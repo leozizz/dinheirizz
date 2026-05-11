@@ -1,5 +1,6 @@
 "use client"
 
+import type { ElementType } from "react"
 import { GlassCard } from "./glass-card"
 import { 
   ShoppingBag, 
@@ -10,8 +11,10 @@ import {
   Utensils,
   Smartphone,
   Plane,
+  Receipt,
   ChevronRight
 } from "lucide-react"
+import type { TransactionRecord } from "@/lib/supabase"
 
 interface Transaction {
   id: string
@@ -20,11 +23,11 @@ interface Transaction {
   amount: number
   date: string
   type: "income" | "expense"
-  icon: React.ElementType
+  icon: ElementType
   iconBg: string
 }
 
-const transactions: Transaction[] = [
+const fallbackTransactions: Transaction[] = [
   {
     id: "1",
     title: "iFood",
@@ -107,6 +110,79 @@ const transactions: Transaction[] = [
   },
 ]
 
+function formatDateLabel(value: string) {
+  const parsedDate = new Date(value)
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value
+  }
+
+  const today = new Date()
+  const isToday = parsedDate.toDateString() === today.toDateString()
+  if (isToday) return 'Hoje'
+
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (parsedDate.toDateString() === yesterday.toDateString()) {
+    return 'Ontem'
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(parsedDate)
+}
+
+function getTransactionStyle(categoryName: string, categoryType?: string | null) {
+  const normalizedName = categoryName.toLowerCase()
+  const normalizedType = categoryType?.toLowerCase()
+
+  if (normalizedType === 'income' || normalizedName.includes('receita')) {
+    return { icon: Zap, iconBg: 'bg-emerald-500/20 text-emerald-400', type: 'income' as const }
+  }
+
+  if (normalizedName.includes('transporte') || normalizedName.includes('uber')) {
+    return { icon: Car, iconBg: 'bg-blue-500/20 text-blue-400', type: 'expense' as const }
+  }
+
+  if (normalizedName.includes('aliment') || normalizedName.includes('food')) {
+    return { icon: Utensils, iconBg: 'bg-orange-500/20 text-orange-400', type: 'expense' as const }
+  }
+
+  if (normalizedName.includes('assin') || normalizedName.includes('stream')) {
+    return { icon: Music, iconBg: 'bg-green-500/20 text-green-400', type: 'expense' as const }
+  }
+
+  if (normalizedName.includes('viagem') || normalizedName.includes('trip')) {
+    return { icon: Plane, iconBg: 'bg-sky-500/20 text-sky-400', type: 'expense' as const }
+  }
+
+  if (normalizedName.includes('compr') || normalizedName.includes('shopping')) {
+    return { icon: ShoppingBag, iconBg: 'bg-pink-500/20 text-pink-400', type: 'expense' as const }
+  }
+
+  if (normalizedName.includes('tech') || normalizedName.includes('tecn')) {
+    return { icon: Smartphone, iconBg: 'bg-slate-400/20 text-slate-300', type: 'expense' as const }
+  }
+
+  return { icon: Receipt, iconBg: 'bg-white/10 text-foreground/70', type: 'expense' as const }
+}
+
+function mapRecordToTransaction(record: TransactionRecord): Transaction {
+  const categoryName = record.categories?.name ?? 'Sem categoria'
+  const categoryType = record.categories?.type ?? 'expense'
+  const style = getTransactionStyle(categoryName, categoryType)
+  const numericAmount = Number(record.amount)
+  const signedAmount = style.type === 'income' ? Math.abs(numericAmount) : -Math.abs(numericAmount)
+
+  return {
+    id: record.id,
+    title: record.description ?? 'Transação sem descrição',
+    category: categoryName,
+    amount: signedAmount,
+    date: formatDateLabel(record.occurred_at),
+    type: style.type,
+    icon: style.icon,
+    iconBg: style.iconBg,
+  }
+}
+
 function formatCurrency(value: number) {
   const formatted = Math.abs(value).toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
@@ -118,10 +194,12 @@ function formatCurrency(value: number) {
 interface TransactionsListProps {
   layout?: "list" | "table"
   maxItems?: number
+  transactions?: TransactionRecord[]
 }
 
-export function TransactionsList({ layout = "list", maxItems }: TransactionsListProps) {
-  const displayedTransactions = maxItems ? transactions.slice(0, maxItems) : transactions
+export function TransactionsList({ layout = "list", maxItems, transactions }: TransactionsListProps) {
+  const resolvedTransactions = transactions?.map(mapRecordToTransaction) ?? fallbackTransactions
+  const displayedTransactions = maxItems ? resolvedTransactions.slice(0, maxItems) : resolvedTransactions
   const isTable = layout === "table"
 
   return (

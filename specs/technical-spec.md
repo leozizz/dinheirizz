@@ -122,6 +122,17 @@
 - **Contexto**: Transformar dados brutos em insights financeiros de alto valor.
 - **Decisão**: Adotar a persona de "Consultor Sênior" nas instruções da API do Gemini.
 
+**ADR-03: Substituição do WhatsApp por E-mail (Resend)**
+- **Status**: Aceita.
+- **Contexto**: Necessidade de evitar custos com novos chips e manter a privacidade do número pessoal.
+- **Decisão**: Utilizar a API do Resend para envio de relatórios semanais via e-mail em formato HTML.
+- **Consequências**: Melhora na apresentação visual (HTML vs Texto), mas exige que o usuário verifique o e-mail.
+
+**Estratégia de Implantação (Atualizada)**
+- **Mensageria**: Remoção da dependência da Meta Cloud API.
+- **Serviço de E-mail**: Integração da Edge Function com resend-js.
+- **Secrets Management**: Chaves do Resend armazenadas no Supabase Vault.
+
 ## Histórico de revisões
 
 |Versão | Data | Autor | Descrição da alteração |

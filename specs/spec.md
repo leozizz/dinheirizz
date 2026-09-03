@@ -102,6 +102,10 @@ Documentação interna:      specs/design-system.md, specs/testing.md, copilot-i
 - Sem console.log em código de produção
 ```
 
+## PC-6. MCPs Disponíveis
+
+- MCP GitHub - Utilize-o como prioridade ao invés do Github CLI.
+
 <!-- ═══ FIM DO PROJECT CONTEXT ═══ -->
 
 ---
@@ -112,16 +116,22 @@ Documentação interna:      specs/design-system.md, specs/testing.md, copilot-i
 ## 1. Identificação
 
 ```
-Issue principal:    #2
-Título:             [Fase 1] Setup de Infraestrutura, Limpeza do Legado e Configuração Inicial (Dinheirizz 2.0)
-Tipo:               chore
-Branch:             feat/v2-foundation
-Milestone:          Dinheirizz 2.0 - Fase 1
+Issue principal:    #<!-- FILL -->
+Título:             <!-- FILL -->
+Tipo:               <!-- FILL: feat | fix | refactor | chore | spike -->
+Branch:             <!-- FILL: ex: feat/fe-07-cadastro-equipe -->
+Milestone:          <!-- FILL ou remover -->
 ```
 
 **Issues relacionadas**
 ```
-#1  🚀 [Epic] Dinheirizz 2.0: Nova Arquitetura e Roadmap (Épico pai)
+<!-- FILL: listar com número e título resumido
+ex:
+#1  Épico
+#2  Roadmap
+#BE-06  Employees + 5 roles (depende de)
+#FE-08  Calendário (bloqueia)
+-->
 ```
 
 ---
@@ -131,7 +141,7 @@ Milestone:          Dinheirizz 2.0 - Fase 1
 > O que esta spec cobre e por que existe.
 > Referenciar a issue — não duplicar o conteúdo dela.
 
-Esta especificação define o alicerce técnico do Dinheirizz 2.0 conforme a Issue #2 e o Épico #1. Cobre a transição estrutural completa: eliminação do código legado em Next.js e reconstrução com React SPA/PWA via Vite, criação do backend BFF em HonoJS (/api) voltado para Cloudflare Pages, modelagem e integração do banco de dados na nuvem via Supabase CLI e Drizzle ORM, além da implantação da infraestrutura de testes em TDD (Vitest) com mocks do banco.
+<!-- FILL: 2–4 linhas -->
 
 ---
 
@@ -139,28 +149,26 @@ Esta especificação define o alicerce técnico do Dinheirizz 2.0 conforme a Iss
 
 ### 3.1 Documentação interna
 ```
-specs/design-system.md  # Diretrizes mandatórias de UI (Glassmorphism, tokens OKLCH, temas e componentes)
-specs/testing.md        # Convenções do projeto para TDD e testes unitários/integração
-copilot-instructions.md # Diretrizes gerais de padrões de projeto e engenharia
+# Caminhos definidos em PC-4 — não repetir aqui, apenas confirmar que foram lidos.
+# Adicionar arquivos específicos desta issue se houver:
+<!-- FILL ou remover -->
 ```
 
 ### 3.2 Issues via MCP
 ```
-#2 [Fase 1] Setup de Infraestrutura, Limpeza do Legado e Configuração Inicial (Dinheirizz 2.0)
-#1 🚀 [Epic] Dinheirizz 2.0: Nova Arquitetura e Roadmap
+<!-- FILL: listar as issues a ler além das já indicadas na seção 1 -->
 ```
 
-Ler PRs atrelados a cada issue. Para PRs mergeados, ler o diff completo:
-- Nenhum Pull Request atrelado no momento.
+Ler PRs atrelados a cada issue. Para PRs mergeados, ler o diff completo.
 
 ### 3.3 Arquivos do repositório
 ```
-package.json            # Dependências legadas, scripts e ferramentas
-lib/supabase.ts         # Contratos e tipos atuais (CategoryRecord, TransactionRecord, queries Supabase)
-components/             # Componentes de UI atuais a preservar/migrar futuramente (balance-card, transactions-list, ui/*)
-app/globals.css         # Variáveis e estilos globais atuais
-middleware.ts           # Lógica legada de autenticação
-tsconfig.json          # Configuração TypeScript a ser ajustada para Vite
+<!-- FILL: listar arquivos/pastas a ler antes de editar
+ex:
+src/pages/cadastros/
+src/types/employee.ts
+src/context/AuthContext.tsx
+-->
 ```
 
 ---
@@ -169,26 +177,16 @@ tsconfig.json          # Configuração TypeScript a ser ajustada para Vite
 
 ### Está incluso
 ```
-- Criação e ativação da branch de desenvolvimento `feat/v2-foundation`.
-- Remoção completa da infraestrutura e arquivos legados do Next.js (diretório `app/`, `next.config.mjs`, `next-env.d.ts`, `middleware.ts` e dependências Next.js).
-- Inicialização da estrutura frontend moderna com React 19 + Vite + TypeScript (com suporte PWA) gerenciada via `pnpm`.
-- Manutenção estrita da fidelidade visual e de tokens de design de `specs/design-system.md` (Glassmorphism, paleta OKLCH, background blur, layout responsivo).
-- Estruturação do diretório `/api` com HonoJS (BFF) configurado para execução compatível com Cloudflare Pages / Workers.
-- Configuração de ferramentas centrais: Supabase CLI, Drizzle ORM (`drizzle-orm`, `drizzle-kit`) e Wrangler.
-- Modelagem do schema do banco em Drizzle (`users`, `accounts`, `categories`, `transactions`, `pix_keys`) espelhando as entidades existentes.
-- Configuração de pipeline de migrations via Supabase CLI e geração de tipagens TypeScript (`supabase gen types typescript`).
-- Setup da infraestrutura de testes com Vitest cobrindo Frontend e BFF (HonoJS).
-- Implementação de mocks para o Drizzle ORM garantindo que a execução de testes automatizados não realize queries nem modificações no banco de dados na nuvem.
-- Testes automatizados iniciais passando (healthcheck, endpoints básicos mockados do Hono e casca inicial do React).
+<!-- FILL -->
+-
+-
 ```
 
 ### Está fora do escopo
 ```
-- Migração completa de dashboards e gráficos de despesas (Fase 2 - Fundação Visual).
-- Fluxos avançados de autenticação visual e telas de perfil (Fase 2).
-- Novos modais especializados de Receita, Despesa, Transferência e Carteira Pix (Fase 3).
-- Integração de IA com Google Gemini e mensageria com Resend (Fase 4).
-- Pipelines de CI/CD em produção via GitHub Actions.
+<!-- FILL -->
+-
+-
 ```
 
 ---
@@ -200,73 +198,25 @@ tsconfig.json          # Configuração TypeScript a ser ajustada para Vite
 
 ### Endpoints / Mutations / Queries
 ```
-GET    /api/health              # Health check do BFF (retorna { status: 'ok', timestamp: string, version: '2.0.0' })
-GET    /api/v1/categories       # Lista de categorias ativas do usuário
-GET    /api/v1/transactions     # Consulta de transações com suporte a filtros (month, year, limit, offset)
-POST   /api/v1/transactions     # Criação de transação validada via Zod schema
-DELETE /api/v1/transactions/:id # Exclusão de transação por id (UUID)
+<!-- FILL: ex:
+GET  /api/employees?role=MONITOR
+POST /api/employees
+# ou para GraphQL:
+# mutation CreateEmployee($input: EmployeeInput!): Employee
+-->
 ```
 
 ### Schema / Migrations
 ```sql
--- Definição relacional a ser espelhada no Drizzle ORM:
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE,
-  full_name TEXT,
-  avatar_url TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS accounts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL DEFAULT 'checking',
-  balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL, -- 'expense' | 'income'
-  icon TEXT,
-  color TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-  amount NUMERIC(12, 2) NOT NULL,
-  description TEXT,
-  occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  paid BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS pix_keys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  key_type TEXT NOT NULL, -- 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
-  key_value TEXT NOT NULL,
-  bank_name TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- FILL: alterações de banco necessárias
+-- ex:
+-- ALTER TABLE employees ADD COLUMN IF NOT EXISTS nome_en VARCHAR(255);
 ```
 
 ### Tipos gerados (se aplicável)
 ```bash
-# Geração de tipagens oficiais do Supabase a partir do banco de dados na nuvem:
-supabase gen types typescript --project-id <project-id> > src/types/database.types.ts
-
-# Geração de migrations via Drizzle Kit:
-pnpm drizzle-kit generate
+# FILL: comando para regenerar tipos após mudança de schema
+# ex: prisma generate | supabase gen types | graphql-codegen
 ```
 
 ---
@@ -278,37 +228,13 @@ pnpm drizzle-kit generate
 
 ```
 CRIAR:
-  vite.config.ts                     # Configuração do Vite com plugins React e PWA
-  index.html                         # Entrypoint HTML SPA
-  src/main.tsx                       # Inicialização do React 19
-  src/App.tsx                        # Componente raiz da interface do usuário
-  src/index.css                      # Implementação do design system (Glassmorphism, tokens OKLCH)
-  src/types/database.types.ts        # Tipagens exportadas/espelhadas do Supabase
-  api/index.ts                       # Entrypoint e roteador principal do BFF HonoJS para Cloudflare Pages
-  api/src/db/schema.ts               # Schemas Drizzle ORM (Users, Accounts, Categories, Transactions, Pix_Keys)
-  api/src/db/client.ts               # Conexão Drizzle ORM
-  api/src/routes/health.ts           # Handler de health check
-  api/src/routes/transactions.ts     # Handlers de listagem e criação de transações
-  api/src/routes/categories.ts       # Handlers de listagem de categorias
-  api/tests/setup.ts                 # Setup de testes e mocks do Drizzle ORM
-  api/tests/health.spec.ts           # Teste unitário/integração do endpoint de health
-  api/tests/transactions.spec.ts     # Teste das rotas de transações com Drizzle mockado
-  src/tests/App.spec.tsx             # Teste de renderização da interface base
-  drizzle.config.ts                  # Configuração do Drizzle Kit
-  wrangler.toml                      # Configuração de deployment Cloudflare Pages / Workers
-  vitest.config.ts                   # Configuração unificada de testes com Vitest
+  <!-- FILL -->
 
 ALTERAR:
-  package.json                       # Migração de dependências: substituição de Next por Vite, Hono, Drizzle, Vitest
-  tsconfig.json                      # Configuração de paths (@/*) e compilação para Vite/React
-  .gitignore                         # Atualização com dist/, .wrangler/, etc.
-  specs/spec.md                      # Atualização da especificação técnica da issue
+  <!-- FILL -->
 
-REMOVER:
-  app/                               # Diretório raiz legado do Next.js (ações, páginas, layout)
-  next.config.mjs                    # Configuração legada Next.js
-  next-env.d.ts                      # Tipagens legadas Next.js
-  middleware.ts                      # Middleware legado de rotas Next.js
+REMOVER (se aplicável):
+  <!-- FILL ou remover esta linha -->
 ```
 
 ---
@@ -324,10 +250,11 @@ REMOVER:
 > Cada critério de aceite deve ter ao menos um teste correspondente.
 
 ```
-- `api/tests/health.spec.ts` → deve responder status 200 e json `{ status: "ok", version: "2.0.0" }` ao acessar `GET /api/health`
-- `api/tests/transactions.spec.ts` → deve responder 200 e retornar array de transações mockadas pelo Drizzle em `GET /api/v1/transactions`
-- `api/tests/transactions.spec.ts` → deve rejeitar payload inválido (amount negativo ou ausente) com status 400 em `POST /api/v1/transactions`
-- `src/tests/App.spec.tsx` → deve renderizar a casca da aplicação Dinheirizz com aplicação de classes glassmorphism sem quebrar
+<!-- FILL: ex:
+- `employee.service.spec.ts` → deve lançar erro ao criar employee com role ADM por COORDENACAO
+- `EmployeeForm.spec.tsx` → deve desabilitar opção ADM no select para usuário COORDENACAO
+- `cadastros.e2e.ts` → fluxo completo de cadastro de monitor com nome_en obrigatório
+-->
 ```
 
 ### 🟢 Green — mínimo para os testes passarem
@@ -336,10 +263,11 @@ REMOVER:
 > Sem over-engineering — apenas o suficiente.
 
 ```
-- Criar a instância Hono no BFF com a rota `/api/health` retornando o status esperado.
-- Configurar as rotas `/api/v1/transactions` no Hono com validação Zod e injeção do client Drizzle mockado.
-- Configurar setup de mocks do Drizzle (`api/tests/setup.ts`) interceptando chamadas para que nenhuma query atinja a nuvem.
-- Montar componente `App.tsx` com container estilizado pelo design system em `src/index.css`.
+<!-- FILL: ex:
+- Validação de role no service antes de persistir
+- Lógica de filtragem de opções no componente de select
+- Handler do formulário com campo nome_en condicional
+-->
 ```
 
 ### 🔵 Refactor — oportunidades após o green
@@ -348,9 +276,7 @@ REMOVER:
 > sem quebrar nenhum deles.
 
 ```
-- Centralizar o middleware de tratamento de erros e formatação de respostas do Hono.
-- Compartilhar schemas de validação Zod e tipos TypeScript entre frontend e backend BFF.
-- Otimizar configurações de bundling do Vite e presets do PWA.
+<!-- FILL ou "Nenhuma oportunidade identificada nesta iteração." -->
 ```
 
 ### Cobertura existente afetada
@@ -359,7 +285,10 @@ REMOVER:
 > Verificar que continuam passando após a implementação.
 
 ```
-Nenhum teste existente nos arquivos em escopo.
+<!-- FILL: ex:
+- `auth.spec.ts` → testa login — afetado se AuthContext for alterado
+- Remover se não houver testes existentes nos arquivos em escopo
+-->
 ```
 
 ---
@@ -369,17 +298,10 @@ Nenhum teste existente nos arquivos em escopo.
 > Copiar e adaptar da issue. Cada item deve ter correspondência na seção 7 (testes).
 
 ```
-- [x] Nova branch `feat/v2-foundation` criada e ativa no repositório.
-- [x] Remoção completa da infraestrutura legada do Next.js (`app/`, `next.config.mjs`, `next-env.d.ts`, `middleware.ts`).
-- [x] Inicialização do projeto frontend em React com Vite (preparado para PWA) utilizando `pnpm`.
-- [x] Fidelidade rigorosa aos tokens e estilos de `specs/design-system.md` preservada no frontend.
-- [x] Servidor HonoJS (BFF) estruturado no diretório `/api` e configurado para Cloudflare Pages / Workers.
-- [x] Drizzle ORM instalado e configurado via `drizzle.config.ts`.
-- [x] Schemas das tabelas essenciais (Users, Accounts, Categories, Transactions, Pix_Keys) declarados no Drizzle.
-- [x] Supabase CLI configurada para integração de migrations e geração de tipagens TypeScript.
-- [x] Vitest configurado para execução de testes unitários e de integração.
-- [x] Camada de Mocks do Drizzle ORM operacional, assegurando que nenhum teste execute operações na nuvem.
-- [x] Testes automatizados do BFF e Frontend passando com sucesso (`pnpm test`).
+<!-- FILL:
+- [ ] ...
+- [ ] ...
+-->
 ```
 
 <!-- ═══ FIM DO ISSUE CONTEXT ═══ -->

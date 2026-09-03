@@ -12,7 +12,8 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "supabase:types": "supabase gen types typescript --local > src/types/database.types.ts",
+    "db:push": "drizzle-kit push",
+    "supabase:types": "supabase gen types typescript --project-id wkglkyxqbhlrnodgdscf > src/types/database.types.ts",
     "pages:dev": "wrangler pages dev dist"
   },
   "dependencies": {

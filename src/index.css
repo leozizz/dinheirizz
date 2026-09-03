@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* === FUNDOS === */
+    --background: oklch(0.12 0.01 260);        /* #1a1625 - Fundo principal escuro */
+    --card: oklch(0.18 0.01 260 / 0.6);        /* Fundo de cards com transparência */
+    --card-foreground: oklch(0.98 0 0);
+    --popover: oklch(0.16 0.01 260 / 0.9);     /* Overlays e popovers */
+    --popover-foreground: oklch(0.98 0 0);
+    --sidebar: oklch(0.14 0.01 260 / 0.8);     /* Sidebar com transparência */
+    --sidebar-foreground: oklch(0.98 0 0);
+    --input: oklch(0.22 0.01 260 / 0.5);       /* Campos de entrada */
+    
+    /* === TEXTO === */
+    --foreground: oklch(0.98 0 0);             /* #fafafa - Texto principal */
+    --muted: oklch(0.22 0.01 260 / 0.5);
+    --muted-foreground: oklch(0.65 0 0);       /* #999999 - Texto secundário */
+    --secondary: oklch(0.24 0.01 260 / 0.6);
+    --secondary-foreground: oklch(0.85 0 0);   /* Texto em elementos secundários */
+    
+    /* === CORES DE AÇÃO === */
+    --primary: oklch(0.7 0.15 200);            /* #4da6ff - Azul primário */
+    --primary-foreground: oklch(0.12 0.01 260);/* Texto sobre primary */
+    --accent: oklch(0.75 0.12 170);            /* #5eead4 - Teal accent */
+    --accent-foreground: oklch(0.12 0.01 260); /* Texto sobre accent */
+    
+    /* === ESTADOS === */
+    --destructive: oklch(0.6 0.2 25);          /* #f87171 - Erro/Despesa */
+    --destructive-foreground: oklch(0.98 0 0); /* Texto sobre destructive */
+    
+    /* === BORDAS E DIVISORES === */
+    --border: oklch(0.35 0.01 260 / 0.3);      /* Bordas sutis */
+    --ring: oklch(0.7 0.15 200 / 0.5);         /* Focus ring */
+    
+    /* === GRÁFICOS === */
+    --chart-1: oklch(0.7 0.15 200);            /* Azul - Primary */
+    --chart-2: oklch(0.75 0.12 170);           /* Teal - Accent */
+    --chart-3: oklch(0.7 0.18 280);            /* Roxo */
+    --chart-4: oklch(0.8 0.15 90);             /* Amarelo */
+    --chart-5: oklch(0.65 0.2 25);             /* Vermelho */
+
+    --radius: 1rem;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+}
+
+/* === GLASSMORPHISM DESIGN SYSTEM CLASSES === */
+.glass-card {
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.glass-card-interactive {
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-interactive:hover {
+  background: oklch(0.22 0.01 260 / 0.7);
+  border-color: oklch(0.45 0.01 260 / 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.glass-sheet {
+  background: var(--popover);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.gradient-orb-primary {
+  background: oklch(0.7 0.15 200 / 0.08);
+  filter: blur(120px);
+}
+
+.gradient-orb-accent {
+  background: oklch(0.75 0.12 170 / 0.06);
+  filter: blur(100px);
+}
+
+.avatar-gradient {
+  background: linear-gradient(to bottom right, var(--primary), var(--accent));
+}
+
+.progress-gradient {
+  background: linear-gradient(to right, var(--primary), var(--accent));
+}

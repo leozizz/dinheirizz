@@ -1,3 +1,32 @@
+# specs/.gitignore
+
+# ─── Commitados (base permanente do projeto) ───────────────────────────
+# setup.md          ← executar uma vez, depois commitar
+# spec.md           ← template base — commitar após setup.md preencher PROJECT CONTEXT
+# testing.md        ← convenções de teste — commitar após setup.md preencher
+# generate-spec.md  ← prompt de geração de spec por issue
+# instructions.md   ← prompt de implementação
+# plan.md           ← template vazio commitado; instâncias preenchidas são ignoradas
+# .gitignore        ← este arquivo
+
+# ─── Ignorados (gerados por issue, variam por task) ────────────────────
+
+# Plano gerado pelo agente (instância preenchida)
+# O template vazio (plan.md) é commitado; o plano real de cada issue não.
+# Convenção: salvar planos por issue como plan.{issue}.md se quiser histórico local.
+plan.*.md
+
+# Arquivos auxiliares gerados por sessão de agente
+context.md
+revision.md
+prompt-fe-cross.md
+*.local.md
+*.draft.md
+
+# Specs de issues específicas (se geradas como arquivos separados)
+# Remover esta linha se preferir commitar specs por issue
+spec.*.md
+
 # Logs
 logs
 *.log
@@ -137,3 +166,12 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Vite build output
+dist/
+
+# Cloudflare Wrangler
+.wrangler/
+
+# Drizzle migrations / cache
+.drizzle/

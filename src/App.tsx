@@ -5,6 +5,7 @@ import { ActionType } from './components/dashboard/QuickActions'
 import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
 import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
 import { LoginScreen } from './components/auth/LoginScreen'
+import { WelcomeScreen } from './components/auth/WelcomeScreen'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut, User as UserIcon } from 'lucide-react'
 
 const initialTransactions: TransactionItem[] = [
@@ -94,7 +95,7 @@ const initialAccounts = [
 
 function MainApp() {
   const { user, signOut } = useAuth()
-  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
   const [transactions, setTransactions] = useState<TransactionItem[]>(initialTransactions)
   const [pixKeys] = useState<PixKeyItem[]>(initialPixKeys)
 
@@ -143,38 +144,48 @@ function MainApp() {
     setTransactions((prev) => [newTx, ...prev])
   }
 
-  if (showAuthModal && !user) {
+  // Usuário não autenticado: tela inicial é Boas-Vindas ou Login (não o dashboard privado)
+  if (!user && unauthView !== 'demo') {
+    if (unauthView === 'login') {
+      return (
+        <div className="relative">
+          <button
+            onClick={() => setUnauthView('welcome')}
+            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+          >
+            ← Voltar
+          </button>
+          <LoginScreen />
+        </div>
+      )
+    }
+
     return (
-      <div className="relative">
-        <button
-          onClick={() => setShowAuthModal(false)}
-          className="fixed top-6 right-6 z-50 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/10 cursor-pointer transition-all"
-        >
-          Voltar ao Dashboard
-        </button>
-        <LoginScreen />
-      </div>
+      <WelcomeScreen
+        onGoToLogin={() => setUnauthView('login')}
+        onExploreDemo={() => setUnauthView('demo')}
+      />
     )
   }
 
   return (
-    <div className="relative min-h-screen bg-[#0d0d12] text-foreground overflow-x-hidden pb-20">
+    <div className="relative min-h-dvh bg-[#0d0d12] text-foreground overflow-x-hidden pb-20">
       {/* Background Orbs */}
       <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-30" />
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-20" />
 
-      {/* Top Bar */}
-      <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0d0d12]/80 border-b border-white/10 px-4 py-3 sm:px-6">
+      {/* Top Bar with Safe Area Top */}
+      <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0d0d12]/80 border-b border-white/10 px-3.5 py-2.5 sm:px-6 sm:py-3 pt-safe-top">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10">
-              <Wallet className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10 flex-shrink-0">
+              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-base sm:text-lg tracking-tight flex items-center gap-2 text-white font-display">
-                Dinheirizz <span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-medium border border-teal-500/30">2.0 PWA</span>
+              <h1 className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-white font-display">
+                Dinheirizz <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-medium border border-teal-500/30">2.0 PWA</span>
               </h1>
-              <p className="text-xs text-neutral-400 flex items-center gap-1">
+              <p className="text-[11px] text-neutral-400 hidden sm:flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-teal-400" /> Cloudflare Pages & Supabase
               </p>
             </div>
@@ -206,8 +217,8 @@ function MainApp() {
               </div>
             ) : (
               <button
-                onClick={() => setShowAuthModal(true)}
-                className="py-1.5 px-3 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 text-xs font-medium border border-blue-500/30 flex items-center gap-1.5 cursor-pointer transition-all"
+                onClick={() => setUnauthView('login')}
+                className="py-1.5 px-3 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 text-xs font-medium border border-blue-500/30 flex items-center gap-1.5 cursor-pointer transition-all min-h-[36px]"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Entrar</span>
@@ -217,8 +228,21 @@ function MainApp() {
         </div>
       </header>
 
+      {/* Demo Banner for Unauthenticated Users */}
+      {!user && (
+        <div className="bg-gradient-to-r from-blue-600/20 via-teal-500/20 to-purple-600/20 border-b border-white/10 px-3 py-2 text-center text-xs text-neutral-300 flex items-center justify-center gap-1.5 flex-wrap">
+          <span>Modo de demonstração.</span>
+          <button
+            onClick={() => setUnauthView('login')}
+            className="text-teal-300 font-semibold underline hover:text-white transition-colors cursor-pointer"
+          >
+            Fazer login ou cadastrar
+          </button>
+        </div>
+      )}
+
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6">
         <Dashboard
           totalBalance={totalBalance}
           totalIncome={totalIncome}

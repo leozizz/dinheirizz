@@ -1,25 +1,35 @@
 import React from 'react'
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import App from '../App'
 
 describe('App Component (Dinheirizz 2.0 Frontend)', () => {
-  it('deve renderizar o título Dinheirizz e a tag PWA', () => {
+  it('deve renderizar a tela de Boas-Vindas inicialmente quando deslogado', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { name: /dinheirizz/i })).toBeInTheDocument()
-    expect(screen.getByText(/2\.0 PWA/i)).toBeInTheDocument()
+    expect(screen.getByText(/dinheirizz 2\.0 pwa/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /controle financeiro inteligente/i })).toBeInTheDocument()
+    expect(screen.getByTestId('welcome-login-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('welcome-demo-btn')).toBeInTheDocument()
   })
 
-  it('deve renderizar o card de saldo principal com valores', () => {
+  it('deve navegar para a tela de Login ao clicar em Acessar minha conta', () => {
     render(<App />)
+    const loginBtn = screen.getByTestId('welcome-login-btn')
+    fireEvent.click(loginBtn)
+
+    expect(screen.getByPlaceholderText('seu@email.com')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
+  })
+
+  it('deve abrir o Dashboard em modo demonstração ao clicar em Explorar modo demonstração', () => {
+    render(<App />)
+    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    fireEvent.click(demoBtn)
+
+    expect(screen.getByText(/modo de demonstração/i)).toBeInTheDocument()
     expect(screen.getByText(/saldo total/i)).toBeInTheDocument()
     expect(screen.getByText(/R\$ 14\.850,20/i)).toBeInTheDocument()
-    expect(screen.getByText(/receitas do mês/i)).toBeInTheDocument()
-    expect(screen.getByText(/despesas do mês/i)).toBeInTheDocument()
-  })
-
-  it('deve renderizar os botões de ações rápidas', () => {
-    render(<App />)
     expect(screen.getByRole('button', { name: /receita/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /despesa/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /transferir/i })).toBeInTheDocument()

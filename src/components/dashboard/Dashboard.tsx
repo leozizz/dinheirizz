@@ -32,52 +32,52 @@ export function Dashboard({
   onActionClick
 }: DashboardProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in pb-12">
+    <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
       {/* Saldo Principal Card */}
-      <div className="relative overflow-hidden glass-card p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02]">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative overflow-hidden glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02]">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-              <Wallet className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">
+            <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-neutral-400">
               Saldo total disponível
             </span>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+          <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
             Ativo
           </span>
         </div>
 
         {/* Valor de Destaque */}
-        <div className="mb-6">
-          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white font-display">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white font-display break-words">
             {formatBRL(totalBalance)}
           </h2>
         </div>
 
-        {/* Resumo de Entradas e Saídas */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
-              <ArrowDownLeft className="w-4 h-4" />
+        {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3 sm:pt-4 border-t border-white/10">
+          <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-white/5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+              <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div>
-              <span className="text-xs text-neutral-400 block">Receitas do Mês</span>
-              <span className="text-sm sm:text-base font-semibold text-emerald-400">
+            <div className="min-w-0 flex-1">
+              <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Receitas do Mês</span>
+              <span className="text-xs sm:text-base font-semibold text-emerald-400 block truncate tabular-nums">
                 {formatBRL(totalIncome)}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
-              <ArrowUpRight className="w-4 h-4" />
+          <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-white/5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div>
-              <span className="text-xs text-neutral-400 block">Despesas do Mês</span>
-              <span className="text-sm sm:text-base font-semibold text-rose-400">
+            <div className="min-w-0 flex-1">
+              <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Despesas do Mês</span>
+              <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
                 {formatBRL(totalExpense)}
               </span>
             </div>
@@ -94,7 +94,7 @@ export function Dashboard({
       </div>
 
       {/* Extrato Recente */}
-      <div className="glass-card p-6 rounded-3xl border border-white/10">
+      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-neutral-400" />
@@ -118,33 +118,33 @@ export function Dashboard({
               return (
                 <div
                   key={t.id}
-                  className="py-3.5 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-xl transition-colors"
+                  className="py-3 sm:py-3.5 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-xl transition-colors gap-3"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center border text-sm font-semibold ${
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border text-sm font-semibold flex-shrink-0 ${
                         isIncome
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                       }`}
                     >
                       {isIncome ? (
-                        <ArrowDownLeft className="w-5 h-5" />
+                        <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <ArrowUpRight className="w-5 h-5" />
+                        <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-white truncate">
                         {t.description || 'Transação sem descrição'}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-neutral-400">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
+                        <span className="text-[11px] sm:text-xs text-neutral-400 whitespace-nowrap">
                           {formatTransactionDate(t.occurred_at)}
                         </span>
                         {t.category && (
                           <span
-                            className="text-[10px] px-2 py-0.5 rounded-md font-medium border"
+                            className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md font-medium border truncate max-w-[120px]"
                             style={{
                               backgroundColor: t.category.color ? `${t.category.color}20` : 'rgba(255,255,255,0.05)',
                               borderColor: t.category.color ? `${t.category.color}40` : 'rgba(255,255,255,0.1)',
@@ -158,16 +158,16 @@ export function Dashboard({
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0 pl-2">
                     <span
-                      className={`text-sm sm:text-base font-semibold ${
+                      className={`text-xs sm:text-base font-semibold tabular-nums block ${
                         isIncome ? 'text-emerald-400' : 'text-rose-400'
                       }`}
                     >
                       {isIncome ? '+' : ''}
                       {formatBRL(t.amount)}
                     </span>
-                    <span className="block text-[11px] text-neutral-500">
+                    <span className="block text-[10px] sm:text-[11px] text-neutral-500">
                       {t.paid ? 'Concluído' : 'Pendente'}
                     </span>
                   </div>

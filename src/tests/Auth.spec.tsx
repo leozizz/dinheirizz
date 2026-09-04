@@ -47,8 +47,8 @@ describe('Auth & LoginScreen (TDD)', () => {
     expect(screen.getByText('Dinheirizz')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('seu@email.com')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /entrar com google/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /entrar com apple/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /google/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /apple/i })).toBeInTheDocument()
   })
 
   it('deve permitir alternar entre abas de Login e Cadastro', async () => {
@@ -95,25 +95,26 @@ describe('Auth & LoginScreen (TDD)', () => {
     })
   })
 
-  it('deve disparar signInWithOAuth ao clicar no botão do Google', async () => {
-    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValueOnce({
-      data: { provider: 'google', url: 'https://oauth.google.com' },
-      error: null
-    })
-
+  it('deve exibir botões sociais (Google e Apple) bloqueados com badge "Em breve" e desabilitados', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
       </AuthProvider>
     )
 
-    const googleBtn = screen.getByRole('button', { name: /entrar com google/i })
-    fireEvent.click(googleBtn)
+    const googleBtn = screen.getByRole('button', { name: /google/i })
+    const appleBtn = screen.getByRole('button', { name: /apple/i })
 
-    expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
-      provider: 'google',
-      options: expect.any(Object)
-    })
+    expect(googleBtn).toBeDisabled()
+    expect(appleBtn).toBeDisabled()
+
+    const badges = screen.getAllByText(/em breve/i)
+    expect(badges.length).toBeGreaterThanOrEqual(2)
+
+    fireEvent.click(googleBtn)
+    fireEvent.click(appleBtn)
+
+    expect(supabase.auth.signInWithOAuth).not.toHaveBeenCalled()
   })
 
   it('deve exibir mensagem de erro quando o login falha', async () => {

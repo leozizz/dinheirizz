@@ -101,7 +101,6 @@ Documentação interna:      specs/design-system.md, specs/testing.md
 - Gerenciamento de pacotes estritamente com pnpm
 - Sem console.log em código de produção
 ```
-
 ## PC-6. MCPs Disponíveis
 
 - MCP GitHub - Utilize-o como prioridade ao invés do Github CLI.
@@ -116,17 +115,20 @@ Documentação interna:      specs/design-system.md, specs/testing.md
 ## 1. Identificação
 
 ```
-Issue principal:    #3
-Título:             [Fase 2] Fundação Visual, Autenticação e Ações Rápidas (Dinheirizz 2.0)
+Issue principal:    #5
+Título:             [Fase 1.5] Configuração de Autenticação e Segurança (Supabase Auth)
 Tipo:               feat
-Branch:             feat/v2-visual-foundation
-Milestone:          Dinheirizz 2.0 - Fase 2
+Branch:             feat/auth-supabase
+Milestone:          Dinheirizz 2.0 - Fase 1.5
 ```
 
 **Issues relacionadas**
 ```
 #1  🚀 [Epic] Dinheirizz 2.0: Nova Arquitetura e Roadmap (Épico pai)
-#2  [Fase 1] Setup de Infraestrutura, Limpeza do Legado e Configuração Inicial (Dependência concluída em #4)
+#2  [Fase 1] Setup de Infraestrutura, Limpeza do Legado e Configuração Inicial (Fundação de banco e stack)
+#3  [Fase 2] Fundação Visual, Autenticação e Ações Rápidas (UI base, LoginScreen e Dashboard)
+#8  [Fase 1.6] Autenticação Social via Google OAuth (Supabase Auth) (Sub-issue desacoplada)
+#9  [Fase 1.7] Autenticação Social via Apple OAuth (Supabase Auth) (Sub-issue desacoplada)
 ```
 
 ---
@@ -136,7 +138,7 @@ Milestone:          Dinheirizz 2.0 - Fase 2
 > O que esta spec cobre e por que existe.
 > Referenciar a issue — não duplicar o conteúdo dela.
 
-Esta especificação define a implementação da Fase 2 do Dinheirizz 2.0 conforme a Issue #3 e o Épico #1. Cobre a construção visual no frontend (React 19 SPA/PWA com Vite), incluindo o fluxo de Autenticação minimalista com Supabase Auth, o Dashboard Principal completo com saldo em destaque e listagem de movimentações, os Modais animados via Framer Motion (Transação com modos Receber, Despesa e Transferência) e o Modal de Carteira Pix com exibição e cópia de chaves, mantendo fidelidade estrita ao design system Glassmorphism.
+Esta especificação define a implementação da Fase 1.5 (#5) do Dinheirizz 2.0 para segurança e autenticação com Supabase Auth. Foca na configuração do fluxo de autenticação por E-mail e Senha (cadastro, login e gerenciamento de sessão no SPA), proteção e bloqueio visual com badge "Em breve" dos botões de login social (Google e Apple, cujas integrações completas foram transferidas para as issues #8 e #9 devido a dependências externas), e criação do Middleware no HonoJS para validação de JWT e injeção do `user_id` no contexto das requisições do BFF (`/api`).
 
 ---
 
@@ -144,15 +146,17 @@ Esta especificação define a implementação da Fase 2 do Dinheirizz 2.0 confor
 
 ### 3.1 Documentação interna
 ```
-specs/design-system.md  # Diretrizes visuais mandatórias (Glassmorphism Apple-inspired, tokens OKLCH, animações fluidas)
-specs/testing.md        # Convenções de TDD e testes em React com Vitest e Testing Library
+specs/design-system.md  # Diretrizes de componentes visuais, tokens Glassmorphism e acessibilidade
+specs/testing.md        # Convenções de TDD, Vitest e mocks do Drizzle ORM
 ```
 
 ### 3.2 Issues via MCP
 ```
-#3 [Fase 2] Fundação Visual, Autenticação e Ações Rápidas (Dinheirizz 2.0)
+#5 [Fase 1.5] Configuração de Autenticação e Segurança (Supabase Auth)
 #1 🚀 [Epic] Dinheirizz 2.0: Nova Arquitetura e Roadmap
-#2 [Fase 1] Setup de Infraestrutura, Limpeza do Legado e Configuração Inicial
+#3 [Fase 2] Fundação Visual, Autenticação e Ações Rápidas (Dinheirizz 2.0)
+#8 [Fase 1.6] Autenticação Social via Google OAuth (Supabase Auth)
+#9 [Fase 1.7] Autenticação Social via Apple OAuth (Supabase Auth)
 ```
 
 Ler PRs atrelados a cada issue:
@@ -160,11 +164,12 @@ Ler PRs atrelados a cada issue:
 
 ### 3.3 Arquivos do repositório
 ```
-src/index.css                      # Estilos base e classes Glassmorphism (.glass-card, .glass-sheet, orbs)
-src/App.tsx                        # Casca visual atual a ser expandida para acomodar telas e modais
-src/types/database.types.ts        # Tipos TypeScript oficiais sincronizados do Supabase
-api/src/routes/transactions.ts     # Contratos e validação Zod dos endpoints de transações
-api/src/routes/categories.ts       # Contratos de categorias
+src/lib/supabase.ts                  # Instância e configuração do Supabase client
+src/contexts/AuthContext.tsx         # Contexto de autenticação e sessão do usuário
+src/components/auth/LoginScreen.tsx  # Tela de login e botões de provedores sociais
+api/index.ts                         # Ponto de entrada do backend BFF HonoJS
+api/src/routes/transactions.ts       # Rotas de transação que devem ser protegidas
+api/tests/setup.ts                   # Mocks e setup de testes do backend
 ```
 
 ---
@@ -173,37 +178,22 @@ api/src/routes/categories.ts       # Contratos de categorias
 
 ### Está incluso
 ```
-- Criação e ativação da branch de desenvolvimento `feat/v2-visual-foundation`.
-- Camada de Autenticação Supabase no cliente (`src/lib/supabase.ts` e `src/contexts/AuthContext.tsx`) com suporte a Login por E-mail (Magic Link / Senha) e OAuth (Google / Apple), além de Logout.
-- Componente de tela de Autenticação minimalista em Glassmorphism (`src/components/auth/LoginScreen.tsx`).
-- Dashboard Principal estruturado (`src/components/dashboard/Dashboard.tsx`):
-  - Card central de saldo com tipografia de alto destaque e indicador de variação percentual.
-  - Seção de resumo com entradas e saídas do mês.
-  - Listagem de últimas transações recentes com badges de categoria e valores coloridos (verde/vermelho).
-- Barra de 4 Ações Rápidas (`src/components/dashboard/QuickActions.tsx`):
-  - Receber (abre modal em modo 'income')
-  - Despesa/Gastar (abre modal em modo 'expense')
-  - Transferir (abre modal em modo 'transfer')
-  - Pix (abre modal de carteira Pix)
-- Modal Genérico de Transações (`src/components/modals/TransactionModal.tsx`) com animação slide-up via Framer Motion:
-  - Input monetário formatado em BRL.
-  - Descrição textual.
-  - Seletor de categorias dinâmico.
-  - Seletor de contas.
-  - Datepicker de ocorrência da transação.
-- Modal de Carteira Pix (`src/components/modals/PixWalletModal.tsx`):
-  - Dropdown limpo de chaves Pix cadastradas do usuário.
-  - Exibição de QR Code visual para recebimento.
-  - Botão de ação rápida "Copiar Chave Pix" com feedback sonner/toast.
-- Suíte de testes TDD com Vitest cobrindo fluxos de Auth, Dashboard, TransactionModal e PixWalletModal.
+- Configuração do cliente Supabase (@supabase/supabase-js) no frontend React.
+- Provedor de autenticação por E-mail e Senha no AuthContext (login, cadastro, logout e recuperação de sessão).
+- Adaptação do LoginScreen para exibir botões de Google e Apple em estado bloqueado/desabilitado com badge "Em breve" e feedback visual de cursor não-permitido.
+- Criação do Middleware de autenticação no HonoJS (api/src/middlewares/auth.ts) para validação do Bearer JWT do Supabase.
+- Injeção segura de user_id e objeto de usuário no contexto da requisição Hono (c.set('userId', ...)).
+- Proteção das rotas privadas no BFF (/api/v1/transactions) rejeitando requisições não autenticadas com 401 Unauthorized.
+- Atualização da rota POST /api/v1/transactions para gravar transações com o user_id real autenticado extraído do JWT.
+- Criação de testes unitários e de integração no Vitest para o middleware Hono e para a tela de autenticação.
 ```
 
 ### Está fora do escopo
 ```
-- Fluxos de IA Consultor Financeiro com Gemini (Fase 4).
-- Disparos automáticos de e-mail e relatórios semanais com Resend (Fase 4).
-- Gestão e criação de novas chaves Pix pelo usuário (Fase 3).
-- Gráficos analíticos avançados de projeção e faturas de cartão de crédito (Fase 3).
+- Configuração e autorização OAuth 2.0 externa no Google Cloud Console (transferido para #8 - Fase 1.6).
+- Configuração de certificados, Service ID e autenticação Apple no Apple Developer Portal (transferido para #9 - Fase 1.7).
+- Recuperação avançada de senha ("Esqueci minha senha" com deep-link por e-mail).
+- Alterações estruturais no banco de dados (o schema de users e transações já suporta user_id UUID).
 ```
 
 ---
@@ -215,30 +205,39 @@ api/src/routes/categories.ts       # Contratos de categorias
 
 ### Endpoints / Mutations / Queries
 ```
-# Endpoints consumidos pelo frontend no BFF HonoJS:
-GET    /api/health              # Health check do BFF
-GET    /api/v1/categories       # Lista de categorias para os seletores de transação
-GET    /api/v1/transactions     # Consulta de histórico recente de transações
-POST   /api/v1/transactions     # Criação de transações (Receita, Despesa, Transferência)
-DELETE /api/v1/transactions/:id # Cancelamento/remoção de transação
+# Headers obrigatórios em rotas protegidas do BFF:
+Authorization: Bearer <supabase_access_token>
 
-# Supabase Auth Client:
-supabase.auth.signInWithPassword({ email, password })
-supabase.auth.signInWithOAuth({ provider: 'google' | 'apple' })
-supabase.auth.signOut()
-supabase.auth.getSession()
+# Middleware de Autenticação Hono:
+c.get('userId') -> string (UUID do auth.users)
+c.get('user')   -> User
+
+# Resposta de erro 401:
+Status: 401 Unauthorized
+Body: { "error": "Não autorizado", "message": "Token de autenticação ausente ou inválido" }
+
+# Rotas protegidas pelo middleware:
+GET    /api/v1/transactions
+POST   /api/v1/transactions
+DELETE /api/v1/transactions/:id
+
+# Rotas públicas:
+GET    /api/health
+GET    /api/v1/categories
 ```
 
 ### Schema / Migrations
 ```sql
--- Nenhum schema novo necessário para a Fase 2; as tabelas já foram criadas na Fase 1:
--- users, accounts, categories, transactions, pix_keys
+-- Nenhuma migration adicional necessária.
+-- As tabelas já possuem a estrutura relacional com auth.users:
+-- users (id UUID PRIMARY KEY REFERENCES auth.users(id))
+-- transactions (user_id UUID NOT NULL REFERENCES auth.users(id))
 ```
 
 ### Tipos gerados (se aplicável)
 ```bash
-# Tipagens já geradas e consolidadas em:
-# src/types/database.types.ts
+# Tipos consolidados do Supabase em:
+src/types/database.types.ts
 ```
 
 ---
@@ -250,21 +249,16 @@ supabase.auth.getSession()
 
 ```
 CRIAR:
-  src/lib/supabase.ts                          # Client Supabase configurado com VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY
-  src/contexts/AuthContext.tsx                 # Contexto de autenticação, sessão de usuário e helpers de login/logout
-  src/components/auth/LoginScreen.tsx          # Tela de login minimalista com Glassmorphism
-  src/components/dashboard/Dashboard.tsx       # Componente do Dashboard Principal (saldo e histórico)
-  src/components/dashboard/QuickActions.tsx    # Barra com as 4 Ações Rápidas (Receber, Gastar, Transferir, Pix)
-  src/components/modals/TransactionModal.tsx   # Modal de criação de transação animado com Framer Motion (slide-up)
-  src/components/modals/PixWalletModal.tsx     # Modal de Carteira Pix com seleção de chave, QR Code e cópia
-  src/tests/Auth.spec.tsx                      # Teste unitário do fluxo e contexto de autenticação
-  src/tests/Dashboard.spec.tsx                 # Teste do Dashboard e renderização de saldo/transações
-  src/tests/TransactionModal.spec.tsx          # Teste do modal de transações (inputs, validações e alternância de modos)
-  src/tests/PixWalletModal.spec.tsx            # Teste da carteira Pix (seleção de chave e cópia)
+  api/src/middlewares/auth.ts                  # Middleware Hono de verificação de JWT do Supabase
+  api/tests/auth-middleware.spec.ts            # Testes de integração do middleware de autenticação
 
 ALTERAR:
-  src/App.tsx                                  # Integração do AuthContext, roteamento condicional (Login vs Dashboard) e modais
-  specs/spec.md                                # Preenchimento do ISSUE CONTEXT para a Issue #3
+  src/components/auth/LoginScreen.tsx          # Bloqueio dos botões Google/Apple com badge "Em breve"
+  src/tests/Auth.spec.tsx                      # Atualização dos testes unitários para validar botões bloqueados
+  api/index.ts                                 # Aplicação do middleware de autenticação nas rotas protegidas
+  api/src/routes/transactions.ts               # Consumo do userId injetado pelo middleware
+  api/tests/transactions.spec.ts               # Inclusão de Authorization header nos testes de rotas protegidas
+  specs/spec.md                                # Atualização da especificação para Fase 1.5 (#5)
 ```
 
 ---
@@ -280,11 +274,11 @@ ALTERAR:
 > Cada critério de aceite deve ter ao menos um teste correspondente.
 
 ```
-- `src/tests/Auth.spec.tsx` → deve renderizar formulário de login com campos de e-mail e botões sociais (Google/Apple) quando usuário deslogado
-- `src/tests/Dashboard.spec.tsx` → deve exibir saldo total e lista de transações recentes formatadas quando usuário autenticado
-- `src/tests/TransactionModal.spec.tsx` → deve abrir em modo "Receita" ao clicar em Receber e submeter dados válidos para a API
-- `src/tests/TransactionModal.spec.tsx` → deve abrir em modo "Despesa" ao clicar em Gastar e validar que valor não pode ser zero
-- `src/tests/PixWalletModal.spec.tsx` → deve exibir chave Pix selecionada, imagem/representação do QR code e disparar cópia para a área de transferência
+- `api/tests/auth-middleware.spec.ts` → deve retornar 401 quando o header Authorization estiver ausente em rotas protegidas
+- `api/tests/auth-middleware.spec.ts` → deve retornar 401 quando o token JWT for inválido ou malformado
+- `api/tests/auth-middleware.spec.ts` → deve injetar userId no contexto e permitir o acesso quando o token for válido
+- `src/tests/Auth.spec.tsx` → deve exibir botões de Google e Apple com a badge "Em breve" e com estado desabilitado (não disparando OAuth)
+- `api/tests/transactions.spec.ts` → deve associar o registro criado ao userId autenticado recebido via JWT
 ```
 
 ### 🟢 Green — mínimo para os testes passarem
@@ -293,12 +287,10 @@ ALTERAR:
 > Sem over-engineering — apenas o suficiente.
 
 ```
-- Implementar AuthContext com mock de sessão em testes e integração real com Supabase Auth em produção.
-- Criar componente LoginScreen com estética Glassmorphism.
-- Implementar Dashboard exibindo saldo e consumindo a lista de transações.
-- Criar QuickActions despachando eventos de abertura dos modais correspondentes.
-- Criar TransactionModal com Framer Motion (AnimatePresence) e formulário com validação.
-- Criar PixWalletModal exibindo dados da chave Pix e simulando QR Code.
+- Implementar api/src/middlewares/auth.ts validando o JWT (usando supabase.auth.getUser ou verificação de claims) e atribuindo c.set('userId', user.id).
+- Acoplar o middleware de auth nas rotas /api/v1/transactions em api/index.ts.
+- Atualizar POST /api/v1/transactions para persistir com o userId do contexto.
+- Ajustar LoginScreen.tsx adicionando a badge visual "Em breve", cursor-not-allowed e disabled={true} nos botões sociais.
 ```
 
 ### 🔵 Refactor — oportunidades após o green
@@ -307,8 +299,8 @@ ALTERAR:
 > sem quebrar nenhum deles.
 
 ```
-- Extrair formatadores de moeda e data para utilitários reutilizáveis em `src/lib/formatters.ts`.
-- Otimizar acessibilidade (ARIA labels e focus trap) nos modais com Framer Motion.
+- Centralizar o helper de extração de Bearer token para reutilização em futuros microsserviços.
+- Adicionar tipos globais no Hono Env (Variables: { userId: string }) para autocomplete TypeScript estrito em todos os routers.
 ```
 
 ### Cobertura existente afetada
@@ -317,9 +309,9 @@ ALTERAR:
 > Verificar que continuam passando após a implementação.
 
 ```
-- `api/tests/health.spec.ts` → Healthcheck do backend
-- `api/tests/transactions.spec.ts` → Contratos de rotas do BFF
-- `src/tests/App.spec.tsx` → Renderização inicial da casca do aplicativo
+- `src/tests/Auth.spec.tsx` → testes de clique nos botões sociais precisam ser atualizados para testar estado bloqueado e badge
+- `api/tests/transactions.spec.ts` → requisições aos endpoints protegidos devem incluir header de autorização mockado
+- `api/tests/health.spec.ts` → rota pública que deve continuar funcionando sem autenticação
 ```
 
 ---
@@ -329,16 +321,15 @@ ALTERAR:
 > Copiar e adaptar da issue. Cada item deve ter correspondência na seção 7 (testes).
 
 ```
-- [x] Nova branch `feat/v2-visual-foundation` criada a partir de `main`.
-- [x] Tela de Autenticação minimalista com Supabase Auth construída em Glassmorphism.
-- [x] Área do Dashboard Principal exibindo saldo em destaque e listagem das últimas movimentações.
-- [x] Área de Ações Rápidas com 4 botões direcionados: Receber, Despesa (Gastar), Transferir e Pix.
-- [x] Modal de Transações construído com efeito slide-up (Framer Motion) suportando valores, descrição, categorias, contas e data.
-- [x] Modal de Carteira Pix com dropdown de chave, visualização de QR Code e botão "Copiar Chave".
-- [x] Testes no Vitest escritos e cobrindo os componentes da interface em TDD.
-- [x] Fidelidade visual ao `specs/design-system.md` (Glassmorphism, tokens OKLCH e dark theme).
-- [x] Todos os testes automatizados passando com sucesso (`pnpm test`).
+- [x] Provedor de Email e Senha habilitado e funcional no cliente Supabase (AuthContext) permitindo cadastro, login e persistência de sessão.
+- [x] Botões de login social via Google e Apple mantidos na interface de LoginScreen, porém bloqueados/desabilitados com feedback visual e badge "Em breve".
+- [x] Tentativas de clique nos botões de Google e Apple não disparam chamadas OAuth.
+- [x] Middleware no HonoJS (api/src/middlewares/auth.ts) valida o Bearer JWT enviado pelo Frontend nas requisições da pasta /api.
+- [x] O user_id extraído do JWT é injetado no contexto da requisição (c.set('userId', ...)) e utilizado pelo Drizzle nas queries de transações.
+- [x] Requisições para rotas protegidas sem token válido retornam status 401 Unauthorized.
+- [x] Sub-issues complementares #8 (Google OAuth - Fase 1.6) e #9 (Apple OAuth - Fase 1.7) criadas e vinculadas à Issue #5.
+- [x] Checkboxes de itens transferidos devidamente tachadas na Issue #5.
+- [x] Todos os testes automatizados da aplicação passando no Vitest (`pnpm test`).
 ```
-
 <!-- ═══ FIM DO ISSUE CONTEXT ═══ -->
 

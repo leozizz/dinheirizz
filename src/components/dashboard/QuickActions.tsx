@@ -47,7 +47,7 @@ export function QuickActions({ onAction }: QuickActionsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-6">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 my-4 sm:my-6">
       {actions.map((action) => {
         const Icon = action.icon
         return (
@@ -55,15 +55,15 @@ export function QuickActions({ onAction }: QuickActionsProps) {
             key={action.id}
             type="button"
             onClick={() => onAction(action.id)}
-            className={`glass-card-interactive p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-white/10 bg-gradient-to-b ${action.bgGlow} ${action.borderColor}`}
+            className={`glass-card-interactive p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-white/10 bg-gradient-to-b min-h-[76px] sm:min-h-[92px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-95`}
           >
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 mb-2.5 shadow-sm group-hover:scale-105 transition-transform ${action.color}`}>
-              <Icon className="w-5 h-5" />
+            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 mb-2 sm:mb-2.5 shadow-sm group-hover:scale-105 transition-transform ${action.color}`}>
+              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-sm font-semibold text-white group-hover:text-white">
+            <span className="text-xs sm:text-sm font-semibold text-white group-hover:text-white block truncate w-full">
               {action.label}
             </span>
-            <span className="text-[11px] text-neutral-400 mt-0.5">
+            <span className="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 block truncate w-full">
               {action.sublabel}
             </span>
           </button>

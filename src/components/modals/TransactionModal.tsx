@@ -130,19 +130,19 @@ export function TransactionModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg glass-card p-6 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[90vh] overflow-y-auto"
+            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[85dvh] overflow-y-auto pb-safe-bottom"
           >
             {/* Top Bar Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5 sm:mb-6">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner ${colors[mode]}`}>
-                  <CurrentIcon className="w-5 h-5" />
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center border shadow-inner ${colors[mode]}`}>
+                  <CurrentIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white font-display">
+                  <h3 className="text-base sm:text-lg font-bold text-white font-display">
                     {titles[mode]}
                   </h3>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-[11px] sm:text-xs text-neutral-400">
                     Preencha os detalhes da movimentação
                   </p>
                 </div>
@@ -152,7 +152,7 @@ export function TransactionModal({
                 type="button"
                 data-testid="close-transaction-modal-btn"
                 onClick={onClose}
-                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -167,21 +167,21 @@ export function TransactionModal({
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
               {/* Valor em destaque */}
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
+              <div className="bg-white/5 p-3.5 sm:p-4 rounded-2xl border border-white/5 text-center">
                 <label className="block text-xs font-medium text-neutral-400 mb-1">
                   Valor da Movimentação
                 </label>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-2xl font-bold text-neutral-400">R$</span>
+                  <span className="text-xl sm:text-2xl font-bold text-neutral-400">R$</span>
                   <input
                     type="text"
                     autoFocus
                     value={amountStr}
                     onChange={(e) => setAmountStr(e.target.value)}
                     placeholder="0,00"
-                    className="w-48 text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display"
+                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display"
                   />
                 </div>
               </div>
@@ -260,7 +260,7 @@ export function TransactionModal({
                 type="submit"
                 data-testid="transaction-submit-btn"
                 disabled={loading}
-                className="w-full mt-4 py-3 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full mt-4 min-h-[48px] py-3 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {loading ? (
                   <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -80,19 +80,19 @@ export function PixWalletModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-md glass-card p-6 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#13111c]/95"
+            className="relative z-10 w-full max-w-md glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#13111c]/95 max-h-[85dvh] overflow-y-auto pb-safe-bottom"
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5 sm:mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-inner">
-                  <QrCode className="w-5 h-5" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-inner flex-shrink-0">
+                  <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white font-display">
+                  <h3 className="text-base sm:text-lg font-bold text-white font-display">
                     Carteira Pix
                   </h3>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-[11px] sm:text-xs text-neutral-400">
                     Selecione uma chave para receber pagamentos
                   </p>
                 </div>
@@ -102,7 +102,7 @@ export function PixWalletModal({
                 type="button"
                 data-testid="close-pix-modal-btn"
                 onClick={onClose}
-                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -113,7 +113,7 @@ export function PixWalletModal({
                 Nenhuma chave Pix cadastrada no momento.
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {/* Seletor de Chave */}
                 <div>
                   <label className="block text-xs font-medium text-neutral-400 mb-1.5 ml-1">
@@ -137,11 +137,11 @@ export function PixWalletModal({
                 </div>
 
                 {/* QR Code Container */}
-                <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner">
-                  <div className="p-3.5 rounded-2xl bg-white shadow-xl mb-3">
+                <div className="flex flex-col items-center justify-center p-4 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner">
+                  <div className="p-3 sm:p-3.5 rounded-2xl bg-white shadow-xl mb-3">
                     {/* Visual QR Code Generator */}
                     <svg
-                      className="w-36 h-36"
+                      className="w-32 h-32 sm:w-36 sm:h-36"
                       viewBox="0 0 100 100"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -198,12 +198,12 @@ export function PixWalletModal({
                 </div>
 
                 {/* Exibição da Chave e Botão Copiar */}
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
-                  <div className="overflow-hidden">
+                <div className="p-3 sm:p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2.5 sm:gap-3">
+                  <div className="overflow-hidden min-w-0 flex-1">
                     <span className="text-[10px] uppercase font-semibold tracking-wider text-teal-400 block mb-0.5">
                       {selectedKey && formatKeyType(selectedKey.key_type)}
                     </span>
-                    <p data-testid="active-pix-key-value" className="text-sm font-medium text-white truncate">
+                    <p data-testid="active-pix-key-value" className="text-xs sm:text-sm font-medium text-white truncate">
                       {selectedKey?.key_value}
                     </p>
                   </div>
@@ -211,7 +211,7 @@ export function PixWalletModal({
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 min-h-[40px] active:scale-95 ${
                       copied
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                         : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'

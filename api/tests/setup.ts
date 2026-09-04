@@ -38,3 +38,4 @@ export const mockDb = {
 
 // Garantia absoluta de ausência de credenciais reais de banco durante execução de testes
 delete process.env.DATABASE_URL
+process.env.SUPABASE_JWT_SECRET = 'test-super-secret-jwt-key-dinheirizz-minimum-32-chars'

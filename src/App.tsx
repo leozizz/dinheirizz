@@ -1,28 +1,192 @@
 import React, { useState } from 'react'
-import { Wallet, TrendingUp, TrendingDown, ArrowLeftRight, QrCode, Plus, Bell, ShieldCheck } from 'lucide-react'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
+import { ActionType } from './components/dashboard/QuickActions'
+import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
+import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
+import { LoginScreen } from './components/auth/LoginScreen'
+import { WelcomeScreen } from './components/auth/WelcomeScreen'
+import { Wallet, Bell, ShieldCheck, LogIn, LogOut, User as UserIcon } from 'lucide-react'
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'cards'>('dashboard')
+const initialTransactions: TransactionItem[] = [
+  {
+    id: 'tx-1',
+    description: 'Salário Desenvolvimento',
+    amount: 12000.0,
+    paid: true,
+    occurred_at: new Date().toISOString(),
+    category: { name: 'Renda', color: '#10b981', icon: 'wallet' },
+    type: 'income'
+  },
+  {
+    id: 'tx-2',
+    description: 'Consultoria Frontend & BFF',
+    amount: 6200.0,
+    paid: true,
+    occurred_at: new Date(Date.now() - 86400000).toISOString(),
+    category: { name: 'Serviços', color: '#3b82f6', icon: 'laptop' },
+    type: 'income'
+  },
+  {
+    id: 'tx-3',
+    description: 'Supermercado & Alimentação',
+    amount: -1450.5,
+    paid: true,
+    occurred_at: new Date(Date.now() - 172800000).toISOString(),
+    category: { name: 'Alimentação', color: '#f59e0b', icon: 'utensils' },
+    type: 'expense'
+  },
+  {
+    id: 'tx-4',
+    description: 'Serviços de Nuvem & Infra',
+    amount: -899.3,
+    paid: true,
+    occurred_at: new Date(Date.now() - 259200000).toISOString(),
+    category: { name: 'Infraestrutura', color: '#8b5cf6', icon: 'server' },
+    type: 'expense'
+  },
+  {
+    id: 'tx-5',
+    description: 'Assinaturas de Software',
+    amount: -1000.0,
+    paid: true,
+    occurred_at: new Date(Date.now() - 345600000).toISOString(),
+    category: { name: 'Software', color: '#ec4899', icon: 'layers' },
+    type: 'expense'
+  }
+]
+
+const initialPixKeys: PixKeyItem[] = [
+  {
+    id: 'pix-1',
+    key_type: 'email',
+    key_value: 'contato@dinheirizz.com',
+    bank_name: 'Nubank Institucional',
+    description: 'Chave Principal'
+  },
+  {
+    id: 'pix-2',
+    key_type: 'cpf',
+    key_value: '123.456.789-00',
+    bank_name: 'Itaú Personalité',
+    description: 'Chave Pessoal'
+  },
+  {
+    id: 'pix-3',
+    key_type: 'random',
+    key_value: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
+    bank_name: 'Inter PJ',
+    description: 'Chave Aleatória Recebimentos'
+  }
+]
+
+const initialCategories = [
+  { id: 'cat-1', name: 'Alimentação', type: 'expense' },
+  { id: 'cat-2', name: 'Renda / Salário', type: 'income' },
+  { id: 'cat-3', name: 'Infraestrutura', type: 'expense' },
+  { id: 'cat-4', name: 'Transporte', type: 'expense' },
+  { id: 'cat-5', name: 'Serviços & Freelas', type: 'income' }
+]
+
+const initialAccounts = [
+  { id: 'acc-1', name: 'Nubank Principal', balance: 10500 },
+  { id: 'acc-2', name: 'Itaú Reserva de Emergência', balance: 4350.2 }
+]
+
+function MainApp() {
+  const { user, signOut } = useAuth()
+  const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
+  const [transactions, setTransactions] = useState<TransactionItem[]>(initialTransactions)
+  const [pixKeys] = useState<PixKeyItem[]>(initialPixKeys)
+
+  // Modals state
+  const [isTxModalOpen, setIsTxModalOpen] = useState(false)
+  const [txMode, setTxMode] = useState<TransactionMode>('income')
+  const [isPixModalOpen, setIsPixModalOpen] = useState(false)
+
+  // Totais calculados
+  const totalIncome = 18200.0
+  const totalExpense = 3349.8
+  const totalBalance = 14850.2
+
+  const handleActionClick = (action: ActionType) => {
+    if (action === 'pix') {
+      setIsPixModalOpen(true)
+    } else {
+      setTxMode(action as TransactionMode)
+      setIsTxModalOpen(true)
+    }
+  }
+
+  const handleCreateTransaction = (data: {
+    amount: number
+    description: string
+    categoryId?: string
+    accountId?: string
+    occurredAt: string
+    type: TransactionMode
+  }) => {
+    const isExpense = data.type === 'expense'
+    const finalAmount = isExpense ? -Math.abs(data.amount) : Math.abs(data.amount)
+
+    const cat = initialCategories.find((c) => c.id === data.categoryId)
+
+    const newTx: TransactionItem = {
+      id: `tx-${Date.now()}`,
+      description: data.description || (data.type === 'income' ? 'Nova Receita' : 'Nova Despesa'),
+      amount: finalAmount,
+      paid: true,
+      occurred_at: data.occurredAt || new Date().toISOString(),
+      category: cat ? { name: cat.name, color: isExpense ? '#f43f5e' : '#10b981' } : null,
+      type: data.type
+    }
+
+    setTransactions((prev) => [newTx, ...prev])
+  }
+
+  // Usuário não autenticado: tela inicial é Boas-Vindas ou Login (não o dashboard privado)
+  if (!user && unauthView !== 'demo') {
+    if (unauthView === 'login') {
+      return (
+        <div className="relative">
+          <button
+            onClick={() => setUnauthView('welcome')}
+            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+          >
+            ← Voltar
+          </button>
+          <LoginScreen />
+        </div>
+      )
+    }
+
+    return (
+      <WelcomeScreen
+        onGoToLogin={() => setUnauthView('login')}
+        onExploreDemo={() => setUnauthView('demo')}
+      />
+    )
+  }
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden pb-20">
+    <div className="relative min-h-dvh bg-[#0d0d12] text-foreground overflow-x-hidden pb-20">
       {/* Background Orbs */}
-      <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none" />
-      <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none" />
+      <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-30" />
+      <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-20" />
 
-      {/* Top Bar */}
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-background/60 border-b border-border px-4 py-3 sm:px-6">
+      {/* Top Bar with Safe Area Top */}
+      <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0d0d12]/80 border-b border-white/10 px-3.5 py-2.5 sm:px-6 sm:py-3 pt-safe-top">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20">
-              <Wallet className="w-5 h-5 text-primary-foreground" />
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10 flex-shrink-0">
+              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-base sm:text-lg tracking-tight flex items-center gap-2">
-                Dinheirizz <span className="text-xs px-2 py-0.5 rounded-full bg-accent/20 text-accent font-medium">2.0 PWA</span>
+              <h1 className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-white font-display">
+                Dinheirizz <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-medium border border-teal-500/30">2.0 PWA</span>
               </h1>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-accent" /> Cloudflare Pages & Supabase
+              <p className="text-[11px] text-neutral-400 hidden sm:flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" /> Cloudflare Pages & Supabase
               </p>
             </div>
           </div>
@@ -30,130 +194,88 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               aria-label="Notificações"
-              className="w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground"
+              className="w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer"
             >
               <Bell className="w-4 h-4" />
             </button>
-            <div className="w-9 h-9 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs text-primary-foreground border border-white/20">
-              LZ
-            </div>
+
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div
+                  title={user.email || 'Usuário'}
+                  className="w-9 h-9 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs text-white border border-white/20 shadow-sm"
+                >
+                  {user.email ? user.email.slice(0, 2).toUpperCase() : 'US'}
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  title="Sair da conta"
+                  className="w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-rose-400 border border-white/10 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setUnauthView('login')}
+                className="py-1.5 px-3 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 text-xs font-medium border border-blue-500/30 flex items-center gap-1.5 cursor-pointer transition-all min-h-[36px]"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Entrar</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Balance Card */}
-        <section className="glass-card p-6 relative overflow-hidden shadow-2xl shadow-black/40">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Saldo Total</span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1 text-foreground">
-                R$ 14.850,20
-              </h2>
-            </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium border border-emerald-500/20 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> +8.4%
-            </span>
-          </div>
+      {/* Demo Banner for Unauthenticated Users */}
+      {!user && (
+        <div className="bg-gradient-to-r from-blue-600/20 via-teal-500/20 to-purple-600/20 border-b border-white/10 px-3 py-2 text-center text-xs text-neutral-300 flex items-center justify-center gap-1.5 flex-wrap">
+          <span>Modo de demonstração.</span>
+          <button
+            onClick={() => setUnauthView('login')}
+            className="text-teal-300 font-semibold underline hover:text-white transition-colors cursor-pointer"
+          >
+            Fazer login ou cadastrar
+          </button>
+        </div>
+      )}
 
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Receitas do Mês</p>
-                <p className="text-sm font-semibold text-emerald-400">R$ 18.200,00</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-destructive/20 text-destructive flex items-center justify-center">
-                <TrendingDown className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Despesas do Mês</p>
-                <p className="text-sm font-semibold text-destructive">R$ 3.349,80</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Quick Actions */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground">Ações Rápidas</h3>
-          <div className="grid grid-cols-4 gap-3">
-            <button className="glass-card-interactive p-3 flex flex-col items-center justify-center gap-2 text-center group">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Plus className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-medium">Receita</span>
-            </button>
-
-            <button className="glass-card-interactive p-3 flex flex-col items-center justify-center gap-2 text-center group">
-              <div className="w-10 h-10 rounded-full bg-destructive/20 text-destructive flex items-center justify-center group-hover:scale-110 transition-transform">
-                <TrendingDown className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-medium">Despesa</span>
-            </button>
-
-            <button className="glass-card-interactive p-3 flex flex-col items-center justify-center gap-2 text-center group">
-              <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ArrowLeftRight className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-medium">Transferir</span>
-            </button>
-
-            <button className="glass-card-interactive p-3 flex flex-col items-center justify-center gap-2 text-center group">
-              <div className="w-10 h-10 rounded-full bg-accent/20 text-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-                <QrCode className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-medium">Pix</span>
-            </button>
-          </div>
-        </section>
-
-        {/* Architecture Status Info */}
-        <section className="glass-card p-4 space-y-2 border border-accent/20">
-          <div className="flex items-center gap-2 text-accent text-sm font-semibold">
-            <ShieldCheck className="w-4 h-4" /> Fundação Dinheirizz 2.0 Ativa
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Frontend desacoplado em Vite + React 19 SPA/PWA com arquitetura BFF em HonoJS (/api), Drizzle ORM conectado ao Supabase Cloud e cobertura com Vitest.
-          </p>
-        </section>
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6">
+        <Dashboard
+          totalBalance={totalBalance}
+          totalIncome={totalIncome}
+          totalExpense={totalExpense}
+          transactions={transactions}
+          onActionClick={handleActionClick}
+        />
       </main>
 
-      {/* Floating Bottom Navigation */}
-      <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40 glass-card p-2 flex justify-around items-center shadow-2xl border border-border">
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-            activeTab === 'dashboard' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Wallet className="w-4 h-4" />
-          <span>Início</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('transactions')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-            activeTab === 'transactions' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <ArrowLeftRight className="w-4 h-4" />
-          <span>Extrato</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('cards')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-            activeTab === 'cards' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <QrCode className="w-4 h-4" />
-          <span>Pix</span>
-        </button>
-      </nav>
+      {/* Modal de Transações (Receita / Despesa / Transferência) */}
+      <TransactionModal
+        isOpen={isTxModalOpen}
+        mode={txMode}
+        categories={initialCategories}
+        accounts={initialAccounts}
+        onClose={() => setIsTxModalOpen(false)}
+        onSubmit={handleCreateTransaction}
+      />
+
+      {/* Modal de Carteira Pix */}
+      <PixWalletModal
+        isOpen={isPixModalOpen}
+        pixKeys={pixKeys}
+        onClose={() => setIsPixModalOpen(false)}
+      />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   )
 }

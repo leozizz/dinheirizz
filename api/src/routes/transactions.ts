@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getDb } from '../db/client'
 import { transactions } from '../db/schema'
 import { eq, desc } from 'drizzle-orm'
+import type { AuthEnv } from '../middlewares/auth'
 
 export const createTransactionSchema = z.object({
   amount: z.number({ required_error: 'amount é obrigatório' }).positive('O valor deve ser positivo'),
@@ -13,15 +14,17 @@ export const createTransactionSchema = z.object({
   paid: z.boolean().optional().default(true)
 })
 
-export const transactionsRouter = new Hono()
+export const transactionsRouter = new Hono<AuthEnv>()
 
 transactionsRouter.get('/', async (c) => {
+  const userId = c.get('userId')
   const db = getDb()
   if (!db) {
     return c.json({
       data: [
         {
           id: 'test-tx-1',
+          userId: userId || '00000000-0000-0000-0000-000000000000',
           amount: '150.00',
           description: 'Almoço Executivo',
           occurredAt: new Date().toISOString(),
@@ -35,7 +38,9 @@ transactionsRouter.get('/', async (c) => {
   }
 
   try {
-    const list = await db.select().from(transactions).orderBy(desc(transactions.occurredAt)).limit(50)
+    const list = userId
+      ? await db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.occurredAt)).limit(50)
+      : await db.select().from(transactions).orderBy(desc(transactions.occurredAt)).limit(50)
     return c.json({ data: list, total: list.length })
   } catch (error) {
     return c.json({ error: 'Falha ao buscar transações' }, 500)
@@ -60,11 +65,13 @@ transactionsRouter.post('/', async (c) => {
 
   const db = getDb()
   const data = result.data
+  const userId = c.get('userId') || '00000000-0000-0000-0000-000000000000'
 
   if (!db) {
     // Retorno mockado quando db não está conectado (durante testes unitários/offline)
     return c.json({
       id: 'mock-tx-created',
+      userId,
       amount: data.amount.toFixed(2),
       description: data.description ?? null,
       paid: data.paid,
@@ -75,7 +82,7 @@ transactionsRouter.post('/', async (c) => {
 
   try {
     const inserted = await db.insert(transactions).values({
-      userId: '00000000-0000-0000-0000-000000000000',
+      userId,
       accountId: data.accountId,
       categoryId: data.categoryId ?? null,
       amount: data.amount.toFixed(2),

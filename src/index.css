@@ -101,3 +101,39 @@ body {
 .progress-gradient {
   background: linear-gradient(to right, var(--primary), var(--accent));
 }
+
+/* === SAFE AREAS PWA (APPLE HIG) === */
+.pt-safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), 0px);
+}
+
+.pb-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+}
+
+.h-safe-bottom {
+  height: max(env(safe-area-inset-bottom, 0px), 0px);
+}
+
+/* === SCROLLBAR REFINADA GLASSMORPHISM === */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.4 0.01 260 / 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0.01 260 / 0.4);
+}
+
+/* === TOQUE MOBILE E PREVENÇÃO DE HIGHLIGHT === */
+html, body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+

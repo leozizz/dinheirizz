@@ -29,8 +29,7 @@ specs/testing.md       ← ler as convenções de teste antes de preencher a se�
 ## Passo 2 — Leitura da issue e issues relacionadas via MCP
 
 ```
-Issue principal: #5
-Issues relacionadas: #1, #2, #3, #8, #9
+Issue principal: #<!-- ISSUE -->
 ```
 
 Para cada issue lida:

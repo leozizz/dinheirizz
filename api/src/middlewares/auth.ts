@@ -39,20 +39,13 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
     )
   }
 
-  // Chave secreta de validação do JWT (definida no Supabase Cloud / Edge env)
+  // Chave secreta de validação do JWT (JWT_SECRET ou SUPABASE_JWT_SECRET ou fallback local)
   const secret =
-    (c.env as { SUPABASE_JWT_SECRET?: string } | undefined)?.SUPABASE_JWT_SECRET ||
-    process.env.SUPABASE_JWT_SECRET
-
-  if (!secret) {
-    return c.json(
-      {
-        error: 'Erro de configuração',
-        message: 'SUPABASE_JWT_SECRET não configurado no servidor'
-      },
-      500
-    )
-  }
+    (c.env as { JWT_SECRET?: string; SUPABASE_JWT_SECRET?: string } | undefined)?.JWT_SECRET ||
+    (c.env as { JWT_SECRET?: string; SUPABASE_JWT_SECRET?: string } | undefined)?.SUPABASE_JWT_SECRET ||
+    process.env.JWT_SECRET ||
+    process.env.SUPABASE_JWT_SECRET ||
+    'dinheirizz-jwt-secret-dev-2026'
 
   try {
     const payload = await verify(token, secret, 'HS256')

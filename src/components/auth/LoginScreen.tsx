@@ -1,14 +1,45 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { Mail, Lock, Sparkles, AlertCircle, ArrowRight } from 'lucide-react'
+import {
+  Mail,
+  Lock,
+  Sparkles,
+  AlertCircle,
+  ArrowRight,
+  User,
+  AtSign,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck
+} from 'lucide-react'
+import { loginSchema, signUpSchema } from '../../schemas/auth'
+
+import { toast, Toaster } from 'sonner'
 
 export function LoginScreen() {
   const { signInWithPassword, signUp, signInWithOAuth } = useAuth()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [fullName, setFullName] = useState('')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const passwordMatch =
+    password.length > 0 && confirmPassword.length > 0 && password === confirmPassword
+  const passwordMismatch =
+    password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword
+
+  const resetForm = () => {
+    setErrorMessage(null)
+    setFullName('')
+    setUsername('')
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,18 +48,70 @@ export function LoginScreen() {
 
     try {
       if (mode === 'login') {
-        const { error } = await signInWithPassword({ email, password })
-        if (error) {
-          setErrorMessage('Credenciais inválidas ou erro ao autenticar. Verifique seus dados.')
+        const validation = loginSchema.safeParse({ email, password })
+        if (!validation.success) {
+          const err = validation.error.errors[0]?.message || 'Dados de login inválidos.'
+          setErrorMessage(err)
+          toast.error(err)
+          setLoading(false)
+          return
+        }
+
+        const result = await signInWithPassword({ email, password })
+        if (result.error) {
+          const err = 'Credenciais inválidas ou erro ao autenticar. Verifique seus dados.'
+          setErrorMessage(err)
+          toast.error(err)
+        } else {
+          toast.success('Login realizado com sucesso!')
         }
       } else {
-        const { error } = await signUp({ email, password })
-        if (error) {
-          setErrorMessage('Erro ao criar conta: ' + error.message)
+        const validation = signUpSchema.safeParse({
+          fullName,
+          username: username.trim() || undefined,
+          email,
+          password,
+          confirmPassword
+        })
+
+        if (!validation.success) {
+          const err = validation.error.errors[0]?.message || 'Dados de cadastro inválidos.'
+          setErrorMessage(err)
+          toast.error(err)
+          setLoading(false)
+          return
+        }
+
+        const result = await signUp({
+          email,
+          password,
+          fullName: fullName.trim(),
+          username: username.trim() || undefined
+        })
+
+        if (result.isDuplicate || (result.error && result.error.message.toLowerCase().includes('já está cadastrado'))) {
+          const warn = 'Este e-mail já está cadastrado. Redirecionando para o login...'
+          setErrorMessage(warn)
+          toast.warning(warn)
+          setMode('login')
+          setPassword('')
+          setConfirmPassword('')
+        } else if (result.error) {
+          const err = 'Erro ao criar conta: ' + result.error.message
+          setErrorMessage(err)
+          toast.error(err)
+        } else {
+          toast.success('Conta criada com sucesso! Você já pode entrar.')
+          setMode('login')
+          setPassword('')
+          setConfirmPassword('')
         }
       }
+
     } catch (err: any) {
-      setErrorMessage(err.message || 'Erro inesperado ao processar login.')
+      const msg = err.message || 'Erro inesperado ao processar a autenticação.'
+      setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -44,7 +127,8 @@ export function LoginScreen() {
 
   return (
     <div className="relative min-h-dvh flex items-center justify-center p-4 sm:p-6 py-8 sm:py-12 overflow-y-auto bg-[#0d0d12]">
-      {/* Dynamic Background Glows (Fixed to not break flexbox flow) */}
+      <Toaster richColors theme="dark" position="top-right" />
+      {/* Dynamic Background Glows */}
       <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary opacity-30 pointer-events-none" />
       <div className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full gradient-orb-accent opacity-25 pointer-events-none" />
 
@@ -68,8 +152,11 @@ export function LoginScreen() {
           <button
             type="button"
             data-testid="tab-login"
-            onClick={() => { setMode('login'); setErrorMessage(null); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+            onClick={() => {
+              setMode('login')
+              setErrorMessage(null)
+            }}
+            className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
               mode === 'login'
                 ? 'bg-white/15 text-white shadow-sm font-semibold'
                 : 'text-neutral-400 hover:text-white'
@@ -80,8 +167,11 @@ export function LoginScreen() {
           <button
             type="button"
             data-testid="tab-signup"
-            onClick={() => { setMode('signup'); setErrorMessage(null); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+            onClick={() => {
+              setMode('signup')
+              setErrorMessage(null)
+            }}
+            className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
               mode === 'signup'
                 ? 'bg-white/15 text-white shadow-sm font-semibold'
                 : 'text-neutral-400 hover:text-white'
@@ -101,6 +191,49 @@ export function LoginScreen() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <>
+              {/* Nome Completo */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+                  Nome Completo
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Username / Handle */}
+              <div>
+                <div className="flex justify-between items-center mb-1.5 ml-1">
+                  <label className="block text-xs font-medium text-neutral-300">
+                    Identificador (@username)
+                  </label>
+                  <span className="text-[10px] text-neutral-500">Opcional</span>
+                </div>
+                <div className="relative">
+                  <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
+                    placeholder="seu_usuario"
+                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all lowercase"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* E-mail */}
           <div>
             <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
               E-mail
@@ -118,6 +251,7 @@ export function LoginScreen() {
             </div>
           </div>
 
+          {/* Senha */}
           <div>
             <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
               Senha
@@ -133,13 +267,53 @@ export function LoginScreen() {
                 className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
               />
             </div>
+            {mode === 'signup' && (
+              <p className="text-[11px] text-neutral-400 mt-1 ml-1 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400 inline" />
+                Mínimo 8 caracteres, contendo letras e números
+              </p>
+            )}
           </div>
+
+          {/* Confirmação de Senha (Signup) */}
+          {mode === 'signup' && (
+            <div>
+              <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+                Confirmar Senha
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita sua senha"
+                  className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Feedback dinâmico de match */}
+              {passwordMatch && (
+                <div className="flex items-center gap-1.5 mt-1.5 ml-1 text-emerald-400 text-xs animate-fade-in">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>As senhas coincidem</span>
+                </div>
+              )}
+              {passwordMismatch && (
+                <div className="flex items-center gap-1.5 mt-1.5 ml-1 text-red-400 text-xs animate-fade-in">
+                  <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>As senhas não coincidem</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
             data-testid="auth-submit-btn"
             disabled={loading}
-            className="w-full mt-2 h-11 sm:h-12 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+            className="w-full mt-3 min-h-[44px] h-11 sm:h-12 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

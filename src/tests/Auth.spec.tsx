@@ -3,24 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { LoginScreen } from '../components/auth/LoginScreen'
 
-// Mock do supabase client
-vi.mock('../lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: vi.fn() } }
-      }),
-      signInWithPassword: vi.fn(),
-      signUp: vi.fn(),
-      signInWithOAuth: vi.fn(),
-      signOut: vi.fn()
-    }
-  }
-}))
-
-import { supabase } from '../lib/supabase'
-
 function TestConsumer() {
   const { user, signOut } = useAuth()
   if (!user) return <LoginScreen />
@@ -32,9 +14,53 @@ function TestConsumer() {
   )
 }
 
-describe('Auth & LoginScreen (TDD)', () => {
+describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
+
+    global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+      if (typeof url === 'string' && url.includes('/api/v1/auth/login')) {
+        const body = JSON.parse((init?.body as string) || '{}')
+        if (body.email === 'errado@email.com') {
+          return {
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Credenciais inválidas ou erro ao autenticar' })
+          } as Response
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            token: 'mock-jwt-token',
+            user: { id: 'user-1', email: 'teste@dinheirizz.com', fullName: 'Teste', username: 'teste' }
+          })
+        } as Response
+      }
+
+      if (typeof url === 'string' && url.includes('/api/v1/auth/me')) {
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Não autorizado' })
+        } as Response
+      }
+
+      if (typeof url === 'string' && url.includes('/api/v1/auth/logout')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true })
+        } as Response
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({})
+      } as Response
+    })
   })
 
   it('deve renderizar a tela de login com formulário e botões sociais quando deslogado', async () => {
@@ -64,15 +90,7 @@ describe('Auth & LoginScreen (TDD)', () => {
     expect(screen.getByRole('button', { name: /cadastrar/i })).toBeInTheDocument()
   })
 
-  it('deve disparar signInWithPassword ao submeter formulário de login', async () => {
-    vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-      data: {
-        user: { id: 'user-1', email: 'teste@dinheirizz.com' } as any,
-        session: {} as any
-      },
-      error: null
-    })
-
+  it('deve disparar POST /api/v1/auth/login ao submeter formulário de login', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
@@ -88,10 +106,14 @@ describe('Auth & LoginScreen (TDD)', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: 'teste@dinheirizz.com',
-        password: 'senha123'
-      })
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/auth/login'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining('"email":"teste@dinheirizz.com"')
+        })
+      )
     })
   })
 
@@ -110,19 +132,9 @@ describe('Auth & LoginScreen (TDD)', () => {
 
     const badges = screen.getAllByText(/em breve/i)
     expect(badges.length).toBeGreaterThanOrEqual(2)
-
-    fireEvent.click(googleBtn)
-    fireEvent.click(appleBtn)
-
-    expect(supabase.auth.signInWithOAuth).not.toHaveBeenCalled()
   })
 
   it('deve exibir mensagem de erro quando o login falha', async () => {
-    vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-      data: { user: null, session: null },
-      error: { message: 'Invalid login credentials' } as any
-    })
-
     render(
       <AuthProvider>
         <TestConsumer />

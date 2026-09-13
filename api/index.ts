@@ -1,14 +1,18 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { secureHeaders } from 'hono/secure-headers'
 import { healthRouter } from './src/routes/health'
 import { categoriesRouter } from './src/routes/categories'
 import { transactionsRouter } from './src/routes/transactions'
+import { usersRouter } from './src/routes/users'
+import { authRouter } from './src/routes/auth'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 
 export const app = new Hono<AuthEnv>().basePath('/api')
 
-// Global Middlewares
+// Global Middlewares (CORS e Headers de Segurança)
 app.use('*', cors())
+app.use('*', secureHeaders())
 
 // Global Error Handler
 app.onError((err, c) => {
@@ -19,10 +23,19 @@ app.onError((err, c) => {
 app.route('/health', healthRouter)
 app.route('/v1/categories', categoriesRouter)
 
-// Protected Routers (Supabase JWT Bearer required)
+// Auth Router (signup, login, logout são públicos; /me é protegido)
+app.use('/v1/auth/me', authMiddleware)
+app.route('/v1/auth', authRouter)
+
+// Protected Routers (Bearer required)
 app.use('/v1/transactions/*', authMiddleware)
 app.use('/v1/transactions', authMiddleware)
 app.route('/v1/transactions', transactionsRouter)
 
+app.use('/v1/users/me', authMiddleware)
+app.use('/v1/users/sync', authMiddleware)
+app.route('/v1/users', usersRouter)
+
 export default app
+
 

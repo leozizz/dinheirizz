@@ -1,11 +1,16 @@
 import { pgTable, uuid, text, numeric, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
   fullName: text('full_name'),
+  username: text('username').unique(),
   avatarUrl: text('avatar_url'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  provider: text('provider').default('email'),
+  providers: text('providers').array().default(sql`ARRAY['email']::text[]`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
 
 export const accounts = pgTable('accounts', {

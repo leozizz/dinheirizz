@@ -1,4 +1,7 @@
 import React, { useState } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { Toaster, toast } from 'sonner'
+import { queryClient } from './lib/queryClient'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
 import { ActionType } from './components/dashboard/QuickActions'
@@ -6,7 +9,9 @@ import { TransactionModal, TransactionMode } from './components/modals/Transacti
 import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
-import { Wallet, Bell, ShieldCheck, LogIn, LogOut, User as UserIcon } from 'lucide-react'
+import { useTransactions, useCreateTransaction } from './hooks/useTransactions'
+import { useCategories } from './hooks/useCategories'
+import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
 
 const initialTransactions: TransactionItem[] = [
   {
@@ -96,7 +101,7 @@ const initialAccounts = [
 function MainApp() {
   const { user, signOut } = useAuth()
   const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
-  const [transactions, setTransactions] = useState<TransactionItem[]>(initialTransactions)
+  const [demoTransactions, setDemoTransactions] = useState<TransactionItem[]>(initialTransactions)
   const [pixKeys] = useState<PixKeyItem[]>(initialPixKeys)
 
   // Modals state
@@ -104,10 +109,32 @@ function MainApp() {
   const [txMode, setTxMode] = useState<TransactionMode>('income')
   const [isPixModalOpen, setIsPixModalOpen] = useState(false)
 
-  // Totais calculados
-  const totalIncome = 18200.0
-  const totalExpense = 3349.8
-  const totalBalance = 14850.2
+  // TanStack Query Hooks (Carregamento reativo da API do BFF)
+  const {
+    transactions: apiTransactions,
+    totalBalance: apiBalance,
+    totalIncome: apiIncome,
+    totalExpense: apiExpense,
+    isLoading: isTxLoading
+  } = useTransactions()
+
+  const { categories: apiCategories } = useCategories()
+  const createTxMutation = useCreateTransaction()
+
+  // Totais do modo de demonstração
+  let demoIncome = 0
+  let demoExpense = 0
+  for (const t of demoTransactions) {
+    if (t.amount > 0) demoIncome += t.amount
+    else demoExpense += Math.abs(t.amount)
+  }
+  const demoBalance = demoIncome - demoExpense
+
+  const activeTransactions = user ? apiTransactions : demoTransactions
+  const activeBalance = user ? apiBalance : demoBalance
+  const activeIncome = user ? apiIncome : demoIncome
+  const activeExpense = user ? apiExpense : demoExpense
+  const activeCategories = apiCategories.length > 0 ? apiCategories : initialCategories
 
   const handleActionClick = (action: ActionType) => {
     if (action === 'pix') {
@@ -118,7 +145,7 @@ function MainApp() {
     }
   }
 
-  const handleCreateTransaction = (data: {
+  const handleCreateTransaction = async (data: {
     amount: number
     description: string
     categoryId?: string
@@ -126,22 +153,47 @@ function MainApp() {
     occurredAt: string
     type: TransactionMode
   }) => {
-    const isExpense = data.type === 'expense'
-    const finalAmount = isExpense ? -Math.abs(data.amount) : Math.abs(data.amount)
+    if (user) {
+      try {
+        await createTxMutation.mutateAsync({
+          amount: data.amount,
+          description: data.description,
+          categoryId: data.categoryId,
+          accountId: data.accountId,
+          occurredAt: data.occurredAt,
+          type: data.type
+        })
+        const successMsg =
+          data.type === 'income'
+            ? 'Receita registrada com sucesso!'
+            : data.type === 'transfer'
+            ? 'Transferência registrada com sucesso!'
+            : 'Despesa registrada com sucesso!'
+        toast.success(successMsg)
+        setIsTxModalOpen(false)
+      } catch (err: any) {
+        toast.error(err?.message || 'Erro ao registrar movimentação')
+      }
+    } else {
+      // Modo Demonstração (em memória)
+      const isExpense = data.type === 'expense'
+      const finalAmount = isExpense ? -Math.abs(data.amount) : Math.abs(data.amount)
+      const cat = activeCategories.find((c) => c.id === data.categoryId)
 
-    const cat = initialCategories.find((c) => c.id === data.categoryId)
+      const newTx: TransactionItem = {
+        id: `tx-${Date.now()}`,
+        description: data.description || (data.type === 'income' ? 'Nova Receita' : 'Nova Despesa'),
+        amount: finalAmount,
+        paid: true,
+        occurred_at: data.occurredAt || new Date().toISOString(),
+        category: cat ? { name: cat.name, color: isExpense ? '#f43f5e' : '#10b981' } : null,
+        type: data.type
+      }
 
-    const newTx: TransactionItem = {
-      id: `tx-${Date.now()}`,
-      description: data.description || (data.type === 'income' ? 'Nova Receita' : 'Nova Despesa'),
-      amount: finalAmount,
-      paid: true,
-      occurred_at: data.occurredAt || new Date().toISOString(),
-      category: cat ? { name: cat.name, color: isExpense ? '#f43f5e' : '#10b981' } : null,
-      type: data.type
+      setDemoTransactions((prev) => [newTx, ...prev])
+      toast.success('Transação registrada (modo demonstração)!')
+      setIsTxModalOpen(false)
     }
-
-    setTransactions((prev) => [newTx, ...prev])
   }
 
   // Usuário não autenticado: tela inicial é Boas-Vindas ou Login (não o dashboard privado)
@@ -186,7 +238,7 @@ function MainApp() {
                 Dinheirizz <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-medium border border-teal-500/30">2.0 PWA</span>
               </h1>
               <p className="text-[11px] text-neutral-400 hidden sm:flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" /> Cloudflare Pages & Supabase
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" /> Cloudflare Pages & BFF
               </p>
             </div>
           </div>
@@ -244,11 +296,12 @@ function MainApp() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6">
         <Dashboard
-          totalBalance={totalBalance}
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-          transactions={transactions}
+          totalBalance={activeBalance}
+          totalIncome={activeIncome}
+          totalExpense={activeExpense}
+          transactions={activeTransactions}
           onActionClick={handleActionClick}
+          isLoading={Boolean(user && isTxLoading)}
         />
       </main>
 
@@ -256,7 +309,7 @@ function MainApp() {
       <TransactionModal
         isOpen={isTxModalOpen}
         mode={txMode}
-        categories={initialCategories}
+        categories={activeCategories}
         accounts={initialAccounts}
         onClose={() => setIsTxModalOpen(false)}
         onSubmit={handleCreateTransaction}
@@ -268,14 +321,19 @@ function MainApp() {
         pixKeys={pixKeys}
         onClose={() => setIsPixModalOpen(false)}
       />
+
+      {/* Toaster Glassmorphism */}
+      <Toaster position="bottom-right" richColors theme="dark" />
     </div>
   )
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    </QueryClientProvider>
   )
 }

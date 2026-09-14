@@ -1,39 +1,65 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { getDb } from '../db/client'
-import { transactions } from '../db/schema'
+import { transactions, accounts, users } from '../db/schema'
 import { eq, desc } from 'drizzle-orm'
 import type { AuthEnv } from '../middlewares/auth'
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export const createTransactionSchema = z.object({
   amount: z.number({ required_error: 'amount é obrigatório' }).positive('O valor deve ser positivo'),
+  type: z.enum(['income', 'expense', 'transfer']).optional(),
   description: z.string().max(255).optional().nullable(),
-  accountId: z.string().optional().default('00000000-0000-0000-0000-000000000000'),
+  accountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   occurredAt: z.string().optional(),
   paid: z.boolean().optional().default(true)
 })
+
+interface MockTransaction {
+  id: string
+  userId: string
+  accountId: string
+  categoryId: string | null
+  amount: string
+  description: string | null
+  paid: boolean
+  type?: 'income' | 'expense' | 'transfer'
+  occurredAt: string
+  createdAt: string
+}
+
+// Armazenamento em memória para ambiente de testes unitários ou offline
+export const mockTransactionsStore = new Map<string, MockTransaction>([
+  [
+    'test-tx-1',
+    {
+      id: 'test-tx-1',
+      userId: '00000000-0000-0000-0000-000000000000',
+      accountId: '00000000-0000-0000-0000-000000000000',
+      categoryId: null,
+      amount: '150.00',
+      description: 'Almoço Executivo',
+      paid: true,
+      type: 'expense',
+      occurredAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    }
+  ]
+])
 
 export const transactionsRouter = new Hono<AuthEnv>()
 
 transactionsRouter.get('/', async (c) => {
   const userId = c.get('userId')
   const db = getDb()
+
   if (!db) {
+    const list = Array.from(mockTransactionsStore.values()).reverse()
     return c.json({
-      data: [
-        {
-          id: 'test-tx-1',
-          userId: userId || '00000000-0000-0000-0000-000000000000',
-          amount: '150.00',
-          description: 'Almoço Executivo',
-          occurredAt: new Date().toISOString(),
-          paid: true,
-          categoryId: '1',
-          accountId: '00000000-0000-0000-0000-000000000000'
-        }
-      ],
-      total: 1
+      data: list,
+      total: list.length
     })
   }
 
@@ -67,33 +93,89 @@ transactionsRouter.post('/', async (c) => {
   const data = result.data
   const userId = c.get('userId') || '00000000-0000-0000-0000-000000000000'
 
+  // Determina o sinal matemático para o extrato
+  let signedAmountNumber = data.amount
+  if (data.type === 'expense') {
+    signedAmountNumber = -Math.abs(data.amount)
+  } else if (data.type === 'income') {
+    signedAmountNumber = Math.abs(data.amount)
+  }
+
+  // Se type não foi enviado (ex: testes legados), preserva positivo para compatibilidade com assertions
+  const formattedAmount = data.type ? signedAmountNumber.toFixed(2) : data.amount.toFixed(2)
+
   if (!db) {
-    // Retorno mockado quando db não está conectado (durante testes unitários/offline)
-    return c.json({
-      id: 'mock-tx-created',
+    // Retorno e persistência em memória quando db não está conectado (testes e modo offline)
+    const mockId = crypto.randomUUID()
+    const newTx: MockTransaction = {
+      id: mockId,
       userId,
-      amount: data.amount.toFixed(2),
+      amount: formattedAmount,
       description: data.description ?? null,
       paid: data.paid,
+      type: data.type,
+      accountId: data.accountId || '00000000-0000-0000-0000-000000000000',
+      categoryId: data.categoryId ?? null,
       occurredAt: data.occurredAt ?? new Date().toISOString(),
       createdAt: new Date().toISOString()
-    }, 201)
+    }
+    mockTransactionsStore.set(mockId, newTx)
+    return c.json(newTx, 201)
   }
 
   try {
+    // 1. Garante a integridade do usuário em public.users
+    const existingUser = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1)
+    if (existingUser.length === 0) {
+      const authUser = c.get('user')
+      await db.insert(users).values({
+        id: userId,
+        email: authUser?.email || `${userId}@dinheirizz.com`,
+        fullName: (authUser?.user_metadata as any)?.full_name || null,
+        username: (authUser?.user_metadata as any)?.username || null,
+        provider: 'email',
+        providers: ['email'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).onConflictDoNothing()
+    }
+
+    // 2. Garante conta válida do usuário em public.accounts
+    let targetAccountId = data.accountId && UUID_REGEX.test(data.accountId) ? data.accountId : null
+    const userAccounts = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.userId, userId)).limit(1)
+
+    if (userAccounts.length > 0) {
+      if (!targetAccountId || !userAccounts.some((a) => a.id === targetAccountId)) {
+        targetAccountId = userAccounts[0].id
+      }
+    } else {
+      // Auto-provisionamento de conta padrão para o usuário
+      const [newAcc] = await db.insert(accounts).values({
+        userId,
+        name: 'Conta Principal',
+        type: 'checking',
+        balance: '0.00'
+      }).returning({ id: accounts.id })
+      targetAccountId = newAcc.id
+    }
+
+    // 3. Sanitização de categoria (garante UUID válido para Postgres)
+    const validCategoryId = data.categoryId && UUID_REGEX.test(data.categoryId) ? data.categoryId : null
+
+    // 4. Inserção persistente da transação
     const inserted = await db.insert(transactions).values({
       userId,
-      accountId: data.accountId,
-      categoryId: data.categoryId ?? null,
-      amount: data.amount.toFixed(2),
+      accountId: targetAccountId,
+      categoryId: validCategoryId,
+      amount: formattedAmount,
       description: data.description ?? null,
       paid: data.paid,
       occurredAt: data.occurredAt ? new Date(data.occurredAt) : new Date()
     }).returning()
 
     return c.json(inserted[0], 201)
-  } catch (error) {
-    return c.json({ error: 'Erro ao persistir transação' }, 500)
+  } catch (error: any) {
+    return c.json({ error: 'Erro ao persistir transação', details: error?.message }, 500)
   }
 })
 
@@ -102,7 +184,8 @@ transactionsRouter.delete('/:id', async (c) => {
   const db = getDb()
 
   if (!db) {
-    return c.json({ success: true, message: `Transação ${id} removida (mock)` })
+    mockTransactionsStore.delete(id)
+    return c.json({ success: true, id })
   }
 
   try {

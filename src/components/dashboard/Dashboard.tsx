@@ -22,6 +22,7 @@ interface DashboardProps {
   totalExpense: number
   transactions: TransactionItem[]
   onActionClick: (action: ActionType) => void
+  isLoading?: boolean
 }
 
 export function Dashboard({
@@ -29,10 +30,43 @@ export function Dashboard({
   totalIncome,
   totalExpense,
   transactions,
-  onActionClick
+  onActionClick,
+  isLoading = false
 }: DashboardProps) {
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
+        {/* Skeleton Saldo Principal */}
+        <div className="glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 animate-pulse">
+          <div className="w-32 h-4 bg-white/10 rounded mb-4" />
+          <div className="w-64 h-12 bg-white/10 rounded-xl mb-6" />
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 pt-4 border-t border-white/10">
+            <div className="h-12 bg-white/5 rounded-xl" />
+            <div className="h-12 bg-white/5 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Skeleton Ações Rápidas */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 glass-card rounded-2xl border border-white/5 animate-pulse" />
+          ))}
+        </div>
+
+        {/* Skeleton Extrato */}
+        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4">
+          <div className="w-40 h-5 bg-white/10 rounded" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-14 bg-white/5 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
+
       {/* Saldo Principal Card */}
       <div className="relative overflow-hidden glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02]">
         <div className="flex items-center justify-between mb-3 sm:mb-4">

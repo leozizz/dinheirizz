@@ -85,4 +85,77 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.getByText('Renda')).toBeInTheDocument()
     expect(screen.getByText('Alimentação')).toBeInTheDocument()
   })
+
+  it('deve exibir AccountsBar e filtrar transações quando uma conta é selecionada', () => {
+    const mockAccountsList = [
+      { id: 'acc-1', name: 'Nubank Principal', balance: 3500.0, type: 'checking' as const },
+      { id: 'acc-2', name: 'Inter Reserva', balance: 8950.75, type: 'savings' as const }
+    ]
+
+    const transactionsWithAccounts = [
+      {
+        id: 'tx-1',
+        description: 'Salário Nubank',
+        amount: 3500.0,
+        paid: true,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'income',
+        accountId: 'acc-1'
+      },
+      {
+        id: 'tx-2',
+        description: 'Rendimento Inter',
+        amount: 150.0,
+        paid: true,
+        occurred_at: '2026-09-02T10:00:00Z',
+        type: 'income',
+        accountId: 'acc-2'
+      }
+    ]
+
+    const handleSelect = vi.fn()
+
+    const { rerender } = render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={transactionsWithAccounts}
+        onActionClick={vi.fn()}
+        accounts={mockAccountsList}
+        selectedAccountId={null}
+        onSelectAccount={handleSelect}
+        onNewAccount={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Suas Contas')).toBeInTheDocument()
+    expect(screen.getByText('Nubank Principal')).toBeInTheDocument()
+    expect(screen.getByText('Inter Reserva')).toBeInTheDocument()
+    expect(screen.getByText('Salário Nubank')).toBeInTheDocument()
+    expect(screen.getByText('Rendimento Inter')).toBeInTheDocument()
+
+    // Quando selecionamos acc-1
+    rerender(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={transactionsWithAccounts}
+        onActionClick={vi.fn()}
+        accounts={mockAccountsList}
+        selectedAccountId="acc-1"
+        onSelectAccount={handleSelect}
+        onNewAccount={vi.fn()}
+      />
+    )
+
+    // Apenas transações da conta acc-1 devem aparecer
+    expect(screen.getByText('Salário Nubank')).toBeInTheDocument()
+    expect(screen.queryByText('Rendimento Inter')).not.toBeInTheDocument()
+    // O título e o saldo devem refletir a conta selecionada
+    expect(screen.getByText('Saldo da conta Nubank Principal')).toBeInTheDocument()
+    expect(screen.getAllByText('R$ 3.500,00').length).toBeGreaterThanOrEqual(1)
+  })
 })
+

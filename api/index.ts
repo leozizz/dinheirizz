@@ -5,6 +5,9 @@ import { healthRouter } from './src/routes/health'
 import { categoriesRouter } from './src/routes/categories'
 import { transactionsRouter } from './src/routes/transactions'
 import { usersRouter } from './src/routes/users'
+import { accountsRouter } from './src/routes/accounts'
+import { transfersRouter } from './src/routes/transfers'
+import { pixKeysRouter } from './src/routes/pix'
 import { authRouter } from './src/routes/auth'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 
@@ -28,6 +31,18 @@ app.use('/v1/auth/me', authMiddleware)
 app.route('/v1/auth', authRouter)
 
 // Protected Routers (Bearer required)
+app.use('/v1/accounts/*', authMiddleware)
+app.use('/v1/accounts', authMiddleware)
+app.route('/v1/accounts', accountsRouter)
+
+app.use('/v1/transfers/*', authMiddleware)
+app.use('/v1/transfers', authMiddleware)
+app.route('/v1/transfers', transfersRouter)
+
+app.use('/v1/pix-keys/*', authMiddleware)
+app.use('/v1/pix-keys', authMiddleware)
+app.route('/v1/pix-keys', pixKeysRouter)
+
 app.use('/v1/transactions/*', authMiddleware)
 app.use('/v1/transactions', authMiddleware)
 app.route('/v1/transactions', transactionsRouter)

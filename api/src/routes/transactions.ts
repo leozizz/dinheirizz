@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { getDb } from '../db/client'
 import { transactions, accounts, users } from '../db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, sql } from 'drizzle-orm'
+import { mockAccountsStore } from './accounts'
 import type { AuthEnv } from '../middlewares/auth'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -56,7 +57,12 @@ transactionsRouter.get('/', async (c) => {
   const db = getDb()
 
   if (!db) {
-    const list = Array.from(mockTransactionsStore.values()).reverse()
+    const list = Array.from(mockTransactionsStore.values()).sort((a, b) => {
+      const timeA = new Date(a.occurredAt).getTime()
+      const timeB = new Date(b.occurredAt).getTime()
+      if (timeB !== timeA) return timeB - timeA
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
     return c.json({
       data: list,
       total: list.length
@@ -65,8 +71,17 @@ transactionsRouter.get('/', async (c) => {
 
   try {
     const list = userId
-      ? await db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.occurredAt)).limit(50)
-      : await db.select().from(transactions).orderBy(desc(transactions.occurredAt)).limit(50)
+      ? await db
+          .select()
+          .from(transactions)
+          .where(eq(transactions.userId, userId))
+          .orderBy(desc(transactions.occurredAt), desc(transactions.createdAt))
+          .limit(50)
+      : await db
+          .select()
+          .from(transactions)
+          .orderBy(desc(transactions.occurredAt), desc(transactions.createdAt))
+          .limit(50)
     return c.json({ data: list, total: list.length })
   } catch (error) {
     return c.json({ error: 'Falha ao buscar transações' }, 500)
@@ -118,6 +133,11 @@ transactionsRouter.post('/', async (c) => {
       categoryId: data.categoryId ?? null,
       occurredAt: data.occurredAt ?? new Date().toISOString(),
       createdAt: new Date().toISOString()
+    }
+    if (data.accountId && mockAccountsStore.has(data.accountId)) {
+      const acc = mockAccountsStore.get(data.accountId)!
+      const cur = Number(acc.balance) || 0
+      acc.balance = (cur + signedAmountNumber).toFixed(2)
     }
     mockTransactionsStore.set(mockId, newTx)
     return c.json(newTx, 201)
@@ -173,6 +193,12 @@ transactionsRouter.post('/', async (c) => {
       occurredAt: data.occurredAt ? new Date(data.occurredAt) : new Date()
     }).returning()
 
+    // 5. Atualização atômica do saldo da conta
+    await db
+      .update(accounts)
+      .set({ balance: sql`${accounts.balance} + ${formattedAmount}` })
+      .where(eq(accounts.id, targetAccountId))
+
     return c.json(inserted[0], 201)
   } catch (error: any) {
     return c.json({ error: 'Erro ao persistir transação', details: error?.message }, 500)
@@ -184,12 +210,27 @@ transactionsRouter.delete('/:id', async (c) => {
   const db = getDb()
 
   if (!db) {
+    const tx = mockTransactionsStore.get(id)
+    if (tx && tx.accountId && mockAccountsStore.has(tx.accountId)) {
+      const acc = mockAccountsStore.get(tx.accountId)!
+      const cur = Number(acc.balance) || 0
+      acc.balance = (cur - Number(tx.amount)).toFixed(2)
+    }
     mockTransactionsStore.delete(id)
     return c.json({ success: true, id })
   }
 
   try {
-    await db.delete(transactions).where(eq(transactions.id, id))
+    const [tx] = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1)
+    if (tx) {
+      await db.delete(transactions).where(eq(transactions.id, id))
+      if (tx.accountId) {
+        await db
+          .update(accounts)
+          .set({ balance: sql`${accounts.balance} - ${tx.amount}` })
+          .where(eq(accounts.id, tx.accountId))
+      }
+    }
     return c.json({ success: true, id })
   } catch {
     return c.json({ error: 'Erro ao deletar transação' }, 500)

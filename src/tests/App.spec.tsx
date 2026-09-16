@@ -35,4 +35,61 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     expect(screen.getByRole('button', { name: /transferir/i })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /pix/i }).length).toBeGreaterThanOrEqual(1)
   })
+
+  it('deve abrir modal de Nova Conta e permitir cadastrar nova conta no modo demo', async () => {
+    render(<App />)
+    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    fireEvent.click(demoBtn)
+
+    const novaContaBtn = screen.getByRole('button', { name: /Nova Conta/i })
+    fireEvent.click(novaContaBtn)
+
+    expect(screen.getByText('Cadastre uma conta corrente, carteira ou investimento')).toBeInTheDocument()
+
+    const nameInput = screen.getByPlaceholderText(/Ex: Nubank Principal/i)
+    fireEvent.change(nameInput, { target: { value: 'C6 Bank PJ' } })
+
+    const balanceInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(balanceInput, { target: { value: '2500,00' } })
+
+    const submitBtn = screen.getByRole('button', { name: /Salvar Conta/i })
+    fireEvent.submit(submitBtn.closest('form')!)
+
+    expect(await screen.findByText('C6 Bank PJ')).toBeInTheDocument()
+  })
+
+  it('deve abrir modal de Transferência com contas de origem e destino no modo demo', async () => {
+    render(<App />)
+    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    fireEvent.click(demoBtn)
+
+    const transferBtn = screen.getByRole('button', { name: /transferir/i })
+    fireEvent.click(transferBtn)
+
+    expect(screen.getByText('Transferência entre Contas')).toBeInTheDocument()
+    expect(screen.getByText('Conta de Origem')).toBeInTheDocument()
+    expect(screen.getByText('Conta de Destino')).toBeInTheDocument()
+  })
+
+  it('deve atualizar o saldo total ao registrar uma despesa ou receita no modo demo', async () => {
+    render(<App />)
+    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    fireEvent.click(demoBtn)
+
+    expect(screen.getByText(/R\$ 14\.850,20/i)).toBeInTheDocument()
+
+    // Abre modal de despesa
+    const despesaBtn = screen.getByRole('button', { name: /despesa/i })
+    fireEvent.click(despesaBtn)
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(amountInput, { target: { value: '850,20' } })
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    // O saldo anterior era 14.850,20 - 850,20 = 14.000,00
+    expect(await screen.findByText(/R\$ 14\.000,00/i)).toBeInTheDocument()
+  })
 })
+

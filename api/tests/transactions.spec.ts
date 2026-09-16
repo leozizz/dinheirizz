@@ -113,6 +113,119 @@ describe('BFF Transactions & Categories API', () => {
 
       expect(res.status).toBe(400)
     })
+
+    it('deve atualizar o saldo da conta ao registrar receita ou despesa', async () => {
+      // 1. Cadastra uma conta de teste
+      const accRes = await app.request('/api/v1/accounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          name: 'Conta Teste Saldo',
+          type: 'checking',
+          balance: 1000.0
+        })
+      })
+      expect(accRes.status).toBe(201)
+      const acc = await accRes.json()
+
+      // 2. Registra uma despesa de 200.00
+      const expRes = await app.request('/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          amount: 200.0,
+          type: 'expense',
+          accountId: acc.id,
+          description: 'Despesa Teste'
+        })
+      })
+      expect(expRes.status).toBe(201)
+
+      // 3. Verifica se a conta agora tem 800.00
+      const getAccRes = await app.request('/api/v1/accounts', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      const accsList = await getAccRes.json()
+      const updatedAcc = accsList.data.find((a: any) => a.id === acc.id)
+      expect(Number(updatedAcc.balance)).toBe(800.0)
+
+      // 4. Registra uma receita de 500.00
+      const incRes = await app.request('/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          amount: 500.0,
+          type: 'income',
+          accountId: acc.id,
+          description: 'Receita Teste'
+        })
+      })
+      expect(incRes.status).toBe(201)
+
+      // 5. Verifica se a conta agora tem 1300.00
+      const getAccRes2 = await app.request('/api/v1/accounts', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      const accsList2 = await getAccRes2.json()
+      const updatedAcc2 = accsList2.data.find((a: any) => a.id === acc.id)
+      expect(Number(updatedAcc2.balance)).toBe(1300.0)
+    })
+
+    it('deve retornar transações em ordem cronológica (da mais recente para a mais antiga)', async () => {
+      // Cria uma transação mais antiga (ontem) e uma mais recente (hoje)
+      const yesterday = new Date(Date.now() - 86400000).toISOString()
+      const today = new Date().toISOString()
+
+      await app.request('/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          amount: 10.0,
+          type: 'expense',
+          description: 'Ontem',
+          occurredAt: yesterday
+        })
+      })
+
+      await app.request('/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          amount: 20.0,
+          type: 'income',
+          description: 'Hoje',
+          occurredAt: today
+        })
+      })
+
+      const res = await app.request('/api/v1/transactions', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      const json = await res.json()
+      expect(json.data.length).toBeGreaterThanOrEqual(2)
+
+      // A lista deve estar em ordem estrita decrescente de data
+      for (let i = 0; i < json.data.length - 1; i++) {
+        const timeCurrent = new Date(json.data[i].occurredAt || json.data[i].occurred_at).getTime()
+        const timeNext = new Date(json.data[i + 1].occurredAt || json.data[i + 1].occurred_at).getTime()
+        expect(timeCurrent).toBeGreaterThanOrEqual(timeNext)
+      }
+    })
   })
 
   describe('GET /api/v1/categories (Rota Pública)', () => {

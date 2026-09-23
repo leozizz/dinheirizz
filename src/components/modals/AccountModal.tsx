@@ -115,7 +115,7 @@ export function AccountModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[85dvh] overflow-y-auto pb-safe-bottom"
+            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-5 sm:mb-6">
@@ -248,19 +248,19 @@ export function AccountModal({
                 </div>
               </div>
 
-              {/* Botões de Ação */}
-              <div className="pt-3 flex gap-3">
+              {/* Botões de Ação com espaçamento respirável */}
+              <div className="pt-4 pb-2 flex gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 px-4 rounded-xl border border-white/10 text-neutral-300 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
+                  className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/10 text-neutral-300 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || isLoading}
-                  className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium transition-all shadow-lg shadow-blue-500/20 active:scale-98 disabled:opacity-50"
+                  className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium transition-all shadow-lg shadow-blue-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
                 >
                   {submitting || isLoading ? 'Salvando...' : 'Salvar Conta'}
                 </button>

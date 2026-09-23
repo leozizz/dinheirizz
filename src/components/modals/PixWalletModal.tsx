@@ -135,13 +135,13 @@ export function PixWalletModal({
             className="fixed inset-0 bg-black/70 backdrop-blur-md"
           />
 
-          {/* Modal Content */}
+          {/* Modal Content com espaçamento confortável */}
           <motion.div
             initial={{ y: '100%', opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-md glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#13111c]/95 max-h-[85dvh] overflow-y-auto pb-safe-bottom"
+            className="relative z-10 w-full max-w-md glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#13111c]/95 max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4 sm:mb-5">
@@ -411,18 +411,18 @@ export function PixWalletModal({
                   </div>
                 </div>
 
-                <div className="pt-2 flex gap-3">
+                <div className="pt-4 pb-2 flex gap-3">
                   <button
                     type="button"
                     onClick={() => setActiveTab('my_keys')}
-                    className="flex-1 py-2.5 px-4 rounded-xl border border-white/10 text-neutral-300 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
+                    className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/10 text-neutral-300 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     Voltar
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-medium transition-all shadow-lg shadow-teal-500/20 active:scale-98 disabled:opacity-50"
+                    className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-medium transition-all shadow-lg shadow-teal-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? 'Salvando...' : 'Salvar Chave'}
                   </button>

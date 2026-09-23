@@ -22,6 +22,7 @@ interface TransactionModalProps {
   mode: TransactionMode
   categories?: CategoryOption[]
   accounts?: AccountOption[]
+  defaultAccountId?: string | null
   onClose: () => void
   onSubmit: (data: {
     amount: number
@@ -48,6 +49,7 @@ export function TransactionModal({
   mode,
   categories = [],
   accounts = [],
+  defaultAccountId,
   onClose,
   onSubmit
 }: TransactionModalProps) {
@@ -71,11 +73,23 @@ export function TransactionModal({
 
       const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
       setCategoryId(filteredCats[0]?.id || '')
-      setAccountId(accounts[0]?.id || '')
-      setFromAccountId(accounts[0]?.id || '')
-      setToAccountId(accounts[1]?.id || accounts[0]?.id || '')
+
+      const selectedOrFirst =
+        defaultAccountId && accounts.some((a) => a.id === defaultAccountId)
+          ? defaultAccountId
+          : accounts[0]?.id || ''
+
+      setAccountId(selectedOrFirst)
+      setFromAccountId(selectedOrFirst)
+      const otherAccount = accounts.find((a) => a.id !== selectedOrFirst)
+      setToAccountId(otherAccount?.id || accounts[1]?.id || selectedOrFirst)
     }
-  }, [isOpen, mode, categories, accounts])
+  }, [isOpen, mode, categories, accounts, defaultAccountId])
+
+  const handleSwapAccounts = () => {
+    setFromAccountId(toAccountId)
+    setToAccountId(fromAccountId)
+  }
 
   const titles = {
     income: 'Nova Receita',
@@ -141,7 +155,7 @@ export function TransactionModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           {/* Backdrop Blur */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -151,13 +165,13 @@ export function TransactionModal({
             className="fixed inset-0 bg-black/70 backdrop-blur-md"
           />
 
-          {/* Modal Container */}
+          {/* Modal Container com espaçamento confortável */}
           <motion.div
             initial={{ y: '100%', opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[85dvh] overflow-y-auto pb-safe-bottom"
+            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
           >
             {/* Top Bar Header */}
             <div className="flex items-center justify-between mb-5 sm:mb-6">
@@ -229,42 +243,66 @@ export function TransactionModal({
 
               {/* Categoria e Conta (ou Origem/Destino em transferências) */}
               {mode === 'transfer' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
-                      Conta de Origem
-                    </label>
-                    <select
-                      data-testid="from-account-select"
-                      value={fromAccountId}
-                      onChange={(e) => setFromAccountId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
-                    >
-                      {accounts.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
-                      Conta de Destino
-                    </label>
-                    <select
-                      data-testid="to-account-select"
-                      value={toAccountId}
-                      onChange={(e) => setToAccountId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
-                    >
-                      {accounts.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.name}
-                        </option>
-                      ))}
-                    </select>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                        Conta de Origem
+                      </label>
+                      <select
+                        data-testid="from-account-select"
+                        value={fromAccountId}
+                        onChange={(e) => {
+                          const newFrom = e.target.value
+                          setFromAccountId(newFrom)
+                          if (toAccountId === newFrom) {
+                            const nextOther = accounts.find((a) => a.id !== newFrom)
+                            if (nextOther) setToAccountId(nextOther.id)
+                          }
+                        }}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                      >
+                        {accounts.map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex justify-center sm:pt-6">
+                      <button
+                        type="button"
+                        onClick={handleSwapAccounts}
+                        data-testid="swap-accounts-btn"
+                        title="Inverter contas de origem e destino"
+                        aria-label="Inverter contas de origem e destino"
+                        className="w-9 h-9 rounded-full glass-card-interactive border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white hover:border-blue-500/30 transition-all cursor-pointer active:scale-95 shadow-md"
+                      >
+                        <ArrowLeftRight className="w-4 h-4 hidden sm:block text-blue-400" />
+                        <ArrowLeftRight className="w-4 h-4 sm:hidden text-blue-400 rotate-90" />
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                        Conta de Destino
+                      </label>
+                      <select
+                        data-testid="to-account-select"
+                        value={toAccountId}
+                        onChange={(e) => setToAccountId(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                      >
+                        {accounts.map((acc) => (
+                          <option key={acc.id} value={acc.id} disabled={acc.id === fromAccountId}>
+                            {acc.name} {acc.id === fromAccountId ? '(mesma conta)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -321,19 +359,21 @@ export function TransactionModal({
                 />
               </div>
 
-              {/* Botão de Enviar */}
-              <button
-                type="submit"
-                data-testid="transaction-submit-btn"
-                disabled={loading}
-                className="w-full mt-4 min-h-[48px] py-3 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? (
-                  <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <span>Confirmar Movimentação</span>
-                )}
-              </button>
+              {/* Botão de Enviar com espaçamento respirável */}
+              <div className="pt-3 pb-1">
+                <button
+                  type="submit"
+                  data-testid="transaction-submit-btn"
+                  disabled={loading}
+                  className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {loading ? (
+                    <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>Confirmar Movimentação</span>
+                  )}
+                </button>
+              </div>
             </form>
           </motion.div>
         </div>

@@ -114,7 +114,7 @@ export function ProfileModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg rounded-3xl glass-card border border-white/10 p-5 sm:p-7 shadow-2xl text-white my-auto z-10 overflow-hidden"
+          className="relative w-full max-w-lg rounded-3xl glass-card border border-white/10 p-5 sm:p-7 pb-8 sm:pb-9 shadow-2xl text-white my-auto z-10 overflow-hidden"
         >
           {/* Decorative Gradient Orbs */}
           <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full gradient-orb-primary pointer-events-none opacity-25" />

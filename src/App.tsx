@@ -501,6 +501,7 @@ function MainApp() {
         mode={txMode}
         categories={activeCategories}
         accounts={activeAccounts}
+        defaultAccountId={selectedAccountId || undefined}
         onClose={() => setIsTxModalOpen(false)}
         onSubmit={handleCreateTransaction}
       />

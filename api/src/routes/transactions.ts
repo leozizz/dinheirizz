@@ -162,21 +162,36 @@ transactionsRouter.post('/', async (c) => {
 
     // 2. Garante conta válida do usuário em public.accounts
     let targetAccountId = data.accountId && UUID_REGEX.test(data.accountId) ? data.accountId : null
-    const userAccounts = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.userId, userId)).limit(1)
-
-    if (userAccounts.length > 0) {
-      if (!targetAccountId || !userAccounts.some((a) => a.id === targetAccountId)) {
-        targetAccountId = userAccounts[0].id
+    if (targetAccountId) {
+      const match = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(sql`${accounts.id} = ${targetAccountId} and ${accounts.userId} = ${userId}`)
+        .limit(1)
+      if (match.length === 0) {
+        targetAccountId = null
       }
-    } else {
-      // Auto-provisionamento de conta padrão para o usuário
-      const [newAcc] = await db.insert(accounts).values({
-        userId,
-        name: 'Conta Principal',
-        type: 'checking',
-        balance: '0.00'
-      }).returning({ id: accounts.id })
-      targetAccountId = newAcc.id
+    }
+
+    if (!targetAccountId) {
+      const defaultAcc = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.userId, userId))
+        .limit(1)
+
+      if (defaultAcc.length > 0) {
+        targetAccountId = defaultAcc[0].id
+      } else {
+        // Auto-provisionamento de conta padrão para o usuário
+        const [newAcc] = await db.insert(accounts).values({
+          userId,
+          name: 'Conta Principal',
+          type: 'checking',
+          balance: '0.00'
+        }).returning({ id: accounts.id })
+        targetAccountId = newAcc.id
+      }
     }
 
     // 3. Sanitização de categoria (garante UUID válido para Postgres)

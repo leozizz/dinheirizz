@@ -9,6 +9,7 @@ import { accountsRouter } from './src/routes/accounts'
 import { transfersRouter } from './src/routes/transfers'
 import { pixKeysRouter } from './src/routes/pix'
 import { authRouter } from './src/routes/auth'
+import { userDataRouter } from './src/routes/userData'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 
 export const app = new Hono<AuthEnv>().basePath('/api')
@@ -50,6 +51,10 @@ app.route('/v1/transactions', transactionsRouter)
 app.use('/v1/users/me', authMiddleware)
 app.use('/v1/users/sync', authMiddleware)
 app.route('/v1/users', usersRouter)
+
+app.use('/v1/user-data/*', authMiddleware)
+app.use('/v1/user-data', authMiddleware)
+app.route('/v1/user-data', userDataRouter)
 
 export default app
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Mail, AtSign, ShieldCheck, Check, AlertCircle, Save, LogOut, Sparkles } from 'lucide-react'
+import { X, User, Mail, AtSign, ShieldCheck, Check, AlertCircle, Save, LogOut, Sparkles, ShieldAlert, Trash2 } from 'lucide-react'
 import { useUserProfile, useUpdateProfile } from '../../hooks/useUserProfile'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -8,12 +8,14 @@ export interface ProfileModalProps {
   isOpen: boolean
   onClose: () => void
   onOpenLogoutConfirm?: () => void
+  onOpenDangerZone?: () => void
 }
 
 export function ProfileModal({
   isOpen,
   onClose,
-  onOpenLogoutConfirm
+  onOpenLogoutConfirm,
+  onOpenDangerZone
 }: ProfileModalProps) {
   const { user: authUser } = useAuth()
   const { profile, isLoading: isProfileLoading } = useUserProfile()
@@ -256,6 +258,35 @@ export function ProfileModal({
               </button>
             </div>
           </form>
+
+          {/* Gerenciamento de Dados / Zona de Perigo */}
+          {onOpenDangerZone && (
+            <div className="mt-5 pt-4 border-t border-white/10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-semibold text-rose-400 flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    Gerenciamento de Dados (Zona de Perigo)
+                  </h4>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    Exclua transações, chaves Pix, contas em cascata ou realize reset geral.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  data-testid="open-danger-zone-btn"
+                  onClick={() => {
+                    onClose()
+                    onOpenDangerZone()
+                  }}
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Gerenciar Dados
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Quick Session Actions */}
           <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">

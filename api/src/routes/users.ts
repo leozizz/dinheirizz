@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { eq, or, sql } from 'drizzle-orm'
 import { getDb } from '../db/client'
 import { users } from '../db/schema'
-import { syncUserSchema } from '../schemas/auth'
+import { syncUserSchema, updateUserSchema } from '../schemas/auth'
 import type { AuthEnv } from '../middlewares/auth'
 
 export const usersRouter = new Hono<AuthEnv>()
@@ -292,5 +292,126 @@ usersRouter.post('/sync', async (c) => {
     })
   } catch (error) {
     return c.json({ error: 'Erro ao sincronizar usuário no banco' }, 500)
+  }
+})
+
+// PATCH /api/v1/users/me
+// Atualiza dados cadastrais do perfil do usuário autenticado (Nome Completo, Username, Avatar)
+usersRouter.patch('/me', async (c) => {
+  const userId = c.get('userId')
+  const authUser = c.get('user')
+  const email = (authUser?.email as string) || ''
+
+  if (!userId) {
+    return c.json({ error: 'Não autorizado' }, 401)
+  }
+
+  const rawBody = await c.req.json().catch(() => ({}))
+  const parsed = updateUserSchema.safeParse(rawBody)
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: 'Dados inválidos',
+        details: parsed.error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      },
+      400
+    )
+  }
+
+  const { fullName, username, avatarUrl } = parsed.data
+  const db = getDb()
+
+  if (!db) {
+    // 1. Verificação de unicidade do username em mock
+    if (username) {
+      const usernameExists = Array.from(mockUsersStore.values()).some(
+        (u) => u.username?.toLowerCase() === username.toLowerCase() && u.id !== userId
+      )
+      if (usernameExists) {
+        return c.json({ error: 'Nome de usuário já está em uso' }, 409)
+      }
+    }
+
+    // 2. Recupera ou inicializa usuário mock
+    let user = mockUsersStore.get(userId)
+    if (!user && email) {
+      user = Array.from(mockUsersStore.values()).find((u) => u.email === email)
+    }
+
+    if (!user) {
+      user = {
+        id: userId,
+        email: email || 'user@dinheirizz.com',
+        fullName: null,
+        username: null,
+        avatarUrl: null,
+        provider: 'email',
+        providers: ['email'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    }
+
+    if (fullName !== undefined) user.fullName = fullName
+    if (username !== undefined) user.username = username
+    if (avatarUrl !== undefined) user.avatarUrl = avatarUrl
+    user.updatedAt = new Date().toISOString()
+
+    mockUsersStore.set(userId, user)
+    return c.json({ user: sanitizeUser(user) }, 200)
+  }
+
+  try {
+    // 1. Verificação de unicidade do username no banco
+    if (username) {
+      const existingUsernames = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1)
+
+      if (existingUsernames.length > 0 && existingUsernames[0].id !== userId) {
+        return c.json({ error: 'Nome de usuário já está em uso' }, 409)
+      }
+    }
+
+    // 2. Atualiza os campos fornecidos
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date()
+    }
+    if (fullName !== undefined) updateData.fullName = fullName
+    if (username !== undefined) updateData.username = username
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl
+
+    const updated = await db
+      .update(users)
+      .set(updateData)
+      .where(or(eq(users.id, userId), eq(users.email, email)))
+      .returning()
+
+    if (updated.length > 0) {
+      const u = updated[0]
+      return c.json({
+        user: sanitizeUser({
+          id: u.id,
+          email: u.email,
+          fullName: u.fullName,
+          username: u.username,
+          avatarUrl: u.avatarUrl,
+          provider: u.provider || 'email',
+          providers: u.providers || [u.provider || 'email'],
+          createdAt: u.createdAt,
+          updatedAt: u.updatedAt
+        })
+      })
+    }
+
+    return c.json({ error: 'Usuário não encontrado' }, 404)
+  } catch {
+    return c.json({ error: 'Erro ao atualizar perfil do usuário' }, 500)
   }
 })

@@ -8,6 +8,8 @@ import { ActionType } from './components/dashboard/QuickActions'
 import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
 import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
 import { AccountModal } from './components/modals/AccountModal'
+import { LogoutConfirmModal } from './components/modals/LogoutConfirmModal'
+import { ProfileModal } from './components/modals/ProfileModal'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
 import { useTransactions, useCreateTransaction } from './hooks/useTransactions'
@@ -120,6 +122,9 @@ function MainApp() {
   const [txMode, setTxMode] = useState<TransactionMode>('income')
   const [isPixModalOpen, setIsPixModalOpen] = useState(false)
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // TanStack Query Hooks (Carregamento reativo da API do BFF)
   const {
@@ -347,6 +352,29 @@ function MainApp() {
     }
   }
 
+  const userInitials = user?.fullName
+    ? user.fullName
+        .split(' ')
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : user?.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : 'US'
+
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await signOut()
+      setIsLogoutModalOpen(false)
+      setIsProfileModalOpen(false)
+      setUnauthView('welcome')
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
+
   // Usuário não autenticado: tela inicial é Boas-Vindas ou Login (não o dashboard privado)
   if (!user && unauthView !== 'demo') {
     if (unauthView === 'login') {
@@ -354,7 +382,7 @@ function MainApp() {
         <div className="relative">
           <button
             onClick={() => setUnauthView('welcome')}
-            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
           >
             ← Voltar
           </button>
@@ -377,9 +405,9 @@ function MainApp() {
       <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-30" />
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-20" />
 
-      {/* Top Bar with Safe Area Top */}
-      <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0d0d12]/80 border-b border-white/10 px-3.5 py-2.5 sm:px-6 sm:py-3 pt-safe-top">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      {/* Top Bar with Floating Capsule and Safe Area Support */}
+      <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-3.5 sm:px-6 transition-all">
+        <div className="max-w-4xl mx-auto backdrop-blur-2xl bg-[#12121b]/85 border border-white/10 rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/50 flex items-center justify-between">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10 flex-shrink-0">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -397,23 +425,30 @@ function MainApp() {
           <div className="flex items-center gap-2">
             <button
               aria-label="Notificações"
-              className="w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer"
             >
               <Bell className="w-4 h-4" />
             </button>
 
             {user ? (
               <div className="flex items-center gap-2">
-                <div
-                  title={user.email || 'Usuário'}
-                  className="w-9 h-9 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs text-white border border-white/20 shadow-sm"
-                >
-                  {user.email ? user.email.slice(0, 2).toUpperCase() : 'US'}
-                </div>
                 <button
-                  onClick={() => signOut()}
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(true)}
+                  data-testid="user-profile-avatar-btn"
+                  title={user.fullName ? `${user.fullName} (@${user.username || 'perfil'})` : (user.email || 'Meu Perfil')}
+                  aria-label="Abrir configurações de perfil"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs sm:text-sm text-white border border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  {userInitials}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLogoutModalOpen(true)}
+                  data-testid="header-logout-btn"
                   title="Sair da conta"
-                  className="w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-rose-400 border border-white/10 cursor-pointer"
+                  aria-label="Sair da conta"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-rose-400 border border-white/10 transition-colors cursor-pointer active:scale-95"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -466,6 +501,7 @@ function MainApp() {
         mode={txMode}
         categories={activeCategories}
         accounts={activeAccounts}
+        defaultAccountId={selectedAccountId || undefined}
         onClose={() => setIsTxModalOpen(false)}
         onSubmit={handleCreateTransaction}
       />
@@ -484,6 +520,21 @@ function MainApp() {
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
         onSubmit={handleCreateAccount}
+      />
+
+      {/* Modal de Perfil e Configurações */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onOpenLogoutConfirm={() => setIsLogoutModalOpen(true)}
+      />
+
+      {/* Modal de Confirmação de Logout */}
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleConfirmLogout}
+        isLoading={isLoggingOut}
       />
 
       {/* Toaster Glassmorphism */}

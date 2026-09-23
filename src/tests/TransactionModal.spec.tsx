@@ -187,5 +187,30 @@ describe('TransactionModal (TDD)', () => {
       )
     })
   })
+
+  it('deve inverter contas de origem e destino ao clicar no botão de swap', () => {
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="transfer"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />
+    )
+
+    const originSelect = screen.getByTestId('from-account-select') as HTMLSelectElement
+    const destSelect = screen.getByTestId('to-account-select') as HTMLSelectElement
+
+    expect(originSelect.value).toBe('acc-1')
+    expect(destSelect.value).toBe('acc-2')
+
+    const swapBtn = screen.getByTestId('swap-accounts-btn')
+    fireEvent.click(swapBtn)
+
+    expect(originSelect.value).toBe('acc-2')
+    expect(destSelect.value).toBe('acc-1')
+  })
 })
 

@@ -52,6 +52,7 @@ interface AuthContextType {
   }) => Promise<SignUpResult>
   signInWithOAuth: (provider: 'google' | 'apple') => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
+  updateUser: (updatedData: Partial<AuthUser>) => void
 }
 
 const STORAGE_SESSION_KEY = 'dinheirizz_auth_session'
@@ -276,6 +277,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateUser = (updatedData: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return null
+      const merged: AuthUser = { ...prev, ...updatedData }
+      if (updatedData.fullName !== undefined || updatedData.username !== undefined) {
+        merged.user_metadata = {
+          ...merged.user_metadata,
+          full_name: updatedData.fullName !== undefined ? updatedData.fullName : merged.user_metadata?.full_name,
+          username: updatedData.username !== undefined ? updatedData.username : merged.user_metadata?.username
+        }
+      }
+      return merged
+    })
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -285,7 +301,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithPassword,
         signUp,
         signInWithOAuth,
-        signOut
+        signOut,
+        updateUser
       }}
     >
       {children}

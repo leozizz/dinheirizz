@@ -205,6 +205,77 @@ describe('BFF Users API - Hardening, Sanitização e Account Linking Multi-prove
     })
   })
 
+  describe('PATCH /api/v1/users/me', () => {
+    it('deve retornar 401 para requisições sem autenticação', async () => {
+      const res = await app.request('/api/v1/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: 'Novo Nome' })
+      })
+      expect(res.status).toBe(401)
+    })
+
+    it('deve retornar 400 para payload com username inválido (caracteres proibidos)', async () => {
+      const res = await app.request('/api/v1/users/me', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${authTokenUser1}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: 'user name com espaço!' })
+      })
+      expect(res.status).toBe(400)
+      const body = await res.json()
+      expect(body).toHaveProperty('error', 'Dados inválidos')
+    })
+
+    it('deve atualizar com sucesso fullName e username do usuário', async () => {
+      const res = await app.request('/api/v1/users/me', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${authTokenUser1}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName: 'João Silva Editado',
+          username: 'joaosilva_dev'
+        })
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.user.fullName).toBe('João Silva Editado')
+      expect(body.user.username).toBe('joaosilva_dev')
+
+      // Validação de persistência no GET /me subsequente
+      const getRes = await app.request('/api/v1/users/me', {
+        headers: { Authorization: `Bearer ${authTokenUser1}` }
+      })
+      expect(getRes.status).toBe(200)
+      const getBody = await getRes.json()
+      expect(getBody.user.fullName).toBe('João Silva Editado')
+      expect(getBody.user.username).toBe('joaosilva_dev')
+    })
+
+    it('deve retornar 409 se outro usuário já estiver utilizando o mesmo username', async () => {
+      // User 2 tenta usar o username que acabou de ser atribuído ao User 1
+      const res = await app.request('/api/v1/users/me', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${authTokenUser2}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: 'joaosilva_dev'
+        })
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body).toHaveProperty('error', 'Nome de usuário já está em uso')
+    })
+  })
+
   describe('Security Headers', () => {
     it('deve conter headers de segurança HTTP (X-Content-Type-Options, X-Frame-Options)', async () => {
       const res = await app.request('/api/v1/users/me', {

@@ -32,3 +32,16 @@ export const loginSchema = z.object({
 })
 
 export type LoginInput = z.infer<typeof loginSchema>
+
+export const updateUserSchema = z.object({
+  fullName: z.string().trim().min(2, 'Nome completo deve ter no mínimo 2 caracteres').max(100).optional(),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_]{3,20}$/, 'Nome de usuário deve ter entre 3 e 20 caracteres (apenas letras, números e sublinhados)')
+    .optional(),
+  avatarUrl: z.string().url().optional(),
+})
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>

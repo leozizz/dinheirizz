@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import type { TransactionItem } from '../components/dashboard/Dashboard'
 
 export interface CreateTransactionInput {
@@ -43,7 +44,7 @@ export function useTransactions() {
       const json = await res.json()
       const rawList = Array.isArray(json.data) ? json.data : []
 
-      return rawList.map((item: any): TransactionItem => {
+      const mapped = rawList.map((item: any): TransactionItem => {
         const amountNum = Number(item.amount) || 0
         return {
           id: item.id,
@@ -52,9 +53,14 @@ export function useTransactions() {
           paid: item.paid ?? true,
           occurred_at: item.occurredAt || item.occurred_at || new Date().toISOString(),
           category: item.category ?? null,
-          type: item.type || (amountNum >= 0 ? 'income' : 'expense')
+          type: item.type || (amountNum >= 0 ? 'income' : 'expense'),
+          accountId: item.accountId || item.account_id || null
         }
       })
+
+      return (mapped as TransactionItem[]).sort(
+        (a: TransactionItem, b: TransactionItem) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+      )
     }
   })
 
@@ -131,8 +137,9 @@ export function useCreateTransaction() {
       return res.json()
     },
     onSuccess: () => {
-      // Invalidação reativa imediata do cache de transações
+      // Invalidação reativa imediata do cache de transações e contas
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
     }
   })
 }
@@ -163,6 +170,7 @@ export function useDeleteTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
     }
   })
 }

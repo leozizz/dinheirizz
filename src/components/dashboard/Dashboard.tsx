@@ -1,5 +1,7 @@
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
 import { QuickActions, ActionType } from './QuickActions'
+import { AccountsBar } from './AccountsBar'
+import type { AccountItem } from '../../hooks/useAccounts'
 import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, Clock } from 'lucide-react'
 
 export interface TransactionItem {
@@ -14,6 +16,8 @@ export interface TransactionItem {
     icon?: string | null
   } | null
   type?: string
+  accountId?: string | null
+  account_id?: string | null
 }
 
 interface DashboardProps {
@@ -23,6 +27,10 @@ interface DashboardProps {
   transactions: TransactionItem[]
   onActionClick: (action: ActionType) => void
   isLoading?: boolean
+  accounts?: AccountItem[]
+  selectedAccountId?: string | null
+  onSelectAccount?: (accountId: string | null) => void
+  onNewAccount?: () => void
 }
 
 export function Dashboard({
@@ -31,8 +39,41 @@ export function Dashboard({
   totalExpense,
   transactions,
   onActionClick,
-  isLoading = false
+  isLoading = false,
+  accounts = [],
+  selectedAccountId = null,
+  onSelectAccount,
+  onNewAccount
 }: DashboardProps) {
+  const selectedAccount = selectedAccountId
+    ? accounts.find((a) => a.id === selectedAccountId)
+    : null
+
+  const totalAccountsBalance = accounts.length > 0
+    ? accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0)
+    : totalBalance
+
+  const displayBalance = selectedAccount ? selectedAccount.balance : totalAccountsBalance
+  const displayTitle = selectedAccount
+    ? `Saldo da conta ${selectedAccount.name}`
+    : 'Saldo total disponível'
+
+  const filteredTransactions = (selectedAccountId
+    ? transactions.filter((t) => (t.accountId || t.account_id) === selectedAccountId)
+    : transactions
+  ).slice().sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+
+  let displayIncome = totalIncome
+  let displayExpense = totalExpense
+
+  if (selectedAccountId) {
+    displayIncome = 0
+    displayExpense = 0
+    for (const t of filteredTransactions) {
+      if (t.amount > 0) displayIncome += t.amount
+      else displayExpense += Math.abs(t.amount)
+    }
+  }
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
@@ -75,7 +116,7 @@ export function Dashboard({
               <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-neutral-400">
-              Saldo total disponível
+              {displayTitle}
             </span>
           </div>
           <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
@@ -87,7 +128,7 @@ export function Dashboard({
         {/* Valor de Destaque */}
         <div className="mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white font-display break-words">
-            {formatBRL(totalBalance)}
+            {formatBRL(displayBalance)}
           </h2>
         </div>
 
@@ -100,7 +141,7 @@ export function Dashboard({
             <div className="min-w-0 flex-1">
               <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Receitas do Mês</span>
               <span className="text-xs sm:text-base font-semibold text-emerald-400 block truncate tabular-nums">
-                {formatBRL(totalIncome)}
+                {formatBRL(displayIncome)}
               </span>
             </div>
           </div>
@@ -112,12 +153,22 @@ export function Dashboard({
             <div className="min-w-0 flex-1">
               <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Despesas do Mês</span>
               <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
-                {formatBRL(totalExpense)}
+                {formatBRL(displayExpense)}
               </span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Barra de Contas */}
+      {accounts.length > 0 && onSelectAccount && onNewAccount && (
+        <AccountsBar
+          accounts={accounts}
+          selectedAccountId={selectedAccountId}
+          onSelectAccount={onSelectAccount}
+          onNewAccount={onNewAccount}
+        />
+      )}
 
       {/* Ações Rápidas */}
       <div>
@@ -137,17 +188,17 @@ export function Dashboard({
             </h3>
           </div>
           <span className="text-xs text-neutral-400">
-            {transactions.length} registros
+            {filteredTransactions.length} registros
           </span>
         </div>
 
-        {transactions.length === 0 ? (
+        {filteredTransactions.length === 0 ? (
           <div className="py-12 text-center text-neutral-500 text-sm">
             Nenhuma transação recente encontrada.
           </div>
         ) : (
           <div className="divide-y divide-white/5">
-            {transactions.map((t) => {
+            {filteredTransactions.map((t) => {
               const isIncome = t.amount > 0
               return (
                 <div

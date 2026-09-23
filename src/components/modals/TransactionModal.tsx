@@ -28,9 +28,19 @@ interface TransactionModalProps {
     description: string
     categoryId?: string
     accountId?: string
+    fromAccountId?: string
+    toAccountId?: string
     occurredAt: string
     type: TransactionMode
   }) => Promise<void> | void
+}
+
+function getTodayLocalDate(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 export function TransactionModal({
@@ -45,7 +55,9 @@ export function TransactionModal({
   const [description, setDescription] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [accountId, setAccountId] = useState('')
-  const [occurredAt, setOccurredAt] = useState(() => new Date().toISOString().split('T')[0])
+  const [fromAccountId, setFromAccountId] = useState('')
+  const [toAccountId, setToAccountId] = useState('')
+  const [occurredAt, setOccurredAt] = useState(() => getTodayLocalDate())
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -55,11 +67,13 @@ export function TransactionModal({
       setAmountStr('')
       setDescription('')
       setError(null)
-      setOccurredAt(new Date().toISOString().split('T')[0])
+      setOccurredAt(getTodayLocalDate())
 
       const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
       setCategoryId(filteredCats[0]?.id || '')
       setAccountId(accounts[0]?.id || '')
+      setFromAccountId(accounts[0]?.id || '')
+      setToAccountId(accounts[1]?.id || accounts[0]?.id || '')
     }
   }, [isOpen, mode, categories, accounts])
 
@@ -93,13 +107,26 @@ export function TransactionModal({
       return
     }
 
+    if (mode === 'transfer') {
+      if (!fromAccountId || !toAccountId) {
+        setError('Selecione as contas de origem e destino.')
+        return
+      }
+      if (fromAccountId === toAccountId) {
+        setError('A conta de origem e de destino não podem ser iguais.')
+        return
+      }
+    }
+
     setLoading(true)
     try {
       await onSubmit({
         amount: num,
         description,
         categoryId: categoryId || undefined,
-        accountId: accountId || undefined,
+        accountId: mode === 'transfer' ? fromAccountId : (accountId || undefined),
+        fromAccountId: mode === 'transfer' ? fromAccountId : undefined,
+        toAccountId: mode === 'transfer' ? toAccountId : undefined,
         occurredAt,
         type: mode
       })
@@ -200,9 +227,48 @@ export function TransactionModal({
                 />
               </div>
 
-              {/* Categoria e Conta */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {mode !== 'transfer' && (
+              {/* Categoria e Conta (ou Origem/Destino em transferências) */}
+              {mode === 'transfer' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                      Conta de Origem
+                    </label>
+                    <select
+                      data-testid="from-account-select"
+                      value={fromAccountId}
+                      onChange={(e) => setFromAccountId(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                    >
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                      Conta de Destino
+                    </label>
+                    <select
+                      data-testid="to-account-select"
+                      value={toAccountId}
+                      onChange={(e) => setToAccountId(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                    >
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5 text-neutral-400" />
@@ -220,26 +286,26 @@ export function TransactionModal({
                       ))}
                     </select>
                   </div>
-                )}
 
-                <div className={mode === 'transfer' ? 'sm:col-span-2' : ''}>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
-                    Conta
-                  </label>
-                  <select
-                    value={accountId}
-                    onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
-                  >
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                      Conta
+                    </label>
+                    <select
+                      value={accountId}
+                      onChange={(e) => setAccountId(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                    >
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Data */}
               <div>

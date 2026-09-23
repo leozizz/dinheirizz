@@ -7,9 +7,13 @@ import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
 import { ActionType } from './components/dashboard/QuickActions'
 import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
 import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
+import { AccountModal } from './components/modals/AccountModal'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
 import { useTransactions, useCreateTransaction } from './hooks/useTransactions'
+import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
+import { useTransferTransaction } from './hooks/useTransfer'
+import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
 import { useCategories } from './hooks/useCategories'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
 
@@ -21,7 +25,8 @@ const initialTransactions: TransactionItem[] = [
     paid: true,
     occurred_at: new Date().toISOString(),
     category: { name: 'Renda', color: '#10b981', icon: 'wallet' },
-    type: 'income'
+    type: 'income',
+    accountId: 'acc-1'
   },
   {
     id: 'tx-2',
@@ -30,7 +35,8 @@ const initialTransactions: TransactionItem[] = [
     paid: true,
     occurred_at: new Date(Date.now() - 86400000).toISOString(),
     category: { name: 'Serviços', color: '#3b82f6', icon: 'laptop' },
-    type: 'income'
+    type: 'income',
+    accountId: 'acc-1'
   },
   {
     id: 'tx-3',
@@ -39,7 +45,8 @@ const initialTransactions: TransactionItem[] = [
     paid: true,
     occurred_at: new Date(Date.now() - 172800000).toISOString(),
     category: { name: 'Alimentação', color: '#f59e0b', icon: 'utensils' },
-    type: 'expense'
+    type: 'expense',
+    accountId: 'acc-1'
   },
   {
     id: 'tx-4',
@@ -48,7 +55,8 @@ const initialTransactions: TransactionItem[] = [
     paid: true,
     occurred_at: new Date(Date.now() - 259200000).toISOString(),
     category: { name: 'Infraestrutura', color: '#8b5cf6', icon: 'server' },
-    type: 'expense'
+    type: 'expense',
+    accountId: 'acc-2'
   },
   {
     id: 'tx-5',
@@ -57,7 +65,8 @@ const initialTransactions: TransactionItem[] = [
     paid: true,
     occurred_at: new Date(Date.now() - 345600000).toISOString(),
     category: { name: 'Software', color: '#ec4899', icon: 'layers' },
-    type: 'expense'
+    type: 'expense',
+    accountId: 'acc-2'
   }
 ]
 
@@ -93,21 +102,24 @@ const initialCategories = [
   { id: 'cat-5', name: 'Serviços & Freelas', type: 'income' }
 ]
 
-const initialAccounts = [
-  { id: 'acc-1', name: 'Nubank Principal', balance: 10500 },
-  { id: 'acc-2', name: 'Itaú Reserva de Emergência', balance: 4350.2 }
+const initialAccounts: AccountItem[] = [
+  { id: 'acc-1', name: 'Nubank Principal', type: 'checking', balance: 10500, bank: 'Nubank', color: '#820ad1' },
+  { id: 'acc-2', name: 'Itaú Reserva de Emergência', type: 'savings', balance: 4350.2, bank: 'Itaú', color: '#ec7000' }
 ]
 
 function MainApp() {
   const { user, signOut } = useAuth()
   const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
   const [demoTransactions, setDemoTransactions] = useState<TransactionItem[]>(initialTransactions)
-  const [pixKeys] = useState<PixKeyItem[]>(initialPixKeys)
+  const [demoAccounts, setDemoAccounts] = useState<AccountItem[]>(initialAccounts)
+  const [demoPixKeys, setDemoPixKeys] = useState<PixKeyItem[]>(initialPixKeys)
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
 
   // Modals state
   const [isTxModalOpen, setIsTxModalOpen] = useState(false)
   const [txMode, setTxMode] = useState<TransactionMode>('income')
   const [isPixModalOpen, setIsPixModalOpen] = useState(false)
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
 
   // TanStack Query Hooks (Carregamento reativo da API do BFF)
   const {
@@ -117,6 +129,13 @@ function MainApp() {
     totalExpense: apiExpense,
     isLoading: isTxLoading
   } = useTransactions()
+
+  const { accounts: apiAccounts, isLoading: isAccountsLoading } = useAccounts()
+  const createAccountMutation = useCreateAccount()
+  const transferMutation = useTransferTransaction()
+  const { pixKeys: apiPixKeys } = usePixKeys()
+  const createPixMutation = useCreatePixKey()
+  const deletePixMutation = useDeletePixKey()
 
   const { categories: apiCategories } = useCategories()
   const createTxMutation = useCreateTransaction()
@@ -130,8 +149,12 @@ function MainApp() {
   }
   const demoBalance = demoIncome - demoExpense
 
+  const activeAccounts = user ? apiAccounts : demoAccounts
+  const activePixKeys = user ? apiPixKeys : demoPixKeys
   const activeTransactions = user ? apiTransactions : demoTransactions
-  const activeBalance = user ? apiBalance : demoBalance
+  const activeBalance = activeAccounts.length > 0
+    ? activeAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0)
+    : (user ? apiBalance : demoBalance)
   const activeIncome = user ? apiIncome : demoIncome
   const activeExpense = user ? apiExpense : demoExpense
   const activeCategories = apiCategories.length > 0 ? apiCategories : initialCategories
@@ -150,32 +173,89 @@ function MainApp() {
     description: string
     categoryId?: string
     accountId?: string
+    fromAccountId?: string
+    toAccountId?: string
     occurredAt: string
     type: TransactionMode
   }) => {
     if (user) {
       try {
-        await createTxMutation.mutateAsync({
-          amount: data.amount,
-          description: data.description,
-          categoryId: data.categoryId,
-          accountId: data.accountId,
-          occurredAt: data.occurredAt,
-          type: data.type
-        })
-        const successMsg =
-          data.type === 'income'
-            ? 'Receita registrada com sucesso!'
-            : data.type === 'transfer'
-            ? 'Transferência registrada com sucesso!'
-            : 'Despesa registrada com sucesso!'
-        toast.success(successMsg)
+        if (data.type === 'transfer') {
+          if (!data.fromAccountId || !data.toAccountId) {
+            throw new Error('Contas de origem e destino são obrigatórias.')
+          }
+          await transferMutation.mutateAsync({
+            amount: data.amount,
+            fromAccountId: data.fromAccountId,
+            toAccountId: data.toAccountId,
+            description: data.description || undefined
+          })
+          toast.success('Transferência realizada com sucesso!')
+        } else {
+          await createTxMutation.mutateAsync({
+            amount: data.amount,
+            description: data.description,
+            categoryId: data.categoryId,
+            accountId: data.accountId,
+            occurredAt: data.occurredAt,
+            type: data.type
+          })
+          const successMsg =
+            data.type === 'income'
+              ? 'Receita registrada com sucesso!'
+              : 'Despesa registrada com sucesso!'
+          toast.success(successMsg)
+        }
         setIsTxModalOpen(false)
       } catch (err: any) {
         toast.error(err?.message || 'Erro ao registrar movimentação')
       }
     } else {
       // Modo Demonstração (em memória)
+      if (data.type === 'transfer') {
+        const fromAcc = demoAccounts.find((a) => a.id === data.fromAccountId)
+        const toAcc = demoAccounts.find((a) => a.id === data.toAccountId)
+
+        setDemoAccounts((prev) =>
+          prev.map((acc) => {
+            if (acc.id === data.fromAccountId) {
+              return { ...acc, balance: acc.balance - data.amount }
+            }
+            if (acc.id === data.toAccountId) {
+              return { ...acc, balance: acc.balance + data.amount }
+            }
+            return acc
+          })
+        )
+
+        const debitTx: TransactionItem = {
+          id: `tx-transfer-out-${Date.now()}`,
+          description: `Transferência enviada para ${toAcc?.name || 'conta'}`,
+          amount: -data.amount,
+          paid: true,
+          occurred_at: data.occurredAt || new Date().toISOString(),
+          category: { name: 'Transferência', color: '#3b82f6', icon: 'arrow-left-right' },
+          type: 'transfer',
+          accountId: data.fromAccountId
+        }
+
+        const creditTx: TransactionItem = {
+          id: `tx-transfer-in-${Date.now()}`,
+          description: `Transferência recebida de ${fromAcc?.name || 'conta'}`,
+          amount: data.amount,
+          paid: true,
+          occurred_at: data.occurredAt || new Date().toISOString(),
+          category: { name: 'Transferência', color: '#3b82f6', icon: 'arrow-left-right' },
+          type: 'transfer',
+          accountId: data.toAccountId
+        }
+
+        setDemoTransactions((prev) => [debitTx, creditTx, ...prev])
+        toast.success('Transferência registrada (modo demonstração)!')
+        setIsTxModalOpen(false)
+        return
+      }
+
       const isExpense = data.type === 'expense'
       const finalAmount = isExpense ? -Math.abs(data.amount) : Math.abs(data.amount)
       const cat = activeCategories.find((c) => c.id === data.categoryId)
@@ -187,12 +267,83 @@ function MainApp() {
         paid: true,
         occurred_at: data.occurredAt || new Date().toISOString(),
         category: cat ? { name: cat.name, color: isExpense ? '#f43f5e' : '#10b981' } : null,
-        type: data.type
+        type: data.type,
+        accountId: data.accountId
       }
 
-      setDemoTransactions((prev) => [newTx, ...prev])
+      const targetAccId = data.accountId || demoAccounts[0]?.id
+      if (targetAccId) {
+        setDemoAccounts((prev) =>
+          prev.map((acc) =>
+            acc.id === targetAccId
+              ? { ...acc, balance: acc.balance + finalAmount }
+              : acc
+          )
+        )
+      }
+
+      setDemoTransactions((prev) => {
+        const updated = [newTx, ...prev]
+        return updated.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+      })
       toast.success('Transação registrada (modo demonstração)!')
       setIsTxModalOpen(false)
+    }
+  }
+
+  const handleCreateAccount = async (data: {
+    name: string
+    type: 'checking' | 'savings' | 'investment' | 'credit'
+    balance: number
+    bank?: string
+    color?: string
+  }) => {
+    if (user) {
+      await createAccountMutation.mutateAsync(data)
+      toast.success('Conta criada com sucesso!')
+    } else {
+      const newAcc: AccountItem = {
+        id: `acc-${Date.now()}`,
+        name: data.name,
+        type: data.type,
+        balance: data.balance,
+        bank: data.bank,
+        color: data.color
+      }
+      setDemoAccounts((prev) => [...prev, newAcc])
+      toast.success('Conta criada (modo demonstração)!')
+    }
+  }
+
+  const handleCreatePixKey = async (data: {
+    keyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
+    keyValue: string
+    bankName?: string
+    label?: string
+  }) => {
+    if (user) {
+      await createPixMutation.mutateAsync(data)
+      toast.success('Chave Pix cadastrada com sucesso!')
+    } else {
+      const newKey: PixKeyItem = {
+        id: `pix-${Date.now()}`,
+        key_type: data.keyType,
+        key_value: data.keyValue,
+        bank_name: data.bankName,
+        description: data.label
+      }
+      setDemoPixKeys((prev) => [...prev, newKey])
+      toast.success('Chave Pix cadastrada (modo demonstração)!')
+    }
+  }
+
+  const handleDeletePixKey = async (id: string) => {
+    if (user) {
+      await deletePixMutation.mutateAsync(id)
+      toast.success('Chave Pix removida!')
+    } else {
+      setDemoPixKeys((prev) => prev.filter((k) => k.id !== id))
+      toast.success('Chave Pix removida (modo demonstração)!')
     }
   }
 
@@ -301,7 +452,11 @@ function MainApp() {
           totalExpense={activeExpense}
           transactions={activeTransactions}
           onActionClick={handleActionClick}
-          isLoading={Boolean(user && isTxLoading)}
+          isLoading={Boolean(user && (isTxLoading || isAccountsLoading))}
+          accounts={activeAccounts}
+          selectedAccountId={selectedAccountId}
+          onSelectAccount={setSelectedAccountId}
+          onNewAccount={() => setIsAccountModalOpen(true)}
         />
       </main>
 
@@ -310,7 +465,7 @@ function MainApp() {
         isOpen={isTxModalOpen}
         mode={txMode}
         categories={activeCategories}
-        accounts={initialAccounts}
+        accounts={activeAccounts}
         onClose={() => setIsTxModalOpen(false)}
         onSubmit={handleCreateTransaction}
       />
@@ -318,8 +473,17 @@ function MainApp() {
       {/* Modal de Carteira Pix */}
       <PixWalletModal
         isOpen={isPixModalOpen}
-        pixKeys={pixKeys}
+        pixKeys={activePixKeys}
         onClose={() => setIsPixModalOpen(false)}
+        onCreatePixKey={handleCreatePixKey}
+        onDeletePixKey={handleDeletePixKey}
+      />
+
+      {/* Modal de Criação de Conta */}
+      <AccountModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        onSubmit={handleCreateAccount}
       />
 
       {/* Toaster Glassmorphism */}

@@ -102,4 +102,56 @@ describe('PixWalletModal (TDD)', () => {
 
     expect(handleClose).toHaveBeenCalledTimes(1)
   })
+
+  it('permite cadastrar uma nova chave Pix via formulário da aba Nova Chave', async () => {
+    const handleCreate = vi.fn().mockResolvedValue(undefined)
+    render(
+      <PixWalletModal
+        isOpen={true}
+        pixKeys={mockPixKeys}
+        onClose={vi.fn()}
+        onCreatePixKey={handleCreate}
+      />
+    )
+
+    // Clica na aba "+ Nova Chave"
+    const newKeyTab = screen.getByRole('button', { name: /Nova Chave/i })
+    fireEvent.click(newKeyTab)
+
+    expect(screen.getByText('Cadastrar Nova Chave')).toBeInTheDocument()
+
+    const keyInput = screen.getByPlaceholderText(/Digite sua chave Pix/i)
+    fireEvent.change(keyInput, { target: { value: 'novo@email.com' } })
+
+    const submitBtn = screen.getByRole('button', { name: /Salvar Chave/i })
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          keyValue: 'novo@email.com'
+        })
+      )
+    })
+  })
+
+  it('permite excluir uma chave Pix cadastrada', async () => {
+    const handleDelete = vi.fn().mockResolvedValue(undefined)
+    render(
+      <PixWalletModal
+        isOpen={true}
+        pixKeys={mockPixKeys}
+        onClose={vi.fn()}
+        onDeletePixKey={handleDelete}
+      />
+    )
+
+    const deleteBtn = screen.getByTestId('delete-pix-key-pix-1')
+    fireEvent.click(deleteBtn)
+
+    await waitFor(() => {
+      expect(handleDelete).toHaveBeenCalledWith('pix-1')
+    })
+  })
 })
+

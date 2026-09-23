@@ -139,4 +139,53 @@ describe('TransactionModal (TDD)', () => {
 
     expect(handleClose).toHaveBeenCalledTimes(1)
   })
+
+  it('no modo transfer deve exibir Conta de Origem e Conta de Destino e validar contas iguais', async () => {
+    const handleSubmit = vi.fn()
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="transfer"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    expect(screen.getByText('Conta de Origem')).toBeInTheDocument()
+    expect(screen.getByText('Conta de Destino')).toBeInTheDocument()
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(amountInput, { target: { value: '200,00' } })
+
+    const originSelect = screen.getByTestId('from-account-select')
+    const destSelect = screen.getByTestId('to-account-select')
+
+    // Definir mesma conta para origem e destino
+    fireEvent.change(originSelect, { target: { value: 'acc-1' } })
+    fireEvent.change(destSelect, { target: { value: 'acc-1' } })
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    expect(handleSubmit).not.toHaveBeenCalled()
+    expect(screen.getByText(/origem e de destino não podem ser iguais/i)).toBeInTheDocument()
+
+    // Corrigir destino para acc-2
+    fireEvent.change(destSelect, { target: { value: 'acc-2' } })
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 200,
+          fromAccountId: 'acc-1',
+          toAccountId: 'acc-2',
+          type: 'transfer'
+        })
+      )
+    })
+  })
 })
+

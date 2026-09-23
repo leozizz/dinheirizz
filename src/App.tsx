@@ -10,6 +10,7 @@ import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
 import { AccountModal } from './components/modals/AccountModal'
 import { LogoutConfirmModal } from './components/modals/LogoutConfirmModal'
 import { ProfileModal } from './components/modals/ProfileModal'
+import { DangerZoneModal } from './components/modals/DangerZoneModal'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
 import { useTransactions, useCreateTransaction } from './hooks/useTransactions'
@@ -125,6 +126,7 @@ function MainApp() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false)
 
   // TanStack Query Hooks (Carregamento reativo da API do BFF)
   const {
@@ -352,6 +354,28 @@ function MainApp() {
     }
   }
 
+  const handleDeleteTransactionsDemo = () => {
+    setDemoTransactions([])
+    setDemoAccounts((prev) => prev.map((a) => ({ ...a, balance: 0 })))
+  }
+
+  const handleDeletePixKeysDemo = () => {
+    setDemoPixKeys([])
+  }
+
+  const handleDeleteAccountsDemo = () => {
+    setDemoAccounts([initialAccounts[0]])
+    setDemoTransactions([])
+    setSelectedAccountId('')
+  }
+
+  const handleResetAllDemo = () => {
+    setDemoTransactions([])
+    setDemoPixKeys([])
+    setDemoAccounts([initialAccounts[0]])
+    setSelectedAccountId('')
+  }
+
   const userInitials = user?.fullName
     ? user.fullName
         .split(' ')
@@ -527,6 +551,18 @@ function MainApp() {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         onOpenLogoutConfirm={() => setIsLogoutModalOpen(true)}
+        onOpenDangerZone={() => setIsDangerZoneOpen(true)}
+      />
+
+      {/* Modal de Gestão de Dados e Zona de Perigo */}
+      <DangerZoneModal
+        isOpen={isDangerZoneOpen}
+        onClose={() => setIsDangerZoneOpen(false)}
+        onSuccessNotification={(msg) => toast.success(msg)}
+        onDeleteTransactions={user ? undefined : handleDeleteTransactionsDemo}
+        onDeletePixKeys={user ? undefined : handleDeletePixKeysDemo}
+        onDeleteAccounts={user ? undefined : handleDeleteAccountsDemo}
+        onResetAllData={user ? undefined : handleResetAllDemo}
       />
 
       {/* Modal de Confirmação de Logout */}

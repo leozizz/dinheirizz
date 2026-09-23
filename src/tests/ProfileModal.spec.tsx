@@ -140,4 +140,23 @@ describe('ProfileModal Component (TDD)', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(onOpenLogoutConfirm).toHaveBeenCalledTimes(1)
   })
+
+  it('deve chamar onOpenDangerZone ao clicar em Gerenciar Dados na seção Zona de Perigo', () => {
+    const onOpenDangerZone = vi.fn()
+    const onClose = vi.fn()
+
+    render(
+      <ProfileModal
+        isOpen={true}
+        onClose={onClose}
+        onOpenDangerZone={onOpenDangerZone}
+      />
+    )
+
+    const dangerZoneBtn = screen.getByTestId('open-danger-zone-btn')
+    fireEvent.click(dangerZoneBtn)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onOpenDangerZone).toHaveBeenCalledTimes(1)
+  })
 })

@@ -157,5 +157,63 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.getByText('Saldo da conta Nubank Principal')).toBeInTheDocument()
     expect(screen.getAllByText('R$ 3.500,00').length).toBeGreaterThanOrEqual(1)
   })
+
+  it('deve renderizar o botão "Carregar mais movimentações" quando hasMore={true} e acionar onLoadMore ao clicar', () => {
+    const onLoadMore = vi.fn()
+    render(
+      <Dashboard
+        totalBalance={1000}
+        totalIncome={1500}
+        totalExpense={500}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        hasMore={true}
+        onLoadMore={onLoadMore}
+        totalCount={10}
+      />
+    )
+
+    const loadMoreBtn = screen.getByRole('button', { name: /carregar mais movimentações/i })
+    expect(loadMoreBtn).toBeInTheDocument()
+    expect(screen.getByText(/2 de 10 registros/i)).toBeInTheDocument()
+
+    fireEvent.click(loadMoreBtn)
+    expect(onLoadMore).toHaveBeenCalledTimes(1)
+  })
+
+  it('deve exibir spinner e desabilitar o botão quando isLoadingMore={true}', () => {
+    render(
+      <Dashboard
+        totalBalance={1000}
+        totalIncome={1500}
+        totalExpense={500}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        hasMore={true}
+        isLoadingMore={true}
+        onLoadMore={vi.fn()}
+      />
+    )
+
+    const loadingBtn = screen.getByRole('button', { name: /carregando movimentações.../i })
+    expect(loadingBtn).toBeDisabled()
+  })
+
+  it('deve exibir mensagem de conclusão quando hasMore={false}', () => {
+    render(
+      <Dashboard
+        totalBalance={1000}
+        totalIncome={1500}
+        totalExpense={500}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        hasMore={false}
+        totalCount={2}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: /carregar mais movimentações/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/você visualizou todas as 2 movimentações/i)).toBeInTheDocument()
+  })
 })
 

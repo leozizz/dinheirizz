@@ -134,8 +134,12 @@ function MainApp() {
     totalBalance: apiBalance,
     totalIncome: apiIncome,
     totalExpense: apiExpense,
-    isLoading: isTxLoading
-  } = useTransactions()
+    isLoading: isTxLoading,
+    total: apiTotal,
+    hasMore: apiHasMore,
+    isLoadingMore: apiIsLoadingMore,
+    loadMore: apiLoadMore
+  } = useTransactions({ accountId: selectedAccountId || undefined })
 
   const { accounts: apiAccounts, isLoading: isAccountsLoading } = useAccounts()
   const createAccountMutation = useCreateAccount()
@@ -516,6 +520,10 @@ function MainApp() {
           selectedAccountId={selectedAccountId}
           onSelectAccount={setSelectedAccountId}
           onNewAccount={() => setIsAccountModalOpen(true)}
+          hasMore={user ? apiHasMore : false}
+          isLoadingMore={user ? apiIsLoadingMore : false}
+          onLoadMore={user ? apiLoadMore : undefined}
+          totalCount={user ? apiTotal : activeTransactions.length}
         />
       </main>
 

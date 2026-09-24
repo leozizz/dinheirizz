@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { getDb } from '../db/client'
 import { transactions, accounts, users } from '../db/schema'
-import { eq, desc, sql } from 'drizzle-orm'
+import { eq, desc, sql, and, gte, lte } from 'drizzle-orm'
 import { mockAccountsStore } from './accounts'
 import type { AuthEnv } from '../middlewares/auth'
 
@@ -18,7 +18,7 @@ export const createTransactionSchema = z.object({
   paid: z.boolean().optional().default(true)
 })
 
-interface MockTransaction {
+export interface MockTransaction {
   id: string
   userId: string
   accountId: string
@@ -56,33 +56,111 @@ transactionsRouter.get('/', async (c) => {
   const userId = c.get('userId')
   const db = getDb()
 
+  const rawPage = parseInt(c.req.query('page') || '1', 10)
+  const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage
+
+  const rawLimit = parseInt(c.req.query('limit') || '20', 10)
+  const limit = isNaN(rawLimit) || rawLimit < 1 ? 20 : Math.min(rawLimit, 100)
+
+  const accountId = c.req.query('accountId')
+  const startDate = c.req.query('startDate')
+  const endDate = c.req.query('endDate')
+
   if (!db) {
-    const list = Array.from(mockTransactionsStore.values()).sort((a, b) => {
+    let filtered = Array.from(mockTransactionsStore.values()).filter((t) => {
+      if (userId && t.userId !== userId && t.userId !== '00000000-0000-0000-0000-000000000000') {
+        return false
+      }
+      if (accountId && t.accountId !== accountId) {
+        return false
+      }
+      if (startDate) {
+        const pStart = new Date(startDate).getTime()
+        if (!isNaN(pStart) && new Date(t.occurredAt).getTime() < pStart) {
+          return false
+        }
+      }
+      if (endDate) {
+        const pEnd = new Date(endDate).getTime()
+        if (!isNaN(pEnd) && new Date(t.occurredAt).getTime() > pEnd) {
+          return false
+        }
+      }
+      return true
+    })
+
+    filtered.sort((a, b) => {
       const timeA = new Date(a.occurredAt).getTime()
       const timeB = new Date(b.occurredAt).getTime()
       if (timeB !== timeA) return timeB - timeA
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
+
+    const total = filtered.length
+    const totalPages = Math.max(1, Math.ceil(total / limit))
+    const offset = (page - 1) * limit
+    const paginatedList = filtered.slice(offset, offset + limit)
+    const hasMore = page < totalPages
+
     return c.json({
-      data: list,
-      total: list.length
+      data: paginatedList,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasMore
     })
   }
 
   try {
-    const list = userId
-      ? await db
-          .select()
-          .from(transactions)
-          .where(eq(transactions.userId, userId))
-          .orderBy(desc(transactions.occurredAt), desc(transactions.createdAt))
-          .limit(50)
-      : await db
-          .select()
-          .from(transactions)
-          .orderBy(desc(transactions.occurredAt), desc(transactions.createdAt))
-          .limit(50)
-    return c.json({ data: list, total: list.length })
+    const conditions = []
+    if (userId) {
+      conditions.push(eq(transactions.userId, userId))
+    }
+    if (accountId) {
+      conditions.push(eq(transactions.accountId, accountId))
+    }
+    if (startDate) {
+      const pStart = new Date(startDate)
+      if (!isNaN(pStart.getTime())) {
+        conditions.push(gte(transactions.occurredAt, pStart))
+      }
+    }
+    if (endDate) {
+      const pEnd = new Date(endDate)
+      if (!isNaN(pEnd.getTime())) {
+        conditions.push(lte(transactions.occurredAt, pEnd))
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(transactions)
+      .where(whereClause)
+
+    const total = countResult?.count ?? 0
+    const totalPages = Math.max(1, Math.ceil(total / limit))
+    const offset = (page - 1) * limit
+    const hasMore = page < totalPages
+
+    const list = await db
+      .select()
+      .from(transactions)
+      .where(whereClause)
+      .orderBy(desc(transactions.occurredAt), desc(transactions.createdAt))
+      .limit(limit)
+      .offset(offset)
+
+    return c.json({
+      data: list,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasMore
+    })
   } catch (error) {
     return c.json({ error: 'Falha ao buscar transações' }, 500)
   }

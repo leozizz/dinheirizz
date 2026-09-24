@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import type { TransactionItem } from '../components/dashboard/Dashboard'
@@ -13,7 +13,34 @@ export interface CreateTransactionInput {
   type?: 'income' | 'expense' | 'transfer'
 }
 
+export interface UseTransactionsOptions {
+  accountId?: string | null
+  limit?: number
+  startDate?: string
+  endDate?: string
+}
+
+export interface PaginatedTransactionsResponse {
+  data: TransactionItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  hasMore: boolean
+}
+
 export const TRANSACTIONS_QUERY_KEY = ['transactions'] as const
+
+export const getTransactionsQueryKey = (options?: UseTransactionsOptions) =>
+  [
+    'transactions',
+    {
+      accountId: options?.accountId || null,
+      limit: options?.limit || 20,
+      startDate: options?.startDate || null,
+      endDate: options?.endDate || null
+    }
+  ] as const
 
 function getApiOrigin(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
@@ -22,21 +49,29 @@ function getApiOrigin(): string {
   return 'http://localhost:3000'
 }
 
-export function useTransactions() {
+export function useTransactions(options?: UseTransactionsOptions) {
   const { session } = useAuth()
   const token = session?.access_token
 
-  const query = useQuery({
-    queryKey: TRANSACTIONS_QUERY_KEY,
+  const query = useInfiniteQuery({
+    queryKey: getTransactionsQueryKey(options),
     enabled: Boolean(token),
-    queryFn: async (): Promise<TransactionItem[]> => {
+    initialPageParam: 1,
+    queryFn: async ({ pageParam = 1 }): Promise<PaginatedTransactionsResponse> => {
       const origin = getApiOrigin()
       const headers: Record<string, string> = {}
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const res = await fetch(`${origin}/api/v1/transactions`, { headers })
+      const params = new URLSearchParams()
+      params.set('page', String(pageParam))
+      params.set('limit', String(options?.limit || 20))
+      if (options?.accountId) params.set('accountId', options.accountId)
+      if (options?.startDate) params.set('startDate', options.startDate)
+      if (options?.endDate) params.set('endDate', options.endDate)
+
+      const res = await fetch(`${origin}/api/v1/transactions?${params.toString()}`, { headers })
       if (!res.ok) {
         throw new Error('Falha ao carregar transações')
       }
@@ -58,13 +93,35 @@ export function useTransactions() {
         }
       })
 
-      return (mapped as TransactionItem[]).sort(
-        (a: TransactionItem, b: TransactionItem) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+      const sorted = (mapped as TransactionItem[]).sort(
+        (a: TransactionItem, b: TransactionItem) =>
+          new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
       )
-    }
+
+      return {
+        data: sorted,
+        total: typeof json.total === 'number' ? json.total : sorted.length,
+        page: typeof json.page === 'number' ? json.page : Number(pageParam),
+        limit: typeof json.limit === 'number' ? json.limit : (options?.limit || 20),
+        totalPages: typeof json.totalPages === 'number' ? json.totalPages : 1,
+        hasMore: typeof json.hasMore === 'boolean' ? json.hasMore : false
+      }
+    },
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined)
   })
 
-  const transactions = query.data || []
+  const transactions = query.data?.pages.flatMap((page) => page.data) || []
+  const total = query.data?.pages[0]?.total ?? transactions.length
+  const lastPage = query.data?.pages[query.data.pages.length - 1]
+  const currentPage = lastPage?.page ?? 1
+  const totalPages = lastPage?.totalPages ?? 1
+  const hasMore = Boolean(query.hasNextPage)
+
+  const loadMore = () => {
+    if (query.hasNextPage && !query.isFetchingNextPage) {
+      query.fetchNextPage()
+    }
+  }
 
   // Cálculo consolidado de receitas, despesas e saldo disponível
   let totalIncome = 0
@@ -82,6 +139,12 @@ export function useTransactions() {
 
   return {
     transactions,
+    total,
+    page: currentPage,
+    totalPages,
+    hasMore,
+    loadMore,
+    isLoadingMore: query.isFetchingNextPage,
     totalBalance,
     totalIncome,
     totalExpense,

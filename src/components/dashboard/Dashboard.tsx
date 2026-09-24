@@ -20,7 +20,7 @@ export interface TransactionItem {
   account_id?: string | null
 }
 
-interface DashboardProps {
+export interface DashboardProps {
   totalBalance: number
   totalIncome: number
   totalExpense: number
@@ -31,6 +31,10 @@ interface DashboardProps {
   selectedAccountId?: string | null
   onSelectAccount?: (accountId: string | null) => void
   onNewAccount?: () => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
+  totalCount?: number
 }
 
 export function Dashboard({
@@ -43,7 +47,11 @@ export function Dashboard({
   accounts = [],
   selectedAccountId = null,
   onSelectAccount,
-  onNewAccount
+  onNewAccount,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  totalCount
 }: DashboardProps) {
   const selectedAccount = selectedAccountId
     ? accounts.find((a) => a.id === selectedAccountId)
@@ -188,7 +196,9 @@ export function Dashboard({
             </h3>
           </div>
           <span className="text-xs text-neutral-400">
-            {filteredTransactions.length} registros
+            {totalCount && totalCount > filteredTransactions.length
+              ? `${filteredTransactions.length} de ${totalCount} registros`
+              : `${filteredTransactions.length} registros`}
           </span>
         </div>
 
@@ -259,6 +269,52 @@ export function Dashboard({
                 </div>
               )
             })}
+
+            {/* Skeleton incremental ao carregar mais páginas */}
+            {isLoadingMore && (
+              <div className="py-2 space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="py-3 px-2 flex items-center justify-between animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5" />
+                      <div className="space-y-1.5">
+                        <div className="w-32 h-3.5 bg-white/10 rounded" />
+                        <div className="w-20 h-2.5 bg-white/5 rounded" />
+                      </div>
+                    </div>
+                    <div className="w-16 h-4 bg-white/10 rounded" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rodapé da Lista: Botão Carregar Mais ou Aviso de Fim */}
+        {filteredTransactions.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-white/10 flex flex-col items-center justify-center gap-2">
+            {hasMore ? (
+              <button
+                type="button"
+                data-testid="load-more-btn"
+                onClick={onLoadMore}
+                disabled={isLoadingMore}
+                className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Carregando movimentações...</span>
+                  </>
+                ) : (
+                  <span>Carregar mais movimentações</span>
+                )}
+              </button>
+            ) : (
+              <p className="text-xs text-neutral-500 font-medium">
+                Você visualizou todas as {totalCount ?? filteredTransactions.length} movimentações
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -82,6 +82,34 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
         }
 
         // GET /api/v1/transactions
+        const urlObj = new URL(urlStr, 'http://localhost:3000')
+        const page = parseInt(urlObj.searchParams.get('page') || '1', 10)
+
+        if (page === 2) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: [
+                {
+                  id: 'tx-3',
+                  amount: '-200.00',
+                  description: 'Farmácia',
+                  occurredAt: '2026-09-09T10:00:00Z',
+                  paid: true,
+                  categoryId: '3',
+                  category: { name: 'Saúde', color: '#06b6d4', icon: 'cross' }
+                }
+              ],
+              total: 3,
+              page: 2,
+              limit: 2,
+              totalPages: 2,
+              hasMore: false
+            })
+          } as Response
+        }
+
         return {
           ok: true,
           status: 200,
@@ -106,7 +134,11 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
                 category: { name: 'Moradia', color: '#f43f5e', icon: 'home' }
               }
             ],
-            total: 2
+            total: 3,
+            page: 1,
+            limit: 2,
+            totalPages: 2,
+            hasMore: true
           })
         } as Response
       }
@@ -212,5 +244,28 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
         url.includes('/api/v1/transactions') && (!init?.method || init.method === 'GET')
     )
     expect(getTxCalls).toHaveLength(0)
+  })
+
+  it('deve carregar a primeira página com metadados de paginação e acumular novos dados ao chamar loadMore()', async () => {
+    const { result } = renderHook(() => useTransactions({ limit: 2 }), {
+      wrapper: createWrapper()
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(result.current.transactions).toHaveLength(2)
+    expect(result.current.hasMore).toBe(true)
+    expect(result.current.total).toBe(3)
+
+    // Aciona o carregamento da próxima página
+    result.current.loadMore()
+
+    await waitFor(() => {
+      expect(result.current.transactions).toHaveLength(3)
+    })
+
+    expect(result.current.hasMore).toBe(false)
   })
 })

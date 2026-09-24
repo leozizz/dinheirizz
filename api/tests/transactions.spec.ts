@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { sign } from 'hono/jwt'
 import app from '../index'
+import { mockTransactionsStore } from '../src/routes/transactions'
 
 describe('BFF Transactions & Categories API', () => {
   let authToken: string
@@ -40,6 +41,94 @@ describe('BFF Transactions & Categories API', () => {
       expect(Array.isArray(json.data)).toBe(true)
       expect(json.data.length).toBeGreaterThan(0)
       expect(json.data[0]).toHaveProperty('amount')
+    })
+
+    it('deve retornar metadados de paginação padrão (page=1, limit=20, total, totalPages, hasMore)', async () => {
+      const res = await app.request('/api/v1/transactions', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      expect(res.status).toBe(200)
+
+      const json = await res.json()
+      expect(json).toHaveProperty('data')
+      expect(json).toHaveProperty('total')
+      expect(json).toHaveProperty('page', 1)
+      expect(json).toHaveProperty('limit', 20)
+      expect(json).toHaveProperty('totalPages')
+      expect(json).toHaveProperty('hasMore')
+    })
+
+    it('deve respeitar os query params page e limit retornando o subconjunto correto', async () => {
+      // Popula 25 transações para testUserId
+      for (let i = 1; i <= 25; i++) {
+        mockTransactionsStore.set(`pag-test-${i}`, {
+          id: `pag-test-${i}`,
+          userId: testUserId,
+          accountId: '00000000-0000-0000-0000-000000000000',
+          categoryId: null,
+          amount: `${i * 10}.00`,
+          description: `Transação Paginada ${i}`,
+          paid: true,
+          type: 'expense',
+          occurredAt: new Date(Date.now() - i * 3600000).toISOString(),
+          createdAt: new Date(Date.now() - i * 3600000).toISOString()
+        })
+      }
+
+      // Página 1 com limit=10
+      const resPage1 = await app.request('/api/v1/transactions?page=1&limit=10', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      expect(resPage1.status).toBe(200)
+      const json1 = await resPage1.json()
+      expect(json1.data.length).toBe(10)
+      expect(json1.page).toBe(1)
+      expect(json1.limit).toBe(10)
+      expect(json1.hasMore).toBe(true)
+
+      // Página 3 com limit=10 (deve ter os itens restantes e hasMore=false)
+      const resPage3 = await app.request('/api/v1/transactions?page=3&limit=10', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      expect(resPage3.status).toBe(200)
+      const json3 = await resPage3.json()
+      expect(json3.data.length).toBeGreaterThanOrEqual(5)
+      expect(json3.page).toBe(3)
+      expect(json3.hasMore).toBe(false)
+    })
+
+    it('deve ordenar as transações por data (occurredAt) decrescente', async () => {
+      const res = await app.request('/api/v1/transactions?page=1&limit=5', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      const json = await res.json()
+      const dates = json.data.map((t: any) => new Date(t.occurredAt).getTime())
+      for (let i = 0; i < dates.length - 1; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1])
+      }
+    })
+
+    it('deve filtrar transações por accountId quando fornecido', async () => {
+      const customAccId = 'acc-custom-filter-123'
+      mockTransactionsStore.set('tx-acc-filtered', {
+        id: 'tx-acc-filtered',
+        userId: testUserId,
+        accountId: customAccId,
+        categoryId: null,
+        amount: '999.00',
+        description: 'Transação Conta Customizada',
+        paid: true,
+        type: 'income',
+        occurredAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      })
+
+      const res = await app.request(`/api/v1/transactions?accountId=${customAccId}`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      const json = await res.json()
+      expect(json.data.length).toBe(1)
+      expect(json.data[0].id).toBe('tx-acc-filtered')
     })
   })
 

@@ -1,7 +1,9 @@
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
 import { QuickActions, ActionType } from './QuickActions'
 import { AccountsBar } from './AccountsBar'
+import { AiInsightsCard } from './AiInsightsCard'
 import type { AccountItem } from '../../hooks/useAccounts'
+import type { AiInsightData } from '../../hooks/useAiInsights'
 import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, Clock } from 'lucide-react'
 
 export interface TransactionItem {
@@ -35,6 +37,11 @@ export interface DashboardProps {
   isLoadingMore?: boolean
   onLoadMore?: () => void
   totalCount?: number
+  // Fase 4: Inteligência Financeira
+  insight?: AiInsightData | null
+  isAiLoading?: boolean
+  isAiGenerating?: boolean
+  onGenerateAiInsight?: () => void
 }
 
 export function Dashboard({
@@ -51,7 +58,11 @@ export function Dashboard({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
-  totalCount
+  totalCount,
+  insight = null,
+  isAiLoading = false,
+  isAiGenerating = false,
+  onGenerateAiInsight
 }: DashboardProps) {
   const selectedAccount = selectedAccountId
     ? accounts.find((a) => a.id === selectedAccountId)
@@ -185,6 +196,16 @@ export function Dashboard({
         </h3>
         <QuickActions onAction={onActionClick} />
       </div>
+
+      {/* Consultor Financeiro com IA (Fase 4) */}
+      {(insight || isAiLoading) && (
+        <AiInsightsCard
+          insight={insight}
+          isLoading={isAiLoading}
+          isGenerating={isAiGenerating}
+          onGenerate={onGenerateAiInsight}
+        />
+      )}
 
       {/* Extrato Recente */}
       <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">

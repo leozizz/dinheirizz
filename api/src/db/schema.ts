@@ -54,6 +54,21 @@ export const pixKeys = pgTable('pix_keys', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 })
 
+export const insights = pgTable('insights', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  period: text('period').notNull(), // 'YYYY-MM'
+  summary: text('summary').notNull(),
+  financialHealthScore: numeric('financial_health_score', { precision: 5, scale: 2 }).notNull(),
+  highlights: text('highlights').array().default(sql`ARRAY[]::text[]`),
+  alerts: text('alerts').array().default(sql`ARRAY[]::text[]`),
+  recommendations: text('recommendations').array().default(sql`ARRAY[]::text[]`),
+  metricsSnapshot: text('metrics_snapshot'),
+  isFallback: boolean('is_fallback').default(false).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+})
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -68,3 +83,6 @@ export type NewTransaction = typeof transactions.$inferInsert
 
 export type PixKey = typeof pixKeys.$inferSelect
 export type NewPixKey = typeof pixKeys.$inferInsert
+
+export type Insight = typeof insights.$inferSelect
+export type NewInsight = typeof insights.$inferInsert

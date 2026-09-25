@@ -18,6 +18,7 @@ import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAcco
 import { useTransferTransaction } from './hooks/useTransfer'
 import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
 import { useCategories } from './hooks/useCategories'
+import { useAiInsights } from './hooks/useAiInsights'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
 
 const initialTransactions: TransactionItem[] = [
@@ -150,6 +151,13 @@ function MainApp() {
 
   const { categories: apiCategories } = useCategories()
   const createTxMutation = useCreateTransaction()
+
+  const {
+    insight: apiInsight,
+    isLoading: isAiLoading,
+    isGenerating: isAiGenerating,
+    generateInsights
+  } = useAiInsights()
 
   // Totais do modo de demonstração
   let demoIncome = 0
@@ -524,6 +532,10 @@ function MainApp() {
           isLoadingMore={user ? apiIsLoadingMore : false}
           onLoadMore={user ? apiLoadMore : undefined}
           totalCount={user ? apiTotal : activeTransactions.length}
+          insight={user ? apiInsight : null}
+          isAiLoading={Boolean(user && isAiLoading)}
+          isAiGenerating={isAiGenerating}
+          onGenerateAiInsight={user ? () => generateInsights() : undefined}
         />
       </main>
 

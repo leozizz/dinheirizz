@@ -57,11 +57,16 @@ export const mockAdminUsersStore = new Map<string, AdminUserRecord>([
   ]
 ])
 
-export const inviteBodySchema = z.object({
-  targetUserId: z.string().min(1, 'targetUserId é obrigatório'),
-  action: z.enum(['grant', 'revoke']),
-  expiresAt: z.string().optional().nullable()
-})
+export const inviteBodySchema = z
+  .object({
+    targetUserId: z.string().optional(),
+    email: z.string().email('E-mail inválido').optional(),
+    action: z.enum(['grant', 'revoke']),
+    expiresAt: z.string().optional().nullable()
+  })
+  .refine((data) => Boolean(data.targetUserId || data.email), {
+    message: 'Informe targetUserId ou o e-mail do usuário'
+  })
 
 export const adminRouter = new Hono<AuthEnv>()
 
@@ -173,7 +178,55 @@ adminRouter.post('/invites', async (c) => {
     return c.json({ error: 'Dados inválidos', details: parsed.error.format() }, 400)
   }
 
-  const { targetUserId, action, expiresAt } = parsed.data
+  let { targetUserId, email, action, expiresAt } = parsed.data
+  const db = getDb()
+
+  if (!targetUserId && email) {
+    if (db) {
+      try {
+        const found = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.email, email.toLowerCase()))
+          .limit(1)
+
+        if (found.length > 0) {
+          targetUserId = found[0].id
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    if (!targetUserId) {
+      for (const [id, u] of mockAdminUsersStore.entries()) {
+        if (u.email.toLowerCase() === email.toLowerCase()) {
+          targetUserId = id
+          break
+        }
+      }
+    }
+
+    if (!targetUserId) {
+      if (!db) {
+        targetUserId = `invited-${Date.now()}`
+        mockAdminUsersStore.set(targetUserId, {
+          id: targetUserId,
+          email: email.toLowerCase(),
+          fullName: 'Usuário Convidado',
+          role: 'free',
+          proType: null,
+          proExpiresAt: null,
+          createdAt: new Date().toISOString()
+        })
+      } else {
+        return c.json(
+          { error: 'Usuário com este e-mail não encontrado. O usuário deve se cadastrar no app primeiro.' },
+          404
+        )
+      }
+    }
+  }
 
   let newRole: 'free' | 'pro' = 'free'
   let newProType: 'invited' | null = null
@@ -186,15 +239,15 @@ adminRouter.post('/invites', async (c) => {
   }
 
   // Atualizar na store em memória
-  const existingMem = mockAdminUsersStore.get(targetUserId)
+  const existingMem = mockAdminUsersStore.get(targetUserId!)
   if (existingMem) {
     existingMem.role = newRole
     existingMem.proType = newProType
     existingMem.proExpiresAt = newExpiresAt
   } else {
-    mockAdminUsersStore.set(targetUserId, {
-      id: targetUserId,
-      email: 'user@dinheirizz.com',
+    mockAdminUsersStore.set(targetUserId!, {
+      id: targetUserId!,
+      email: email?.toLowerCase() || 'user@dinheirizz.com',
       fullName: 'Usuário Convidado',
       role: newRole,
       proType: newProType,
@@ -204,7 +257,6 @@ adminRouter.post('/invites', async (c) => {
   }
 
   // Atualizar no banco de dados se conectado
-  const db = getDb()
   if (db) {
     try {
       await db
@@ -215,13 +267,13 @@ adminRouter.post('/invites', async (c) => {
           proExpiresAt: newExpiresAt ? new Date(newExpiresAt) : null,
           invitedBy: action === 'grant' ? adminId : null
         })
-        .where(eq(users.id, targetUserId))
+        .where(eq(users.id, targetUserId!))
     } catch {
       // memoria preservada
     }
   }
 
-  const updatedUser = mockAdminUsersStore.get(targetUserId)!
+  const updatedUser = mockAdminUsersStore.get(targetUserId!)!
 
   return c.json({
     message:

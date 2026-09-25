@@ -2,14 +2,32 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 
+export interface UserRoleData {
+  role: 'free' | 'pro' | 'admin'
+  proType: 'subscriber' | 'invited' | null
+  proExpiresAt: string | null
+  canUseSystemAi: boolean
+}
+
 export interface UserAiSettingsData {
   provider: string
-  customModel: string
-  isActive: boolean
+  customModel: string | null
+  isActive?: boolean
   hasKey: boolean
   maskedKey: string | null
   lastTestedAt: string | null
   role: 'free' | 'pro' | 'admin'
+  userRole?: UserRoleData
+}
+
+export interface AdminUserData {
+  id: string
+  email: string
+  fullName: string | null
+  role: 'free' | 'pro' | 'admin'
+  proType: 'subscriber' | 'invited' | null
+  proExpiresAt: string | null
+  createdAt: string
 }
 
 export interface UpdateUserAiSettingsInput {
@@ -20,6 +38,7 @@ export interface UpdateUserAiSettingsInput {
 }
 
 export const USER_AI_QUERY_KEY = ['user-ai-settings'] as const
+export const ADMIN_USERS_QUERY_KEY = ['admin-users'] as const
 
 function getApiOrigin(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
@@ -49,7 +68,12 @@ export function useUserAiSettings() {
       }
 
       const json = await res.json()
-      return json.settings
+      const role = json.userRole?.role || json.settings?.role || 'free'
+      return {
+        ...json.settings,
+        role,
+        userRole: json.userRole
+      }
     }
   })
 }
@@ -77,7 +101,12 @@ export function useUpdateUserAiSettings() {
       }
 
       const json = await res.json()
-      return json.settings
+      const role = json.userRole?.role || json.settings?.role || 'free'
+      return {
+        ...json.settings,
+        role,
+        userRole: json.userRole
+      }
     },
     onSuccess: (data) => {
       queryClient.setQueryData(USER_AI_QUERY_KEY, data)
@@ -150,6 +179,76 @@ export function useDeleteUserAiSettings() {
     },
     onError: (err: any) => {
       toast.error(err.message || 'Erro ao remover chave')
+    }
+  })
+}
+
+export function useAdminUsers(enabled: boolean = true) {
+  const { session } = useAuth()
+  const token = session?.access_token
+
+  return useQuery({
+    queryKey: ADMIN_USERS_QUERY_KEY,
+    enabled: Boolean(token && enabled),
+    queryFn: async (): Promise<AdminUserData[]> => {
+      const origin = getApiOrigin()
+      const res = await fetch(`${origin}/api/v1/admin/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      if (!res.ok) {
+        throw new Error('Falha ao listar usuários para administração')
+      }
+
+      const json = await res.json()
+      return json.users || []
+    }
+  })
+}
+
+export function useSendAdminInvite() {
+  const { session } = useAuth()
+  const token = session?.access_token
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      targetUserId,
+      email,
+      action = 'grant',
+      expiresAt
+    }: {
+      targetUserId?: string
+      email?: string
+      action?: 'grant' | 'revoke'
+      expiresAt?: string | null
+    }): Promise<{ message: string; user: AdminUserData }> => {
+      const origin = getApiOrigin()
+      const res = await fetch(`${origin}/api/v1/admin/invites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetUserId, email, action, expiresAt })
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(json.error || 'Falha ao gerenciar convite')
+      }
+
+      return json
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: USER_AI_QUERY_KEY })
+      toast.success(data.message || 'Operação realizada com sucesso!')
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Erro ao processar convite')
     }
   })
 }

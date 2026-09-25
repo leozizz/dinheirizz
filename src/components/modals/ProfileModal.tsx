@@ -18,14 +18,18 @@ import {
   EyeOff,
   ExternalLink,
   Cpu,
-  CheckCircle2
+  CheckCircle2,
+  Users,
+  Send
 } from 'lucide-react'
 import { useUserProfile, useUpdateProfile } from '../../hooks/useUserProfile'
 import {
   useUserAiSettings,
   useUpdateUserAiSettings,
   useTestUserAiKey,
-  useDeleteUserAiSettings
+  useDeleteUserAiSettings,
+  useAdminUsers,
+  useSendAdminInvite
 } from '../../hooks/useUserAiSettings'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -51,6 +55,10 @@ export function ProfileModal({
   const testAiKeyMutation = useTestUserAiKey()
   const deleteAiSettingsMutation = useDeleteUserAiSettings()
 
+  const isAdmin = aiSettings?.role === 'admin'
+  const { data: adminUsers, refetch: refetchAdminUsers } = useAdminUsers(Boolean(isOpen && isAdmin))
+  const sendAdminInviteMutation = useSendAdminInvite()
+
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -63,6 +71,11 @@ export function ProfileModal({
   const [aiCustomModel, setAiCustomModel] = useState('gemini-1.5-flash')
   const [aiFeedback, setAiFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+  // Admin Invites States
+  const [inviteEmailInput, setInviteEmailInput] = useState('')
+  const [showUsersList, setShowUsersList] = useState(false)
+  const [inviteFeedback, setInviteFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
   // Sincroniza formulário ao abrir o modal
   useEffect(() => {
     if (isOpen) {
@@ -73,7 +86,9 @@ export function ProfileModal({
       setSuccessMessage(null)
       setErrorMessage(null)
       setAiFeedback(null)
+      setInviteFeedback(null)
       setApiKeyInput('')
+      setInviteEmailInput('')
     }
   }, [isOpen])
 
@@ -83,8 +98,6 @@ export function ProfileModal({
       setAiCustomModel(aiSettings.customModel || 'gemini-1.5-flash')
     }
   }, [aiSettings])
-
-  if (!isOpen) return null
 
   const displayEmail = profile?.email || authUser?.email || 'usuario@dinheirizz.com'
   const displayProvider = profile?.provider || authUser?.provider || 'email'
@@ -189,6 +202,44 @@ export function ProfileModal({
       setAiFeedback({ type: 'error', message: err.message || 'Erro ao remover chave.' })
     }
   }
+
+  const handleSendInvite = async () => {
+    setInviteFeedback(null)
+    const emailToInvite = inviteEmailInput.trim().toLowerCase()
+    if (!emailToInvite || !emailToInvite.includes('@')) {
+      setInviteFeedback({ type: 'error', message: 'Informe um e-mail válido para conceder o convite PRO.' })
+      return
+    }
+
+    try {
+      const res = await sendAdminInviteMutation.mutateAsync({
+        email: emailToInvite,
+        action: 'grant'
+      })
+      setInviteEmailInput('')
+      setInviteFeedback({ type: 'success', message: res.message || 'Convite PRO concedido com sucesso!' })
+      refetchAdminUsers()
+    } catch (err: any) {
+      setInviteFeedback({ type: 'error', message: err.message || 'Falha ao conceder convite PRO.' })
+    }
+  }
+
+  const handleToggleProRole = async (targetUserId: string, currentRole: string) => {
+    setInviteFeedback(null)
+    const action = currentRole === 'pro' ? 'revoke' : 'grant'
+    try {
+      const res = await sendAdminInviteMutation.mutateAsync({
+        targetUserId,
+        action
+      })
+      setInviteFeedback({ type: 'success', message: res.message })
+      refetchAdminUsers()
+    } catch (err: any) {
+      setInviteFeedback({ type: 'error', message: err.message || 'Falha ao atualizar papel.' })
+    }
+  }
+
+  if (!isOpen) return null
 
   return (
     <AnimatePresence>
@@ -539,6 +590,139 @@ export function ProfileModal({
               </div>
             </div>
           </div>
+
+          {/* Área Administrativa: Gestão de Convites PRO */}
+          {isAdmin && (
+            <div className="mt-6 pt-5 border-t border-indigo-500/20 bg-indigo-500/[0.04] -mx-5 sm:-mx-7 px-5 sm:px-7 py-4 border-b">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      Área Administrativa • Convites PRO
+                      <span className="text-[10px] font-semibold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded border border-indigo-500/30">
+                        Admin Only
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-neutral-400">
+                      Conceda acesso PRO e IA corporativa ilimitada para outros usuários via e-mail.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {inviteFeedback && (
+                <div
+                  className={`mb-3 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                    inviteFeedback.type === 'success'
+                      ? 'bg-teal-500/15 border border-teal-500/30 text-teal-300'
+                      : 'bg-rose-500/15 border border-rose-500/30 text-rose-300'
+                  }`}
+                >
+                  {inviteFeedback.type === 'success' ? (
+                    <Check className="w-4 h-4 shrink-0 text-teal-400" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  )}
+                  <span>{inviteFeedback.message}</span>
+                </div>
+              )}
+
+              {/* Input de Envio de Convite por E-mail */}
+              <div className="flex flex-col sm:flex-row items-center gap-2 mb-3">
+                <div className="relative flex-1 w-full">
+                  <input
+                    id="admin-invite-email"
+                    type="email"
+                    value={inviteEmailInput}
+                    onChange={(e) => setInviteEmailInput(e.target.value)}
+                    placeholder="Digite o e-mail do usuário (ex: amigo@email.com)"
+                    className="w-full min-h-[40px] pl-3.5 pr-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-indigo-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  data-testid="send-admin-invite-btn"
+                  onClick={handleSendInvite}
+                  disabled={sendAdminInviteMutation.isPending || !inviteEmailInput.trim()}
+                  className="w-full sm:w-auto px-4 py-2 min-h-[40px] rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  {sendAdminInviteMutation.isPending ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Conceder PRO</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Toggle para Ver Lista de Usuários do Sistema */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  data-testid="toggle-admin-users-list"
+                  onClick={() => setShowUsersList(!showUsersList)}
+                  className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{showUsersList ? 'Ocultar usuários cadastrados' : 'Visualizar e gerenciar usuários cadastrados'}</span>
+                </button>
+
+                {showUsersList && (
+                  <div className="mt-2.5 max-h-48 overflow-y-auto space-y-1.5 pr-1 border border-white/10 rounded-xl p-2 bg-black/30">
+                    {(!adminUsers || adminUsers.length === 0) ? (
+                      <p className="text-xs text-neutral-500 text-center py-2">Nenhum outro usuário encontrado.</p>
+                    ) : (
+                      adminUsers.map((u) => (
+                        <div
+                          key={u.id}
+                          className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/5 border border-white/5 text-xs"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-white font-medium truncate">{u.fullName || u.email}</span>
+                              <span
+                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                                  u.role === 'admin'
+                                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                                    : u.role === 'pro'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                    : 'bg-white/10 text-neutral-400 border-white/15'
+                                }`}
+                              >
+                                {u.role.toUpperCase()}
+                                {u.proType ? ` (${u.proType})` : ''}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-neutral-400 truncate">{u.email}</p>
+                          </div>
+
+                          {u.role !== 'admin' && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleProRole(u.id, u.role)}
+                              disabled={sendAdminInviteMutation.isPending}
+                              className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition-all cursor-pointer shrink-0 ${
+                                u.role === 'pro'
+                                  ? 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/30 text-rose-300'
+                                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-300'
+                              }`}
+                            >
+                              {u.role === 'pro' ? 'Revogar PRO' : 'Tornar PRO'}
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Gerenciamento de Dados / Zona de Perigo */}
           {onOpenDangerZone && (

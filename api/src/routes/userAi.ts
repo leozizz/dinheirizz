@@ -116,7 +116,8 @@ userAiRouter.get('/settings', async (c) => {
         maskedKey,
         customModel: memoryRecord.customModel ?? null,
         isValidated: memoryRecord.isValidated,
-        lastTestedAt: memoryRecord.lastTestedAt ?? null
+        lastTestedAt: memoryRecord.lastTestedAt ?? null,
+        role: userRole.role
       },
       userRole
     })
@@ -164,7 +165,8 @@ userAiRouter.get('/settings', async (c) => {
             maskedKey,
             customModel: r.customModel,
             isValidated: r.isValidated,
-            lastTestedAt: r.lastTestedAt ? r.lastTestedAt.toISOString() : null
+            lastTestedAt: r.lastTestedAt ? r.lastTestedAt.toISOString() : null,
+            role: userRole.role
           },
           userRole
         })
@@ -182,7 +184,8 @@ userAiRouter.get('/settings', async (c) => {
       maskedKey: null,
       customModel: null,
       isValidated: false,
-      lastTestedAt: null
+      lastTestedAt: null,
+      role: userRole.role
     },
     userRole
   })

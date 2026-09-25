@@ -26,6 +26,19 @@ const mockAuthUser = {
 const mockUpdateAiMutateAsync = vi.fn()
 const mockTestKeyMutateAsync = vi.fn()
 const mockDeleteAiMutateAsync = vi.fn()
+const mockSendAdminInviteMutateAsync = vi.fn()
+const mockRefetchAdminUsers = vi.fn()
+let mockAdminUsersList = [
+  {
+    id: 'u-1',
+    email: 'outro@dinheirizz.com',
+    fullName: 'Outro Usuário',
+    role: 'free' as const,
+    proType: null,
+    proExpiresAt: null,
+    createdAt: new Date().toISOString()
+  }
+]
 let mockAiSettingsData: UserAiSettingsData = {
   provider: 'gemini',
   customModel: 'gemini-1.5-flash',
@@ -62,6 +75,15 @@ vi.mock('../hooks/useUserAiSettings', () => ({
   }),
   useDeleteUserAiSettings: () => ({
     mutateAsync: mockDeleteAiMutateAsync,
+    isPending: false
+  }),
+  useAdminUsers: () => ({
+    data: mockAdminUsersList,
+    isLoading: false,
+    refetch: mockRefetchAdminUsers
+  }),
+  useSendAdminInvite: () => ({
+    mutateAsync: mockSendAdminInviteMutateAsync,
     isPending: false
   })
 }))
@@ -312,5 +334,67 @@ describe('ProfileModal Component (TDD)', () => {
       expect(mockDeleteAiMutateAsync).toHaveBeenCalledTimes(1)
     })
   })
+
+  it('deve exibir badge Admin e seção de convites PRO quando o usuário for Admin', () => {
+    mockAiSettingsData = {
+      provider: 'gemini',
+      customModel: 'gemini-1.5-flash',
+      isActive: true,
+      hasKey: false,
+      maskedKey: null,
+      lastTestedAt: null,
+      role: 'admin'
+    }
+
+    render(
+      <ProfileModal
+        isOpen={true}
+        onClose={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Admin')).toBeInTheDocument()
+    expect(screen.getByText(/Área Administrativa • Convites PRO/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Digite o e-mail do usuário/i)).toBeInTheDocument()
+  })
+
+  it('deve conceder convite PRO para um usuário pelo e-mail na área administrativa', async () => {
+    mockAiSettingsData = {
+      provider: 'gemini',
+      customModel: 'gemini-1.5-flash',
+      isActive: true,
+      hasKey: false,
+      maskedKey: null,
+      lastTestedAt: null,
+      role: 'admin'
+    }
+
+    mockSendAdminInviteMutateAsync.mockResolvedValueOnce({
+      message: 'Acesso Pro concedido por convite com sucesso!'
+    })
+
+    render(
+      <ProfileModal
+        isOpen={true}
+        onClose={vi.fn()}
+      />
+    )
+
+    const emailInput = screen.getByPlaceholderText(/Digite o e-mail do usuário/i)
+    fireEvent.change(emailInput, { target: { value: 'amigo@dinheirizz.com' } })
+
+    const sendBtn = screen.getByTestId('send-admin-invite-btn')
+    fireEvent.click(sendBtn)
+
+    await waitFor(() => {
+      expect(mockSendAdminInviteMutateAsync).toHaveBeenCalledWith({
+        email: 'amigo@dinheirizz.com',
+        action: 'grant'
+      })
+    })
+
+    expect(await screen.findByText(/Acesso Pro concedido por convite com sucesso!/i)).toBeInTheDocument()
+  })
 })
+
 

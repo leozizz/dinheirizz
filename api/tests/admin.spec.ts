@@ -114,4 +114,24 @@ describe('Endpoints Administrativos de Gestão de Roles e Convites (TDD)', () =>
     expect(data.user.role).toBe('free')
     expect(data.user.proType).toBeNull()
   })
+
+  it('POST /api/v1/admin/invites deve conceder status Pro por e-mail', async () => {
+    const res = await app.request('/api/v1/admin/invites', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: 'regular.user@dinheirizz.com',
+        action: 'grant'
+      })
+    })
+
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.message).toContain('concedido')
+    expect(data.user.role).toBe('pro')
+  })
 })
+

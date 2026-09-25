@@ -436,24 +436,24 @@ function MainApp() {
   }
 
   return (
-    <div className="relative min-h-dvh bg-[#0d0d12] text-foreground overflow-x-hidden pb-20">
+    <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom">
       {/* Background Orbs */}
-      <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-30" />
-      <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-20" />
+      <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-40" />
+      <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-25" />
 
       {/* Top Bar with Floating Capsule and Safe Area Support */}
       <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-3.5 sm:px-6 transition-all">
-        <div className="max-w-4xl mx-auto backdrop-blur-2xl bg-[#12121b]/85 border border-white/10 rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/50 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-white/10 rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10 flex-shrink-0">
-              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-white/10 flex-shrink-0">
+              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
             <div>
               <h1 className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-white font-display">
-                Dinheirizz <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-medium border border-teal-500/30">2.0 PWA</span>
+                Dinheirizz <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/30">2.0 PWA</span>
               </h1>
               <p className="text-[11px] text-neutral-400 hidden sm:flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" /> Cloudflare Pages & BFF
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Cloudflare Pages & BFF
               </p>
             </div>
           </div>

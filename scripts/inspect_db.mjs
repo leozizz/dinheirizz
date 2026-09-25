@@ -15,6 +15,8 @@ async function check() {
     console.log('public.categories count:', cat.length, cat)
     const tx = await sql`SELECT * FROM public.transactions`
     console.log('public.transactions count:', tx.length, tx)
+    const ins = await sql`SELECT to_regclass('public.insights') as exists`
+    console.log('public.insights table exists:', ins[0].exists)
   } catch (e) {
     console.error('Error:', e.message)
   } finally {

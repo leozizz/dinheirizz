@@ -20,6 +20,9 @@ export interface AiInsightData {
   recommendations: string[]
   metrics?: AiInsightMetrics
   isFallback: boolean
+  source?: 'byok' | 'system' | 'fallback'
+  provider?: string
+  modelName?: string | null
   createdAt: string
 }
 

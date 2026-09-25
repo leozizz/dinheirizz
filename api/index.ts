@@ -11,6 +11,8 @@ import { pixKeysRouter } from './src/routes/pix'
 import { authRouter } from './src/routes/auth'
 import { userDataRouter } from './src/routes/userData'
 import { insightsRouter } from './src/routes/insights'
+import { userAiRouter } from './src/routes/userAi'
+import { adminRouter } from './src/routes/admin'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 
 export const app = new Hono<AuthEnv>().basePath('/api')
@@ -60,6 +62,14 @@ app.route('/v1/user-data', userDataRouter)
 app.use('/v1/insights/*', authMiddleware)
 app.use('/v1/insights', authMiddleware)
 app.route('/v1/insights', insightsRouter)
+
+app.use('/v1/user-ai/*', authMiddleware)
+app.use('/v1/user-ai', authMiddleware)
+app.route('/v1/user-ai', userAiRouter)
+
+app.use('/v1/admin/*', authMiddleware)
+app.use('/v1/admin', authMiddleware)
+app.route('/v1/admin', adminRouter)
 
 export default app
 

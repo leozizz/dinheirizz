@@ -1,7 +1,32 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Mail, AtSign, ShieldCheck, Check, AlertCircle, Save, LogOut, Sparkles, ShieldAlert, Trash2 } from 'lucide-react'
+import {
+  X,
+  User,
+  Mail,
+  AtSign,
+  ShieldCheck,
+  Check,
+  AlertCircle,
+  Save,
+  LogOut,
+  Sparkles,
+  ShieldAlert,
+  Trash2,
+  KeyRound,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Cpu,
+  CheckCircle2
+} from 'lucide-react'
 import { useUserProfile, useUpdateProfile } from '../../hooks/useUserProfile'
+import {
+  useUserAiSettings,
+  useUpdateUserAiSettings,
+  useTestUserAiKey,
+  useDeleteUserAiSettings
+} from '../../hooks/useUserAiSettings'
 import { useAuth } from '../../contexts/AuthContext'
 
 export interface ProfileModalProps {
@@ -21,10 +46,22 @@ export function ProfileModal({
   const { profile, isLoading: isProfileLoading } = useUserProfile()
   const updateProfileMutation = useUpdateProfile()
 
+  const { data: aiSettings } = useUserAiSettings()
+  const updateAiSettingsMutation = useUpdateUserAiSettings()
+  const testAiKeyMutation = useTestUserAiKey()
+  const deleteAiSettingsMutation = useDeleteUserAiSettings()
+
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // BYOK States
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [aiProvider, setAiProvider] = useState('gemini')
+  const [aiCustomModel, setAiCustomModel] = useState('gemini-1.5-flash')
+  const [aiFeedback, setAiFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   // Sincroniza formulário ao abrir o modal
   useEffect(() => {
@@ -35,8 +72,17 @@ export function ProfileModal({
       setUsername(currentUsername)
       setSuccessMessage(null)
       setErrorMessage(null)
+      setAiFeedback(null)
+      setApiKeyInput('')
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (aiSettings) {
+      setAiProvider(aiSettings.provider || 'gemini')
+      setAiCustomModel(aiSettings.customModel || 'gemini-1.5-flash')
+    }
+  }, [aiSettings])
 
   if (!isOpen) return null
 
@@ -93,6 +139,57 @@ export function ProfileModal({
     }
   }
 
+  const handleSaveAiKey = async () => {
+    setAiFeedback(null)
+    if (!apiKeyInput.trim() && !aiSettings?.hasKey) {
+      setAiFeedback({ type: 'error', message: 'Digite uma chave de API válida.' })
+      return
+    }
+
+    try {
+      await updateAiSettingsMutation.mutateAsync({
+        apiKey: apiKeyInput.trim() || undefined,
+        provider: aiProvider,
+        customModel: aiCustomModel,
+        isActive: true
+      })
+      setApiKeyInput('')
+      setAiFeedback({ type: 'success', message: 'Configurações de IA salvas com sucesso!' })
+    } catch (err: any) {
+      setAiFeedback({ type: 'error', message: err.message || 'Erro ao salvar chave de API.' })
+    }
+  }
+
+  const handleTestAiKey = async () => {
+    setAiFeedback(null)
+    const keyToTest = apiKeyInput.trim()
+    if (!keyToTest) {
+      setAiFeedback({ type: 'error', message: 'Insira a chave no campo para testar.' })
+      return
+    }
+
+    try {
+      const res = await testAiKeyMutation.mutateAsync({
+        apiKey: keyToTest,
+        provider: aiProvider
+      })
+      setAiFeedback({ type: 'success', message: res.message || 'Conexão com Gemini validada!' })
+    } catch (err: any) {
+      setAiFeedback({ type: 'error', message: err.message || 'Falha na validação da chave.' })
+    }
+  }
+
+  const handleDeleteAiKey = async () => {
+    setAiFeedback(null)
+    try {
+      await deleteAiSettingsMutation.mutateAsync()
+      setApiKeyInput('')
+      setAiFeedback({ type: 'success', message: 'Chave removida. O sistema usará o diagnóstico gratuito heurístico.' })
+    } catch (err: any) {
+      setAiFeedback({ type: 'error', message: err.message || 'Erro ao remover chave.' })
+    }
+  }
+
   return (
     <AnimatePresence>
       <div
@@ -146,6 +243,21 @@ export function ProfileModal({
                   <ShieldCheck className="w-3 h-3 text-teal-400" />
                   Verificado
                 </span>
+                {aiSettings?.role === 'admin' ? (
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold border border-indigo-500/30 flex items-center gap-1 flex-shrink-0">
+                    <Sparkles className="w-3 h-3 text-indigo-400" />
+                    Admin
+                  </span>
+                ) : aiSettings?.role === 'pro' ? (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
+                    <Sparkles className="w-3 h-3 text-emerald-400" />
+                    Plano PRO
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 text-[10px] font-semibold border border-white/15 flex items-center gap-1 flex-shrink-0">
+                    Plano Free
+                  </span>
+                )}
               </div>
               <p className="text-xs text-neutral-400 truncate mt-0.5">
                 {username ? `@${username}` : 'Defina seu @username'}
@@ -258,6 +370,175 @@ export function ProfileModal({
               </button>
             </div>
           </form>
+
+          {/* Seção Inteligência Artificial & BYOK */}
+          <div className="mt-6 pt-5 border-t border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                  <Cpu className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    Inteligência Artificial (BYOK)
+                    <span className="text-[10px] font-normal text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
+                      Custo Zero
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-neutral-400">
+                    Utilize sua própria chave para análises sem depender de cotas.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status da chave / Banner */}
+            {aiSettings?.hasKey ? (
+              <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-semibold block">Chave Própria Configurada</span>
+                    <span className="font-mono text-[11px] text-emerald-400/80">{aiSettings.maskedKey}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-testid="remove-byok-key-btn"
+                  onClick={handleDeleteAiKey}
+                  disabled={deleteAiSettingsMutation.isPending}
+                  className="px-2.5 py-1 text-[11px] rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 transition-colors cursor-pointer shrink-0"
+                >
+                  Remover
+                </button>
+              </div>
+            ) : (
+              <div className="mb-3 p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-neutral-400 flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span>Nenhuma chave pessoal salva. O sistema usará o diagnóstico analítico heurístico gratuito.</span>
+              </div>
+            )}
+
+            {aiFeedback && (
+              <div
+                className={`mb-3 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                  aiFeedback.type === 'success'
+                    ? 'bg-teal-500/15 border border-teal-500/30 text-teal-300'
+                    : 'bg-rose-500/15 border border-rose-500/30 text-rose-300'
+                }`}
+              >
+                {aiFeedback.type === 'success' ? (
+                  <Check className="w-4 h-4 shrink-0 text-teal-400" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                )}
+                <span>{aiFeedback.message}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {/* Provedor e Modelo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="byok-provider" className="block text-[11px] font-medium text-neutral-300 mb-1">
+                    Provedor de IA
+                  </label>
+                  <select
+                    id="byok-provider"
+                    value={aiProvider}
+                    onChange={(e) => setAiProvider(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-xs focus:outline-none focus:border-indigo-400"
+                  >
+                    <option value="gemini" className="bg-neutral-900 text-white">Google Gemini</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="byok-model" className="block text-[11px] font-medium text-neutral-300 mb-1">
+                    Modelo
+                  </label>
+                  <select
+                    id="byok-model"
+                    value={aiCustomModel}
+                    onChange={(e) => setAiCustomModel(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-xs focus:outline-none focus:border-indigo-400"
+                  >
+                    <option value="gemini-1.5-flash" className="bg-neutral-900 text-white">Gemini 1.5 Flash (Recomendado)</option>
+                    <option value="gemini-1.5-pro" className="bg-neutral-900 text-white">Gemini 1.5 Pro</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Input da Chave */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="byok-api-key" className="block text-[11px] font-medium text-neutral-300">
+                    Chave de API (Google AI Studio)
+                  </label>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                  >
+                    Obter chave grátis <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <div className="relative">
+                  <input
+                    id="byok-api-key"
+                    type={showApiKey ? 'text' : 'password'}
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    placeholder={aiSettings?.hasKey ? '••••••••••••••••••••••••••••' : 'Cole sua chave AIzaSy...'}
+                    className="w-full min-h-[40px] pl-3.5 pr-10 py-2 rounded-xl bg-white/10 border border-white/15 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-indigo-400 font-mono"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showApiKey ? 'Ocultar chave' : 'Mostrar chave'}
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-neutral-400 mt-1">
+                  Sua chave é criptografada com PBKDF2 + AES-GCM (WebCrypto) e nunca é exposta.
+                </p>
+              </div>
+
+              {/* Botões de Ação BYOK */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  data-testid="test-byok-key-btn"
+                  onClick={handleTestAiKey}
+                  disabled={testAiKeyMutation.isPending || !apiKeyInput.trim()}
+                  className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {testAiKeyMutation.isPending ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>Testar Conexão</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="save-byok-key-btn"
+                  onClick={handleSaveAiKey}
+                  disabled={updateAiSettingsMutation.isPending || (!apiKeyInput.trim() && !aiSettings?.hasKey)}
+                  className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {updateAiSettingsMutation.isPending ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>Salvar Chave</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Gerenciamento de Dados / Zona de Perigo */}
           {onOpenDangerZone && (

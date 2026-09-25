@@ -7,6 +7,9 @@ export interface GeneratedInsight {
   alerts: string[]
   recommendations: string[]
   isFallback: boolean
+  source?: 'byok' | 'system' | 'fallback'
+  provider?: string
+  modelName?: string | null
 }
 
 export interface GenerateInsightOptions {
@@ -14,6 +17,9 @@ export interface GenerateInsightOptions {
   period: string
   userName?: string | null
   apiKey?: string
+  source?: 'byok' | 'system' | 'fallback'
+  provider?: string
+  modelName?: string | null
 }
 
 /**
@@ -36,7 +42,10 @@ export function generateFallbackInsight(
         'Adicione suas despesas recorrentes e receitas para iniciar o acompanhamento.',
         'Cadastre suas contas bancárias para ter uma visão consolidada do seu patrimônio.'
       ],
-      isFallback: true
+      isFallback: true,
+      source: 'fallback',
+      provider: 'rules-engine',
+      modelName: 'heuristics'
     }
   }
 
@@ -59,7 +68,10 @@ export function generateFallbackInsight(
         'Mantenha essa margem e direcione o excedente para sua reserva de emergência ou investimentos.',
         'Monitore os custos fixos para preservar seu poder de aporte no próximo período.'
       ],
-      isFallback: true
+      isFallback: true,
+      source: 'fallback',
+      provider: 'rules-engine',
+      modelName: 'heuristics'
     }
   }
 
@@ -83,7 +95,10 @@ export function generateFallbackInsight(
         'Identifique oportunidades de corte em gastos supérfluos na categoria de maior impacto.',
         'Tente elevar sua taxa de poupança para pelo menos 20% da sua renda mensal.'
       ],
-      isFallback: true
+      isFallback: true,
+      source: 'fallback',
+      provider: 'rules-engine',
+      modelName: 'heuristics'
     }
   }
 
@@ -108,7 +123,10 @@ export function generateFallbackInsight(
       'Pause despesas discricionárias não essenciais até a recuperação do saldo positivo.',
       'Defina um teto orçamentário rígido para as próximas semanas e acompanhe as saídas diariamente.'
     ],
-    isFallback: true
+    isFallback: true,
+    source: 'fallback',
+    provider: 'rules-engine',
+    modelName: 'heuristics'
   }
 }
 
@@ -192,7 +210,10 @@ Diretrizes de Tom e Resposta:
       highlights: Array.isArray(parsed.highlights) ? parsed.highlights.map(String) : [],
       alerts: Array.isArray(parsed.alerts) ? parsed.alerts.map(String) : [],
       recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.map(String) : [],
-      isFallback: false
+      isFallback: false,
+      source: options.source || (options.apiKey ? 'byok' : 'system'),
+      provider: options.provider || 'gemini',
+      modelName: options.modelName || 'gemini-1.5-flash'
     }
   } catch {
     // Qualquer falha de rede ou parsing aciona fallback gracioso

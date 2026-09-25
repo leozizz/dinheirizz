@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { getDb } from '../db/client'
-import { insights, transactions } from '../db/schema'
+import { insights, transactions, userAiSettings, users } from '../db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import type { AuthEnv } from '../middlewares/auth'
 import {
@@ -12,7 +12,9 @@ import {
   generateGeminiFinancialInsight,
   type GeneratedInsight
 } from '../services/gemini'
+import { decryptApiKey } from '../services/crypto'
 import { mockTransactionsStore } from './transactions'
+import { mockUserAiSettingsStore } from './userAi'
 
 export interface MockInsightRecord extends GeneratedInsight {
   id: string
@@ -25,12 +27,17 @@ export interface MockInsightRecord extends GeneratedInsight {
     savingsRate: number
     topCategory: string | null
   }
+  source: 'byok' | 'system' | 'fallback'
+  provider: string
+  modelName?: string | null
   createdAt: string
   updatedAt: string
 }
 
 // Armazenamento em memória para ambiente de testes unitários ou offline
 export const mockInsightsStore = new Map<string, MockInsightRecord>()
+
+const ADMIN_EMAIL = 'leonardocps2015@gmail.com'
 
 function getCurrentPeriod(): string {
   const now = new Date()
@@ -61,7 +68,6 @@ async function getUserTransactions(
     const list: FinancialTransactionInput[] = []
     for (const tx of mockTransactionsStore.values()) {
       if (tx.userId === userId) {
-        // Se a data da transação bater com o período (YYYY-MM)
         const txDate = tx.occurredAt || tx.createdAt
         if (!period || txDate.startsWith(period)) {
           list.push({
@@ -97,6 +103,107 @@ async function getUserTransactions(
       }))
   } catch {
     return []
+  }
+}
+
+interface AiExecutionParams {
+  apiKey?: string
+  source: 'byok' | 'system' | 'fallback'
+  provider: string
+  modelName: string
+}
+
+/**
+ * Resolve a cascata de credenciais de IA:
+ * 1. Chave BYOK pessoal (se configurada pelo usuário)
+ * 2. Chave corporativa interna (se admin ou pro)
+ * 3. Fallback Heurístico Gratuito (para free sem chave)
+ */
+async function resolveAiExecutionParams(
+  userId: string,
+  userEmail?: string
+): Promise<AiExecutionParams> {
+  const isAdminByEmail = userEmail?.toLowerCase() === ADMIN_EMAIL
+
+  // 1. Chave BYOK do usuário em memória
+  const memorySetting = mockUserAiSettingsStore.get(userId)
+  if (memorySetting?.apiKeyEncrypted) {
+    try {
+      const apiKey = await decryptApiKey(memorySetting.apiKeyEncrypted)
+      return {
+        apiKey,
+        source: 'byok',
+        provider: memorySetting.provider || 'gemini',
+        modelName: memorySetting.customModel || 'gemini-1.5-flash'
+      }
+    } catch {
+      // continua para próximo nível
+    }
+  }
+
+  // 1.1 Chave BYOK no banco de dados se conectado
+  const db = getDb()
+  if (db) {
+    try {
+      const settings = await db
+        .select()
+        .from(userAiSettings)
+        .where(eq(userAiSettings.userId, userId))
+        .limit(1)
+
+      if (settings.length > 0 && settings[0].apiKeyEncrypted) {
+        const apiKey = await decryptApiKey(settings[0].apiKeyEncrypted)
+        return {
+          apiKey,
+          source: 'byok',
+          provider: settings[0].provider || 'gemini',
+          modelName: settings[0].customModel || 'gemini-1.5-flash'
+        }
+      }
+    } catch {
+      // continua
+    }
+  }
+
+  // 2. Chave corporativa interna (se Admin ou Pro)
+  let isPrivileged = isAdminByEmail
+  if (!isPrivileged && db) {
+    try {
+      const userRows = await db
+        .select({ role: users.role, email: users.email })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1)
+
+      if (userRows.length > 0) {
+        const r = userRows[0]
+        if (
+          r.email?.toLowerCase() === ADMIN_EMAIL ||
+          r.role === 'admin' ||
+          r.role === 'pro'
+        ) {
+          isPrivileged = true
+        }
+      }
+    } catch {
+      // continua
+    }
+  }
+
+  if (isPrivileged && process.env.GEMINI_API_KEY) {
+    return {
+      apiKey: process.env.GEMINI_API_KEY,
+      source: 'system',
+      provider: 'gemini',
+      modelName: 'gemini-1.5-flash'
+    }
+  }
+
+  // 3. Fallback Heurístico Gratuito
+  return {
+    source: 'fallback',
+    provider: 'rules-engine',
+    modelName: 'heuristics'
   }
 }
 
@@ -140,6 +247,9 @@ insightsRouter.get('/', async (c) => {
           recommendations: item.recommendations || [],
           metrics: metricsSnapshot,
           isFallback: item.isFallback,
+          source: (item.source as 'byok' | 'system' | 'fallback') || 'fallback',
+          provider: item.provider || 'gemini',
+          modelName: item.modelName || null,
           createdAt: item.createdAt.toISOString(),
           updatedAt: item.updatedAt?.toISOString() || item.createdAt.toISOString()
         }
@@ -151,12 +261,19 @@ insightsRouter.get('/', async (c) => {
     }
   }
 
-  // 3. Se não existe insight para o período, gera sob demanda
+  // 3. Resolver credenciais e gerar sob demanda
+  const userEmail = (c.get('user') as any)?.email
+  const aiParams = await resolveAiExecutionParams(userId, userEmail)
   const txList = await getUserTransactions(userId, period)
   const metrics = calculateMonthlyMetrics(txList)
+
   const generated = await generateGeminiFinancialInsight({
     metrics,
-    period
+    period,
+    apiKey: aiParams.apiKey,
+    source: aiParams.source,
+    provider: aiParams.provider,
+    modelName: aiParams.modelName
   })
 
   const newRecord: MockInsightRecord = {
@@ -171,6 +288,9 @@ insightsRouter.get('/', async (c) => {
       savingsRate: metrics.savingsRate,
       topCategory: metrics.topCategory
     },
+    source: generated.source || aiParams.source,
+    provider: generated.provider || aiParams.provider,
+    modelName: generated.modelName || aiParams.modelName,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -189,7 +309,10 @@ insightsRouter.get('/', async (c) => {
         alerts: newRecord.alerts,
         recommendations: newRecord.recommendations,
         metricsSnapshot: JSON.stringify(newRecord.metrics),
-        isFallback: newRecord.isFallback
+        isFallback: newRecord.isFallback,
+        source: newRecord.source,
+        provider: newRecord.provider,
+        modelName: newRecord.modelName
       })
     } catch {
       // cache em memória preservado
@@ -218,11 +341,18 @@ insightsRouter.post('/generate', async (c) => {
   }
 
   const cacheKey = `${userId}:${period}`
+  const userEmail = (c.get('user') as any)?.email
+  const aiParams = await resolveAiExecutionParams(userId, userEmail)
   const txList = await getUserTransactions(userId, period)
   const metrics = calculateMonthlyMetrics(txList)
+
   const generated = await generateGeminiFinancialInsight({
     metrics,
-    period
+    period,
+    apiKey: aiParams.apiKey,
+    source: aiParams.source,
+    provider: aiParams.provider,
+    modelName: aiParams.modelName
   })
 
   const record: MockInsightRecord = {
@@ -237,6 +367,9 @@ insightsRouter.post('/generate', async (c) => {
       savingsRate: metrics.savingsRate,
       topCategory: metrics.topCategory
     },
+    source: generated.source || aiParams.source,
+    provider: generated.provider || aiParams.provider,
+    modelName: generated.modelName || aiParams.modelName,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -256,7 +389,10 @@ insightsRouter.post('/generate', async (c) => {
         alerts: record.alerts,
         recommendations: record.recommendations,
         metricsSnapshot: JSON.stringify(record.metrics),
-        isFallback: record.isFallback
+        isFallback: record.isFallback,
+        source: record.source,
+        provider: record.provider,
+        modelName: record.modelName
       })
     } catch {
       // ok

@@ -8,13 +8,25 @@ const sql = postgres(url, { max: 1 })
 
 async function apply() {
   try {
-    const migration = fs.readFileSync('drizzle/0002_create_insights_table.sql', 'utf8')
-    console.log('Aplicando migração drizzle/0002_create_insights_table.sql...')
+    const migration = fs.readFileSync('drizzle/0003_byok_and_roles.sql', 'utf8')
+    console.log('Aplicando migração drizzle/0003_byok_and_roles.sql...')
     await sql.unsafe(migration)
-    console.log('Migração executada com sucesso!')
+    console.log('Migração 0003 executada com sucesso!')
 
-    const res = await sql`SELECT to_regclass('public.insights') as exists`
-    console.log('Verificação: public.insights table exists:', res[0].exists)
+    const res = await sql`SELECT to_regclass('public.user_ai_settings') as exists`
+    console.log('Verificação: public.user_ai_settings table exists:', res[0].exists)
+
+    const columnsUsers = await sql`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name IN ('role', 'pro_type', 'pro_expires_at', 'invited_by')
+    `
+    console.log('Colunas adicionadas em users:', columnsUsers.map(c => c.column_name))
+
+    const columnsInsights = await sql`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'insights' AND column_name IN ('source', 'provider', 'model_name')
+    `
+    console.log('Colunas adicionadas em insights:', columnsInsights.map(c => c.column_name))
   } catch (e) {
     console.error('Erro ao aplicar migração:', e.message)
   } finally {

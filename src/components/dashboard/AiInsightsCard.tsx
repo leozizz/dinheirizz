@@ -6,7 +6,9 @@ import {
   AlertTriangle,
   Lightbulb,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Zap,
+  KeyRound
 } from 'lucide-react'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 
@@ -62,27 +64,67 @@ export function AiInsightsCard({
     scoreLabel = 'Saudável'
   }
 
+  const isDeterministicFallback = insight.source === 'fallback' || insight.isFallback
+  const isByokKey = !isDeterministicFallback && insight.source === 'byok'
+  const isCorporateSystem = !isDeterministicFallback && insight.source === 'system'
+
   return (
     <div className="relative overflow-hidden glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-indigo-500/[0.07] via-emerald-500/[0.04] to-transparent">
       {/* Glow orb decorativo sutil */}
       <div className="absolute -top-12 -right-12 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header do Card */}
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-emerald-500/20 border border-white/15 flex items-center justify-center text-indigo-300 shadow-inner">
-            <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-emerald-500/20 border border-white/15 flex items-center justify-center text-indigo-300 shadow-inner shrink-0">
+            {isDeterministicFallback ? (
+              <Zap className="w-5 h-5 text-amber-400" />
+            ) : isByokKey ? (
+              <KeyRound className="w-5 h-5 text-emerald-400" />
+            ) : (
+              <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+            )}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold text-white tracking-wide">
                 Consultor Dinheirizz
               </h3>
-              <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                IA
-              </span>
+              {isDeterministicFallback && (
+                <span
+                  data-testid="badge-fallback"
+                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1"
+                >
+                  <Zap className="w-3 h-3 text-amber-400" />
+                  Diagnóstico Analítico (Sem IA)
+                </span>
+              )}
+              {isByokKey && (
+                <span
+                  data-testid="badge-byok"
+                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"
+                >
+                  <KeyRound className="w-3 h-3 text-emerald-400" />
+                  Chave Pessoal (BYOK){insight.modelName ? ` • ${insight.modelName}` : ''}
+                </span>
+              )}
+              {isCorporateSystem && (
+                <span
+                  data-testid="badge-system"
+                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3 text-indigo-400" />
+                  Dinheirizz IA (Admin/Pro){insight.modelName ? ` • ${insight.modelName}` : ''}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-white/50">Diagnóstico de Saúde Financeira</p>
+            <p className="text-xs text-white/50">
+              {isDeterministicFallback
+                ? 'Baseado em regras orçamentárias heurísticas locais'
+                : isByokKey
+                ? 'Gerado via sua chave Google Gemini configurada'
+                : 'Diagnóstico avançado gerado por inteligência artificial'}
+            </p>
           </div>
         </div>
 

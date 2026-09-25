@@ -9,6 +9,10 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   provider: text('provider').default('email'),
   providers: text('providers').array().default(sql`ARRAY['email']::text[]`),
+  role: text('role').default('free').notNull(), // 'free' | 'pro' | 'admin'
+  proType: text('pro_type'), // 'subscriber' | 'invited'
+  proExpiresAt: timestamp('pro_expires_at', { withTimezone: true }),
+  invitedBy: uuid('invited_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
@@ -65,6 +69,21 @@ export const insights = pgTable('insights', {
   recommendations: text('recommendations').array().default(sql`ARRAY[]::text[]`),
   metricsSnapshot: text('metrics_snapshot'),
   isFallback: boolean('is_fallback').default(false).notNull(),
+  source: text('source').default('fallback').notNull(), // 'byok' | 'system' | 'fallback'
+  provider: text('provider').default('gemini'),
+  modelName: text('model_name'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+})
+
+export const userAiSettings = pgTable('user_ai_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  provider: text('provider').default('gemini').notNull(), // 'gemini' | 'openai' | 'groq'
+  apiKeyEncrypted: text('api_key_encrypted'),
+  customModel: text('custom_model'),
+  isValidated: boolean('is_validated').default(false).notNull(),
+  lastTestedAt: timestamp('last_tested_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
@@ -86,3 +105,6 @@ export type NewPixKey = typeof pixKeys.$inferInsert
 
 export type Insight = typeof insights.$inferSelect
 export type NewInsight = typeof insights.$inferInsert
+
+export type UserAiSetting = typeof userAiSettings.$inferSelect
+export type NewUserAiSetting = typeof userAiSettings.$inferInsert

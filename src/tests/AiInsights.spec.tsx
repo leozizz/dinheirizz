@@ -92,4 +92,69 @@ describe('AiInsightsCard (TDD)', () => {
     const btnRefresh = screen.getByRole('button', { name: /analisando/i })
     expect(btnRefresh).toBeDisabled()
   })
+
+  it('deve exibir badge transparente de "Diagnóstico Analítico (Sem IA)" quando for fallback', () => {
+    const fallbackInsight: AiInsightData = {
+      ...mockInsight,
+      isFallback: true,
+      source: 'fallback'
+    }
+
+    render(
+      <AiInsightsCard
+        insight={fallbackInsight}
+        isLoading={false}
+        isGenerating={false}
+        onGenerate={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('badge-fallback')).toBeInTheDocument()
+    expect(screen.getByText(/Diagnóstico Analítico \(Sem IA\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/regras orçamentárias heurísticas locais/i)).toBeInTheDocument()
+  })
+
+  it('deve exibir badge de "Chave Pessoal (BYOK)" quando gerado com chave do usuário', () => {
+    const byokInsight: AiInsightData = {
+      ...mockInsight,
+      isFallback: false,
+      source: 'byok',
+      modelName: 'gemini-1.5-flash'
+    }
+
+    render(
+      <AiInsightsCard
+        insight={byokInsight}
+        isLoading={false}
+        isGenerating={false}
+        onGenerate={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('badge-byok')).toBeInTheDocument()
+    expect(screen.getByText(/Chave Pessoal \(BYOK\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/gemini-1.5-flash/i)).toBeInTheDocument()
+  })
+
+  it('deve exibir badge de "Dinheirizz IA (Admin/Pro)" quando gerado via servidor', () => {
+    const systemInsight: AiInsightData = {
+      ...mockInsight,
+      isFallback: false,
+      source: 'system',
+      modelName: 'gemini-1.5-flash'
+    }
+
+    render(
+      <AiInsightsCard
+        insight={systemInsight}
+        isLoading={false}
+        isGenerating={false}
+        onGenerate={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('badge-system')).toBeInTheDocument()
+    expect(screen.getByText(/Dinheirizz IA \(Admin\/Pro\)/i)).toBeInTheDocument()
+  })
 })
+

@@ -2,45 +2,47 @@
 
 @layer base {
   :root {
-    /* === FUNDOS === */
-    --background: oklch(0.12 0.01 260);        /* #1a1625 - Fundo principal escuro */
-    --card: oklch(0.18 0.01 260 / 0.6);        /* Fundo de cards com transparência */
+    /* === FUNDOS DARK LUXURY (MINIMALISMO EQUILIBRADO iOS & OneUI) === */
+    --background: oklch(0.11 0.006 260);        /* #0d0e12 - Fundo ônix profundo com calma ardósia */
+    --card: oklch(0.16 0.008 260 / 0.65);       /* Fundo de vidro fosco homogêneo */
     --card-foreground: oklch(0.98 0 0);
-    --popover: oklch(0.16 0.01 260 / 0.9);     /* Overlays e popovers */
+    --popover: oklch(0.14 0.008 260 / 0.94);    /* Overlays, sheets e modais */
     --popover-foreground: oklch(0.98 0 0);
-    --sidebar: oklch(0.14 0.01 260 / 0.8);     /* Sidebar com transparência */
+    --sidebar: oklch(0.13 0.008 260 / 0.85);    /* Sidebar com transparência */
     --sidebar-foreground: oklch(0.98 0 0);
-    --input: oklch(0.22 0.01 260 / 0.5);       /* Campos de entrada */
+    --input: oklch(0.20 0.008 260 / 0.55);      /* Campos de entrada */
     
-    /* === TEXTO === */
-    --foreground: oklch(0.98 0 0);             /* #fafafa - Texto principal */
-    --muted: oklch(0.22 0.01 260 / 0.5);
-    --muted-foreground: oklch(0.65 0 0);       /* #999999 - Texto secundário */
-    --secondary: oklch(0.24 0.01 260 / 0.6);
-    --secondary-foreground: oklch(0.85 0 0);   /* Texto em elementos secundários */
+    /* === TEXTO & CONTRASTE WCAG AA === */
+    --foreground: oklch(0.98 0 0);              /* #fafafa - Texto principal nítido */
+    --muted: oklch(0.22 0.008 260 / 0.5);
+    --muted-foreground: oklch(0.68 0.01 260);    /* Texto secundário com alto contraste */
+    --secondary: oklch(0.22 0.008 260 / 0.65);
+    --secondary-foreground: oklch(0.90 0 0);    /* Texto em elementos secundários */
     
-    /* === CORES DE AÇÃO === */
-    --primary: oklch(0.7 0.15 200);            /* #4da6ff - Azul primário */
-    --primary-foreground: oklch(0.12 0.01 260);/* Texto sobre primary */
-    --accent: oklch(0.75 0.12 170);            /* #5eead4 - Teal accent */
-    --accent-foreground: oklch(0.12 0.01 260); /* Texto sobre accent */
+    /* === CORES DE AÇÃO & IDENTIDADE (LIMA-ESMERALDA ENCORPADO) === */
+    --primary: oklch(0.76 0.17 142);            /* #7bc816 - Lima sofisticado, encorpado e sem neon estourado */
+    --primary-foreground: oklch(0.10 0.008 260);/* Texto escuro de alto contraste sobre primary */
+    --accent: oklch(0.75 0.12 185);             /* Teal / Ciano sutil */
+    --accent-foreground: oklch(0.10 0.008 260);
     
-    /* === ESTADOS === */
-    --destructive: oklch(0.6 0.2 25);          /* #f87171 - Erro/Despesa */
-    --destructive-foreground: oklch(0.98 0 0); /* Texto sobre destructive */
+    /* === ESTADOS FINANCEIROS === */
+    --destructive: oklch(0.68 0.22 25);         /* Coral / Rosa elétrico para despesas (#fb7185) */
+    --destructive-foreground: oklch(0.98 0 0);  /* Texto sobre destructive */
+    --success: oklch(0.76 0.17 142);            /* Verde para receitas */
+    --success-foreground: oklch(0.10 0.008 260);
     
-    /* === BORDAS E DIVISORES === */
-    --border: oklch(0.35 0.01 260 / 0.3);      /* Bordas sutis */
-    --ring: oklch(0.7 0.15 200 / 0.5);         /* Focus ring */
+    /* === BORDAS E DIVISORES GLASSMORPHISM 2.0 (HAIRLINE SUBTLE) === */
+    --border: oklch(0.38 0.01 260 / 0.22);      /* Bordas vítreas ultrafinas e limpas */
+    --ring: oklch(0.76 0.17 142 / 0.5);         /* Focus ring volt */
     
     /* === GRÁFICOS === */
-    --chart-1: oklch(0.7 0.15 200);            /* Azul - Primary */
-    --chart-2: oklch(0.75 0.12 170);           /* Teal - Accent */
-    --chart-3: oklch(0.7 0.18 280);            /* Roxo */
-    --chart-4: oklch(0.8 0.15 90);             /* Amarelo */
-    --chart-5: oklch(0.65 0.2 25);             /* Vermelho */
+    --chart-1: oklch(0.76 0.17 142);            /* Lima / Emerald */
+    --chart-2: oklch(0.75 0.12 185);            /* Teal */
+    --chart-3: oklch(0.70 0.18 280);            /* Roxo */
+    --chart-4: oklch(0.80 0.15 90);             /* Dourado */
+    --chart-5: oklch(0.68 0.22 25);             /* Coral */
 
-    --radius: 1rem;
+    --radius: 1.25rem;
   }
 }
 
@@ -51,29 +53,45 @@ body {
   overflow-x: hidden;
 }
 
-/* === GLASSMORPHISM DESIGN SYSTEM CLASSES === */
+/* === GLASSMORPHISM DESIGN SYSTEM CLASSES (EQUILÍBRIO iOS & OneUI) === */
 .glass-card {
   background: var(--card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
 }
 
 .glass-card-interactive {
   background: var(--card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card-interactive:hover {
-  background: oklch(0.22 0.01 260 / 0.7);
-  border-color: oklch(0.45 0.01 260 / 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  background: oklch(0.19 0.008 260 / 0.75);
+  border-color: oklch(0.45 0.01 260 / 0.35);
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 26px -2px rgba(0, 0, 0, 0.45);
+}
+
+.glass-card-interactive:active {
+  transform: scale(0.985);
+}
+
+.glass-card-glow {
+  position: relative;
+  background: var(--card);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  border: 1px solid oklch(0.76 0.17 142 / 0.25);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.45), 0 0 25px -5px oklch(0.76 0.17 142 / 0.08);
 }
 
 .glass-sheet {
@@ -85,13 +103,13 @@ body {
 }
 
 .gradient-orb-primary {
-  background: oklch(0.7 0.15 200 / 0.08);
-  filter: blur(120px);
+  background: oklch(0.76 0.17 142 / 0.05);
+  filter: blur(140px);
 }
 
 .gradient-orb-accent {
-  background: oklch(0.75 0.12 170 / 0.06);
-  filter: blur(100px);
+  background: oklch(0.65 0.18 280 / 0.06); /* Toque sutil de violeta no fundo para identidade Dinheirizz */
+  filter: blur(140px);
 }
 
 .avatar-gradient {
@@ -136,4 +154,3 @@ html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-

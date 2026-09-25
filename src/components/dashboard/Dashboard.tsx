@@ -1,4 +1,5 @@
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
+import { AnimatedNumber } from '../ui/AnimatedNumber'
 import { QuickActions, ActionType } from './QuickActions'
 import { AccountsBar } from './AccountsBar'
 import { AiInsightsCard } from './AiInsightsCard'
@@ -128,17 +129,18 @@ export function Dashboard({
     <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
 
       {/* Saldo Principal Card */}
-      <div className="relative overflow-hidden glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02]">
+      <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary">
               <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-neutral-400">
               {displayTitle}
             </span>
           </div>
-          <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+          <span className="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <TrendingUp className="w-3 h-3" />
             Ativo
           </span>
@@ -147,32 +149,32 @@ export function Dashboard({
         {/* Valor de Destaque */}
         <div className="mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white font-display break-words">
-            {formatBRL(displayBalance)}
+            <AnimatedNumber value={displayBalance} formatter={formatBRL} />
           </h2>
         </div>
 
         {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3 sm:pt-4 border-t border-white/10">
-          <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-white/5 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 sm:pt-4 border-t border-white/10">
+          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary flex-shrink-0">
               <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0 flex-1">
               <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Receitas do Mês</span>
-              <span className="text-xs sm:text-base font-semibold text-emerald-400 block truncate tabular-nums">
-                {formatBRL(displayIncome)}
+              <span className="text-xs sm:text-base font-semibold text-primary block truncate tabular-nums">
+                <AnimatedNumber value={displayIncome} formatter={formatBRL} />
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-white/5 min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md min-w-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
               <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0 flex-1">
               <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Despesas do Mês</span>
               <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
-                {formatBRL(displayExpense)}
+                <AnimatedNumber value={displayExpense} formatter={formatBRL} />
               </span>
             </div>
           </div>
@@ -240,7 +242,7 @@ export function Dashboard({
                     <div
                       className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border text-sm font-semibold flex-shrink-0 ${
                         isIncome
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                          ? 'bg-primary/10 border-primary/20 text-primary'
                           : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                       }`}
                     >

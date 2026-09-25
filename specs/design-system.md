@@ -11,38 +11,40 @@
 
 ```css
 :root {
-  /* === FUNDOS === */
-  --background: oklch(0.12 0.01 260);        /* #1a1625 - Fundo principal escuro */
-  --card: oklch(0.18 0.01 260 / 0.6);        /* Fundo de cards com transparência */
-  --popover: oklch(0.16 0.01 260 / 0.9);     /* Overlays e popovers */
-  --sidebar: oklch(0.14 0.01 260 / 0.8);     /* Sidebar com transparência */
-  --input: oklch(0.22 0.01 260 / 0.5);       /* Campos de entrada */
+  /* === FUNDOS DARK LUXURY === */
+  --background: oklch(0.11 0.008 260);        /* #0e0f14 - Fundo ônix profundo de alto contraste */
+  --card: oklch(0.16 0.008 260 / 0.65);       /* Fundo de cards com transparência vítrea */
+  --popover: oklch(0.14 0.008 260 / 0.94);    /* Overlays, sheets e modais */
+  --sidebar: oklch(0.13 0.008 260 / 0.85);    /* Sidebar com transparência */
+  --input: oklch(0.20 0.008 260 / 0.55);      /* Campos de entrada */
   
-  /* === TEXTO === */
-  --foreground: oklch(0.98 0 0);             /* #fafafa - Texto principal */
-  --muted-foreground: oklch(0.65 0 0);       /* #999999 - Texto secundário */
-  --secondary-foreground: oklch(0.85 0 0);   /* Texto em elementos secundários */
+  /* === TEXTO & CONTRASTE WCAG AA === */
+  --foreground: oklch(0.98 0 0);              /* #fafafa - Texto principal nítido */
+  --muted-foreground: oklch(0.68 0.01 260);   /* Texto secundário com alto contraste */
+  --secondary-foreground: oklch(0.90 0 0);   /* Texto em elementos secundários */
   
-  /* === CORES DE AÇÃO === */
-  --primary: oklch(0.7 0.15 200);            /* #4da6ff - Azul primário */
-  --primary-foreground: oklch(0.12 0.01 260);/* Texto sobre primary */
-  --accent: oklch(0.75 0.12 170);            /* #5eead4 - Teal accent */
-  --accent-foreground: oklch(0.12 0.01 260); /* Texto sobre accent */
+  /* === CORES DE AÇÃO & IDENTIDADE === */
+  --primary: oklch(0.76 0.17 142);            /* #7bc816 - Lima sofisticado, encorpado e sem neon estourado */
+  --primary-foreground: oklch(0.10 0.008 260);/* Texto sobre primary */
+  --accent: oklch(0.75 0.12 185);             /* #5eead4 - Teal / Ciano sutil */
+  --accent-foreground: oklch(0.10 0.008 260); /* Texto sobre accent */
   
   /* === ESTADOS === */
-  --destructive: oklch(0.6 0.2 25);          /* #f87171 - Erro/Despesa */
-  --destructive-foreground: oklch(0.98 0 0); /* Texto sobre destructive */
+  --destructive: oklch(0.68 0.22 25);         /* #fb7185 - Coral/Despesa */
+  --destructive-foreground: oklch(0.98 0 0);  /* Texto sobre destructive */
+  --success: oklch(0.76 0.17 142);            /* Verde para receitas */
+  --success-foreground: oklch(0.10 0.008 260);
   
   /* === BORDAS E DIVISORES === */
-  --border: oklch(0.35 0.01 260 / 0.3);      /* Bordas sutis */
-  --ring: oklch(0.7 0.15 200 / 0.5);         /* Focus ring */
+  --border: oklch(0.38 0.01 260 / 0.22);      /* Bordas vítreas ultrafinas e limpas */
+  --ring: oklch(0.76 0.17 142 / 0.5);         /* Focus ring volt */
   
   /* === GRÁFICOS === */
-  --chart-1: oklch(0.7 0.15 200);            /* Azul - Primary */
-  --chart-2: oklch(0.75 0.12 170);           /* Teal - Accent */
-  --chart-3: oklch(0.7 0.18 280);            /* Roxo */
-  --chart-4: oklch(0.8 0.15 90);             /* Amarelo */
-  --chart-5: oklch(0.65 0.2 25);             /* Vermelho */
+  --chart-1: oklch(0.76 0.17 142);            /* Lima / Emerald */
+  --chart-2: oklch(0.75 0.12 185);            /* Teal */
+  --chart-3: oklch(0.70 0.18 280);            /* Roxo */
+  --chart-4: oklch(0.80 0.15 90);             /* Dourado */
+  --chart-5: oklch(0.68 0.22 25);             /* Coral */
 }
 ```
 
@@ -50,12 +52,12 @@
 
 | Token               | OKLCH                        | Hex Aprox.   | Uso                           |
 |---------------------|------------------------------|--------------|-------------------------------|
-| `--background`      | `oklch(0.12 0.01 260)`       | `#1a1625`    | Fundo da aplicação            |
+| `--background`      | `oklch(0.11 0.006 260)`      | `#0d0e12`    | Fundo ônix ardósia profundo   |
 | `--foreground`      | `oklch(0.98 0 0)`            | `#fafafa`    | Texto principal               |
-| `--primary`         | `oklch(0.7 0.15 200)`        | `#4da6ff`    | CTAs, links, destaques        |
-| `--accent`          | `oklch(0.75 0.12 170)`       | `#5eead4`    | Elementos secundários         |
-| `--destructive`     | `oklch(0.6 0.2 25)`          | `#f87171`    | Erros, despesas               |
-| `--muted-foreground`| `oklch(0.65 0 0)`            | `#999999`    | Texto auxiliar                |
+| `--primary`         | `oklch(0.76 0.17 142)`       | `#7bc816`    | CTAs, links, lima fintech     |
+| `--accent`          | `oklch(0.75 0.12 185)`       | `#38bdf8`    | Teal / Ciano sutil            |
+| `--destructive`     | `oklch(0.68 0.22 25)`        | `#fb7185`    | Despesas e alertas            |
+| `--muted-foreground`| `oklch(0.68 0.01 260)`       | `#a1a1aa`    | Texto auxiliar WCAG AA        |
 
 ### 1.3 Cores de Categorias (Transações)
 

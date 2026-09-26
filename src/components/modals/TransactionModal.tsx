@@ -210,19 +210,19 @@ export function TransactionModal({
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
               {/* Valor em destaque */}
-              <div className="bg-white/5 p-3.5 sm:p-4 rounded-2xl border border-white/5 text-center">
-                <label className="block text-xs font-medium text-neutral-400 mb-1">
+              <div className="bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/5 text-center">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Valor da Movimentação
                 </label>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-xl sm:text-2xl font-bold text-neutral-400">R$</span>
+                  <span className="text-xl sm:text-2xl font-bold text-muted-foreground">R$</span>
                   <input
                     type="text"
                     autoFocus
                     value={amountStr}
                     onChange={(e) => setAmountStr(e.target.value)}
                     placeholder="0,00"
-                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display"
+                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display font-tabular"
                   />
                 </div>
               </div>
@@ -237,7 +237,7 @@ export function TransactionModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descrição da movimentação"
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -247,7 +247,7 @@ export function TransactionModal({
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
                     <div>
                       <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                        <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                        <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta de Origem
                       </label>
                       <select
@@ -261,7 +261,7 @@ export function TransactionModal({
                             if (nextOther) setToAccountId(nextOther.id)
                           }
                         }}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
                       >
                         {accounts.map((acc) => (
                           <option key={acc.id} value={acc.id}>
@@ -278,23 +278,23 @@ export function TransactionModal({
                         data-testid="swap-accounts-btn"
                         title="Inverter contas de origem e destino"
                         aria-label="Inverter contas de origem e destino"
-                        className="w-9 h-9 rounded-full glass-card-interactive border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white hover:border-blue-500/30 transition-all cursor-pointer active:scale-95 shadow-md"
+                        className="w-9 h-9 rounded-full glass-card-interactive border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white hover:border-primary/40 transition-all cursor-pointer active:scale-95 shadow-md"
                       >
-                        <ArrowLeftRight className="w-4 h-4 hidden sm:block text-blue-400" />
-                        <ArrowLeftRight className="w-4 h-4 sm:hidden text-blue-400 rotate-90" />
+                        <ArrowLeftRight className="w-4 h-4 hidden sm:block text-primary" />
+                        <ArrowLeftRight className="w-4 h-4 sm:hidden text-primary rotate-90" />
                       </button>
                     </div>
 
                     <div>
                       <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                        <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                        <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta de Destino
                       </label>
                       <select
                         data-testid="to-account-select"
                         value={toAccountId}
                         onChange={(e) => setToAccountId(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
                       >
                         {accounts.map((acc) => (
                           <option key={acc.id} value={acc.id} disabled={acc.id === fromAccountId}>
@@ -309,13 +309,13 @@ export function TransactionModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-neutral-400" />
+                      <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                       Categoria
                     </label>
                     <select
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
                     >
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -327,13 +327,13 @@ export function TransactionModal({
 
                   <div>
                     <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                       Conta
                     </label>
                     <select
                       value={accountId}
                       onChange={(e) => setAccountId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all [&>option]:bg-[#1a1625]"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
                     >
                       {accounts.map((acc) => (
                         <option key={acc.id} value={acc.id}>
@@ -348,14 +348,14 @@ export function TransactionModal({
               {/* Data */}
               <div>
                 <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                   Data da Operação
                 </label>
                 <input
                   type="date"
                   value={occurredAt}
                   onChange={(e) => setOccurredAt(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -365,10 +365,10 @@ export function TransactionModal({
                   type="submit"
                   data-testid="transaction-submit-btn"
                   disabled={loading}
-                  className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                  className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
-                    <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="inline-block w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   ) : (
                     <span>Confirmar Movimentação</span>
                   )}

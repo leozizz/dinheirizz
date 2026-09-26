@@ -53,6 +53,16 @@ body {
   overflow-x: hidden;
 }
 
+.font-display {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
 /* === GLASSMORPHISM DESIGN SYSTEM CLASSES (EQUILÍBRIO iOS & OneUI) === */
 .glass-card {
   background: var(--card);

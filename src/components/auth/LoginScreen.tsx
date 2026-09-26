@@ -126,29 +126,29 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="relative min-h-dvh flex items-center justify-center p-4 sm:p-6 py-8 sm:py-12 overflow-y-auto bg-[#0d0d12]">
+    <div className="relative min-h-dvh flex items-center justify-center p-4 sm:p-6 py-8 sm:py-12 overflow-y-auto bg-background text-foreground">
       <Toaster richColors theme="dark" position="top-right" />
       {/* Dynamic Background Glows */}
-      <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary opacity-30 pointer-events-none" />
-      <div className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full gradient-orb-accent opacity-25 pointer-events-none" />
+      <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary opacity-40 pointer-events-none" />
+      <div className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full gradient-orb-accent opacity-35 pointer-events-none" />
 
       {/* Main Glassmorphism Card */}
-      <div className="relative z-10 w-full max-w-md glass-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl animate-fade-in my-auto">
+      <div className="relative z-10 w-full max-w-md glass-card p-6 sm:p-8 md:p-9 border border-white/10 shadow-2xl backdrop-blur-xl animate-fade-in my-auto">
         {/* Header Branding */}
         <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#3b82f6]/20 to-[#10b981]/20 border border-white/10 mb-3 sm:mb-4 shadow-inner">
-            <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-[#5eead4]" />
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 border border-primary/25 mb-3 sm:mb-4 shadow-inner">
+            <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-1.5 sm:mb-2 font-display">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-1.5 sm:mb-2 font-display">
             Dinheirizz
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400">
-            Controle financeiro inteligente, fluido e refinado.
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Controle financeiro com máxima fluidez e presença.
           </p>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex bg-white/5 p-1 rounded-xl mb-6 border border-white/5">
+        <div className="flex bg-white/5 p-1 rounded-2xl mb-6 border border-white/10">
           <button
             type="button"
             data-testid="tab-login"
@@ -156,10 +156,10 @@ export function LoginScreen() {
               setMode('login')
               setErrorMessage(null)
             }}
-            className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
+            className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
               mode === 'login'
                 ? 'bg-white/15 text-white shadow-sm font-semibold'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-muted-foreground hover:text-white'
             }`}
           >
             Entrar
@@ -171,10 +171,10 @@ export function LoginScreen() {
               setMode('signup')
               setErrorMessage(null)
             }}
-            className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
+            className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
               mode === 'signup'
                 ? 'bg-white/15 text-white shadow-sm font-semibold'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-muted-foreground hover:text-white'
             }`}
           >
             Criar conta
@@ -183,8 +183,8 @@ export function LoginScreen() {
 
         {/* Error Alert */}
         {errorMessage && (
-          <div className="mb-6 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3 text-red-300 text-sm animate-fade-in">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400 mt-0.5" />
+          <div className="mb-6 p-3.5 rounded-xl bg-destructive/15 border border-destructive/30 flex items-start gap-3 text-rose-300 text-sm animate-fade-in">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -199,14 +199,14 @@ export function LoginScreen() {
                   Nome Completo
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Seu nome completo"
-                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -220,13 +220,13 @@ export function LoginScreen() {
                   <span className="text-[10px] text-neutral-500">Opcional</span>
                 </div>
                 <div className="relative">
-                  <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                  <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
                     placeholder="seu_usuario"
-                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all lowercase"
+                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all lowercase"
                   />
                 </div>
               </div>
@@ -239,14 +239,14 @@ export function LoginScreen() {
               E-mail
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
               />
             </div>
           </div>
@@ -257,19 +257,19 @@ export function LoginScreen() {
               Senha
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
               />
             </div>
             {mode === 'signup' && (
-              <p className="text-[11px] text-neutral-400 mt-1 ml-1 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-400 inline" />
+              <p className="text-[11px] text-muted-foreground mt-1 ml-1 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary inline" />
                 Mínimo 8 caracteres, contendo letras e números
               </p>
             )}
@@ -282,26 +282,26 @@ export function LoginScreen() {
                 Confirmar Senha
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repita sua senha"
-                  className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/50 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
               {/* Feedback dinâmico de match */}
               {passwordMatch && (
-                <div className="flex items-center gap-1.5 mt-1.5 ml-1 text-emerald-400 text-xs animate-fade-in">
+                <div className="flex items-center gap-1.5 mt-1.5 ml-1 text-primary text-xs animate-fade-in font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>As senhas coincidem</span>
                 </div>
               )}
               {passwordMismatch && (
-                <div className="flex items-center gap-1.5 mt-1.5 ml-1 text-red-400 text-xs animate-fade-in">
+                <div className="flex items-center gap-1.5 mt-1.5 ml-1 text-rose-400 text-xs animate-fade-in font-medium">
                   <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>As senhas não coincidem</span>
                 </div>
@@ -313,10 +313,10 @@ export function LoginScreen() {
             type="submit"
             data-testid="auth-submit-btn"
             disabled={loading}
-            className="w-full mt-3 min-h-[44px] h-11 sm:h-12 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+            className="w-full mt-3 min-h-[48px] h-11 sm:h-12 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
-              <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="inline-block w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : (
               <>
                 <span>{mode === 'login' ? 'Entrar' : 'Cadastrar'}</span>
@@ -331,7 +331,7 @@ export function LoginScreen() {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10" />
           </div>
-          <span className="relative px-3 bg-[#13111c] text-xs text-neutral-500 rounded-full">
+          <span className="relative px-3 bg-neutral-900 text-xs text-neutral-500 rounded-full">
             ou continue com
           </span>
         </div>

@@ -281,7 +281,7 @@ export function ProfileModal({
 
           {/* Header & Avatar Info */}
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl avatar-gradient flex items-center justify-center font-bold text-lg sm:text-xl text-white border border-white/20 shadow-lg shadow-blue-500/20 flex-shrink-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-lg sm:text-xl text-primary shadow-lg shadow-primary/10 flex-shrink-0 font-display">
               {initials}
             </div>
 
@@ -290,27 +290,27 @@ export function ProfileModal({
                 <h2 id="profile-modal-title" className="text-lg sm:text-xl font-bold font-display tracking-tight text-white truncate">
                   {fullName || 'Meu Perfil'}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-semibold border border-teal-500/30 flex items-center gap-1 flex-shrink-0">
-                  <ShieldCheck className="w-3 h-3 text-teal-400" />
+                <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-semibold border border-primary/30 flex items-center gap-1 flex-shrink-0">
+                  <ShieldCheck className="w-3 h-3 text-primary" />
                   Verificado
                 </span>
                 {aiSettings?.role === 'admin' ? (
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold border border-indigo-500/30 flex items-center gap-1 flex-shrink-0">
-                    <Sparkles className="w-3 h-3 text-indigo-400" />
+                  <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-semibold border border-accent/30 flex items-center gap-1 flex-shrink-0">
+                    <Sparkles className="w-3 h-3 text-accent" />
                     Admin
                   </span>
                 ) : aiSettings?.role === 'pro' ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
-                    <Sparkles className="w-3 h-3 text-emerald-400" />
+                  <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-semibold border border-primary/30 flex items-center gap-1 flex-shrink-0">
+                    <Sparkles className="w-3 h-3 text-primary" />
                     Plano PRO
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 text-[10px] font-semibold border border-white/15 flex items-center gap-1 flex-shrink-0">
+                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-muted-foreground text-[10px] font-semibold border border-white/15 flex items-center gap-1 flex-shrink-0">
                     Plano Free
                   </span>
                 )}
               </div>
-              <p className="text-xs text-neutral-400 truncate mt-0.5">
+              <p className="text-xs text-muted-foreground truncate mt-0.5 font-mono">
                 {username ? `@${username}` : 'Defina seu @username'}
               </p>
             </div>
@@ -321,9 +321,9 @@ export function ProfileModal({
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs flex items-center gap-2"
+              className="mb-4 p-3 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs flex items-center gap-2"
             >
-              <Check className="w-4 h-4 text-teal-400 flex-shrink-0" />
+              <Check className="w-4 h-4 text-primary flex-shrink-0" />
               <span>{successMessage}</span>
             </motion.div>
           )}
@@ -332,7 +332,7 @@ export function ProfileModal({
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2"
+              className="mb-4 p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-rose-300 text-xs flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
               <span>{errorMessage}</span>
@@ -344,7 +344,7 @@ export function ProfileModal({
             {/* E-mail (Somente leitura) */}
             <div>
               <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-neutral-400" />
+                <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                 E-mail da Conta
               </label>
               <div className="relative">
@@ -352,7 +352,7 @@ export function ProfileModal({
                   type="email"
                   value={displayEmail}
                   disabled
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-neutral-400 text-xs sm:text-sm cursor-not-allowed select-none"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-muted-foreground text-xs sm:text-sm cursor-not-allowed select-none"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-500 font-mono uppercase bg-white/5 px-2 py-0.5 rounded border border-white/10">
                   {displayProvider}
@@ -364,7 +364,7 @@ export function ProfileModal({
             {/* Nome Completo */}
             <div>
               <label htmlFor="profile-fullname" className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-neutral-400" />
+                <User className="w-3.5 h-3.5 text-muted-foreground" />
                 Nome Completo
               </label>
               <input
@@ -374,14 +374,14 @@ export function ProfileModal({
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Seu Nome Completo"
                 maxLength={100}
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-neutral-500 text-xs sm:text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-neutral-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
               />
             </div>
 
             {/* Nome de Usuário / Handle */}
             <div>
               <label htmlFor="profile-username" className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
-                <AtSign className="w-3.5 h-3.5 text-neutral-400" />
+                <AtSign className="w-3.5 h-3.5 text-muted-foreground" />
                 Nome de Usuário (@handle)
               </label>
               <div className="relative">
@@ -395,7 +395,7 @@ export function ProfileModal({
                   onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                   placeholder="seu_username"
                   maxLength={20}
-                  className="w-full min-h-[44px] pl-8 pr-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-neutral-500 text-xs sm:text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all font-mono"
+                  className="w-full min-h-[44px] pl-8 pr-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-neutral-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all font-mono"
                 />
               </div>
               <p className="text-[11px] text-neutral-500 mt-1">
@@ -408,10 +408,10 @@ export function ProfileModal({
               <button
                 type="submit"
                 disabled={updateProfileMutation.isPending}
-                className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-500 hover:to-teal-400 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-blue-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-primary/20 cursor-pointer active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {updateProfileMutation.isPending ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                 ) : (
                   <>
                     <Save className="w-4 h-4" />

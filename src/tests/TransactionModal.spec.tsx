@@ -212,5 +212,117 @@ describe('TransactionModal (TDD)', () => {
     expect(originSelect.value).toBe('acc-2')
     expect(destSelect.value).toBe('acc-1')
   })
+
+  it('deve permitir alternar para status Pendente e submeter com data de vencimento', async () => {
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="expense"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    const descInput = screen.getByPlaceholderText('Descrição da movimentação')
+    fireEvent.change(amountInput, { target: { value: '89,90' } })
+    fireEvent.change(descInput, { target: { value: 'Conta de Energia' } })
+
+    const pendingBtn = screen.getByTestId('status-pending-btn')
+    fireEvent.click(pendingBtn)
+
+    const dueDateInput = screen.getByTestId('due-date-input')
+    fireEvent.change(dueDateInput, { target: { value: '2026-10-15' } })
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 89.9,
+          description: 'Conta de Energia',
+          status: 'pending',
+          dueDate: '2026-10-15'
+        })
+      )
+    })
+  })
+
+  it('deve permitir ativar parcelamento, exibir prévia das parcelas e submeter', async () => {
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="expense"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(amountInput, { target: { value: '600,00' } })
+
+    const installmentToggle = screen.getByTestId('installment-toggle')
+    fireEvent.click(installmentToggle)
+
+    const installmentSelect = screen.getByTestId('installment-select')
+    fireEvent.change(installmentSelect, { target: { value: '6' } })
+
+    expect(screen.getByText(/6x de R\$ 100,00/i)).toBeInTheDocument()
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 600,
+          installmentTotal: 6
+        })
+      )
+    })
+  })
+
+  it('deve permitir configurar transação recorrente fixa', async () => {
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="expense"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(amountInput, { target: { value: '49,90' } })
+
+    const recurringToggle = screen.getByTestId('recurring-toggle')
+    fireEvent.click(recurringToggle)
+
+    const periodSelect = screen.getByTestId('recurrence-period-select')
+    fireEvent.change(periodSelect, { target: { value: 'monthly' } })
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 49.9,
+          isRecurring: true,
+          recurrencePeriod: 'monthly'
+        })
+      )
+    })
+  })
 })
 

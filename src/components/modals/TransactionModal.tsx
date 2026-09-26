@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Calendar, Tag, CreditCard, AlertCircle } from 'lucide-react'
-import { parseCurrencyToNumber } from '../../lib/formatters'
+import {
+  X,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ArrowLeftRight,
+  Calendar,
+  Tag,
+  CreditCard,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Layers,
+  Repeat
+} from 'lucide-react'
+import { parseCurrencyToNumber, formatBRL } from '../../lib/formatters'
 
 export type TransactionMode = 'income' | 'expense' | 'transfer'
 
@@ -32,6 +45,11 @@ interface TransactionModalProps {
     fromAccountId?: string
     toAccountId?: string
     occurredAt: string
+    dueDate?: string
+    status?: 'completed' | 'pending'
+    isRecurring?: boolean
+    recurrencePeriod?: string
+    installmentTotal?: number
     type: TransactionMode
   }) => Promise<void> | void
 }
@@ -60,6 +78,12 @@ export function TransactionModal({
   const [fromAccountId, setFromAccountId] = useState('')
   const [toAccountId, setToAccountId] = useState('')
   const [occurredAt, setOccurredAt] = useState(() => getTodayLocalDate())
+  const [status, setStatus] = useState<'completed' | 'pending'>('completed')
+  const [dueDate, setDueDate] = useState(() => getTodayLocalDate())
+  const [isInstallment, setIsInstallment] = useState(false)
+  const [installmentTotal, setInstallmentTotal] = useState(2)
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurrencePeriod, setRecurrencePeriod] = useState('monthly')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -70,6 +94,12 @@ export function TransactionModal({
       setDescription('')
       setError(null)
       setOccurredAt(getTodayLocalDate())
+      setStatus('completed')
+      setDueDate(getTodayLocalDate())
+      setIsInstallment(false)
+      setInstallmentTotal(2)
+      setIsRecurring(false)
+      setRecurrencePeriod('monthly')
 
       const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
       setCategoryId(filteredCats[0]?.id || '')
@@ -111,6 +141,8 @@ export function TransactionModal({
 
   const CurrentIcon = icons[mode]
 
+  const numAmount = parseCurrencyToNumber(amountStr)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -142,6 +174,11 @@ export function TransactionModal({
         fromAccountId: mode === 'transfer' ? fromAccountId : undefined,
         toAccountId: mode === 'transfer' ? toAccountId : undefined,
         occurredAt,
+        dueDate: (status === 'pending' || isInstallment || isRecurring) ? (dueDate || occurredAt) : undefined,
+        status: mode === 'transfer' ? 'completed' : status,
+        isRecurring: mode !== 'transfer' ? isRecurring : false,
+        recurrencePeriod: mode !== 'transfer' && isRecurring ? recurrencePeriod : undefined,
+        installmentTotal: mode !== 'transfer' && isInstallment ? installmentTotal : undefined,
         type: mode
       })
       onClose()
@@ -345,19 +382,166 @@ export function TransactionModal({
                 </div>
               )}
 
-              {/* Data */}
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                  Data da Operação
-                </label>
-                <input
-                  type="date"
-                  value={occurredAt}
-                  onChange={(e) => setOccurredAt(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
-                />
+              {/* Status da Transação (Paga vs Pendente) */}
+              {mode !== 'transfer' && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-neutral-300 ml-1">
+                    Situação da Movimentação
+                  </label>
+                  <div className="flex p-1 bg-white/5 border border-white/10 rounded-xl gap-1">
+                    <button
+                      type="button"
+                      data-testid="status-completed-btn"
+                      onClick={() => setStatus('completed')}
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        status === 'completed'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{mode === 'income' ? 'Recebido' : 'Pago / Liquidado'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="status-pending-btn"
+                      onClick={() => setStatus('pending')}
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        status === 'pending'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{mode === 'income' ? 'A Receber' : 'Pendente (A pagar)'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Data da Operação e Vencimento */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                    Data da Operação
+                  </label>
+                  <input
+                    type="date"
+                    value={occurredAt}
+                    onChange={(e) => setOccurredAt(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                {status === 'pending' && mode !== 'transfer' && (
+                  <div>
+                    <label className="block text-xs font-medium text-amber-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                      Data de Vencimento
+                    </label>
+                    <input
+                      type="date"
+                      data-testid="due-date-input"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-transparent transition-all"
+                    />
+                  </div>
+                )}
               </div>
+
+              {/* Opções Avançadas: Parcelamento e Recorrência */}
+              {mode !== 'transfer' && (
+                <div className="pt-2 border-t border-white/10 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="installment-toggle"
+                      onClick={() => {
+                        const next = !isInstallment
+                        setIsInstallment(next)
+                        if (next) setIsRecurring(false)
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                        isInstallment
+                          ? 'bg-primary/20 text-primary border-primary/40 shadow-sm'
+                          : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Parcelar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      data-testid="recurring-toggle"
+                      onClick={() => {
+                        const next = !isRecurring
+                        setIsRecurring(next)
+                        if (next) setIsInstallment(false)
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                        isRecurring
+                          ? 'bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-sm'
+                          : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      <Repeat className="w-3.5 h-3.5" />
+                      <span>Recorrente</span>
+                    </button>
+                  </div>
+
+                  {isInstallment && (
+                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5 animate-fade-in">
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-xs font-medium text-neutral-300">
+                          Número de Parcelas
+                        </label>
+                        <select
+                          data-testid="installment-select"
+                          value={installmentTotal}
+                          onChange={(e) => setInstallmentTotal(Number(e.target.value))}
+                          className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                        >
+                          {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36, 48, 60, 72].map((n) => (
+                            <option key={n} value={n}>
+                              {n}x
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {numAmount > 0 && (
+                        <div className="text-xs text-primary font-medium flex items-center justify-between pt-1.5 border-t border-white/5">
+                          <span className="text-neutral-400">Prévia da Parcela:</span>
+                          <span className="font-semibold tabular-nums">
+                            {installmentTotal}x de {formatBRL(numAmount / installmentTotal)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {isRecurring && (
+                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3 animate-fade-in">
+                      <label className="text-xs font-medium text-neutral-300">
+                        Frequência de Repetição
+                      </label>
+                      <select
+                        data-testid="recurrence-period-select"
+                        value={recurrencePeriod}
+                        onChange={(e) => setRecurrencePeriod(e.target.value)}
+                        className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                      >
+                        <option value="monthly">Mensal</option>
+                        <option value="weekly">Semanal</option>
+                        <option value="yearly">Anual</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Botão de Enviar com espaçamento respirável */}
               <div className="pt-3 pb-1">

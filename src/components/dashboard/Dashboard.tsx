@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
 import { AnimatedNumber } from '../ui/AnimatedNumber'
 import { QuickActions, ActionType } from './QuickActions'
@@ -5,7 +6,17 @@ import { AccountsBar } from './AccountsBar'
 import { AiInsightsCard } from './AiInsightsCard'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, Clock } from 'lucide-react'
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
+  Check,
+  Layers,
+  Repeat
+} from 'lucide-react'
 
 export interface TransactionItem {
   id: string
@@ -21,6 +32,14 @@ export interface TransactionItem {
   type?: string
   accountId?: string | null
   account_id?: string | null
+  dueDate?: string | null
+  paidAt?: string | null
+  status?: 'completed' | 'pending' | 'cancelled'
+  isRecurring?: boolean
+  recurrencePeriod?: string | null
+  installmentCurrent?: number | null
+  installmentTotal?: number | null
+  parentTransactionId?: string | null
 }
 
 export interface DashboardProps {
@@ -43,6 +62,30 @@ export interface DashboardProps {
   isAiLoading?: boolean
   isAiGenerating?: boolean
   onGenerateAiInsight?: () => void
+  // Issue #29: Gestão de Vencimentos, Status e Baixa Rápida
+  statusFilter?: 'all' | 'completed' | 'pending'
+  onStatusFilterChange?: (status: 'all' | 'completed' | 'pending') => void
+  onPayTransaction?: (transactionId: string) => void | Promise<void>
+}
+
+function getDueStatus(dueDateStr?: string | null) {
+  if (!dueDateStr) return null
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const due = new Date(dueDateStr)
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime()
+  const diffDays = Math.round((dueDay - today) / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) {
+    return { label: 'Atrasado', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' }
+  }
+  if (diffDays === 0) {
+    return { label: 'Vence Hoje', color: 'bg-amber-500/15 text-amber-300 border-amber-500/30' }
+  }
+  if (diffDays === 1) {
+    return { label: 'Vence amanhã', color: 'bg-blue-500/10 text-blue-300 border-blue-500/20' }
+  }
+  return { label: `Vence em ${diffDays}d`, color: 'bg-white/5 text-neutral-300 border-white/10' }
 }
 
 export function Dashboard({
@@ -60,11 +103,22 @@ export function Dashboard({
   isLoadingMore = false,
   onLoadMore,
   totalCount,
+  statusFilter,
+  onStatusFilterChange,
+  onPayTransaction,
   insight = null,
   isAiLoading = false,
   isAiGenerating = false,
   onGenerateAiInsight
 }: DashboardProps) {
+  const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending'>('all')
+  const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
+
+  const handleStatusChange = (newStatus: 'all' | 'completed' | 'pending') => {
+    setInternalStatusFilter(newStatus)
+    onStatusFilterChange?.(newStatus)
+  }
+
   const selectedAccount = selectedAccountId
     ? accounts.find((a) => a.id === selectedAccountId)
     : null
@@ -78,10 +132,22 @@ export function Dashboard({
     ? `Saldo da conta ${selectedAccount.name}`
     : 'Saldo total disponível'
 
-  const filteredTransactions = (selectedAccountId
-    ? transactions.filter((t) => (t.accountId || t.account_id) === selectedAccountId)
-    : transactions
-  ).slice().sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+  const filteredTransactions = transactions
+    .filter((t) => {
+      if (selectedAccountId && (t.accountId || t.account_id) !== selectedAccountId) {
+        return false
+      }
+      const isCompleted = t.status === 'completed' || (t.status === undefined && t.paid === true)
+      if (activeStatusFilter === 'completed') {
+        return isCompleted
+      }
+      if (activeStatusFilter === 'pending') {
+        return !isCompleted
+      }
+      return true
+    })
+    .slice()
+    .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
 
   let displayIncome = totalIncome
   let displayExpense = totalExpense
@@ -211,18 +277,58 @@ export function Dashboard({
 
       {/* Extrato Recente */}
       <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-neutral-400" />
             <h3 className="text-sm font-semibold text-white">
               Últimas Movimentações
             </h3>
+            <span className="text-xs text-neutral-400">
+              {totalCount && totalCount > filteredTransactions.length
+                ? `${filteredTransactions.length} de ${totalCount} registros`
+                : `${filteredTransactions.length} registros`}
+            </span>
           </div>
-          <span className="text-xs text-neutral-400">
-            {totalCount && totalCount > filteredTransactions.length
-              ? `${filteredTransactions.length} de ${totalCount} registros`
-              : `${filteredTransactions.length} registros`}
-          </span>
+
+          {/* Abas de Filtro por Status */}
+          <div className="flex p-0.5 bg-white/5 border border-white/10 rounded-xl self-start sm:self-auto">
+            <button
+              type="button"
+              data-testid="filter-all-btn"
+              onClick={() => handleStatusChange('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                activeStatusFilter === 'all'
+                  ? 'bg-white/15 text-white shadow-sm font-semibold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Todas
+            </button>
+            <button
+              type="button"
+              data-testid="filter-completed-btn"
+              onClick={() => handleStatusChange('completed')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                activeStatusFilter === 'completed'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm font-semibold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Concluídas
+            </button>
+            <button
+              type="button"
+              data-testid="filter-pending-btn"
+              onClick={() => handleStatusChange('pending')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                activeStatusFilter === 'pending'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm font-semibold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Pendentes
+            </button>
+          </div>
         </div>
 
         {filteredTransactions.length === 0 ? (
@@ -233,6 +339,9 @@ export function Dashboard({
           <div className="divide-y divide-white/5">
             {filteredTransactions.map((t) => {
               const isIncome = t.amount > 0
+              const isPending = !t.paid || t.status === 'pending'
+              const dueStatus = isPending ? getDueStatus(t.dueDate) : null
+
               return (
                 <div
                   key={t.id}
@@ -272,11 +381,31 @@ export function Dashboard({
                             {t.category.name}
                           </span>
                         )}
+                        {/* Badges semânticas contextuais */}
+                        {dueStatus && (
+                          <span
+                            className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md font-semibold border ${dueStatus.color}`}
+                          >
+                            {dueStatus.label}
+                          </span>
+                        )}
+                        {t.installmentTotal && (
+                          <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md font-medium bg-primary/10 border border-primary/20 text-primary flex items-center gap-1">
+                            <Layers className="w-2.5 h-2.5" />
+                            <span>{t.installmentCurrent || 1}/{t.installmentTotal}</span>
+                          </span>
+                        )}
+                        {t.isRecurring && (
+                          <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md font-medium bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-center gap-1">
+                            <Repeat className="w-2.5 h-2.5" />
+                            <span className="hidden xs:inline">Recorrente</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0 pl-2">
+                  <div className="text-right flex-shrink-0 pl-2 flex flex-col items-end">
                     <span
                       className={`text-xs sm:text-base font-semibold tabular-nums block ${
                         isIncome ? 'text-emerald-400' : 'text-rose-400'
@@ -286,8 +415,20 @@ export function Dashboard({
                       {formatBRL(t.amount)}
                     </span>
                     <span className="block text-[10px] sm:text-[11px] text-neutral-500">
-                      {t.paid ? 'Concluído' : 'Pendente'}
+                      {isPending ? 'Pendente' : 'Concluído'}
                     </span>
+                    {onPayTransaction && isPending && (
+                      <button
+                        type="button"
+                        data-testid={`pay-tx-btn-${t.id}`}
+                        onClick={() => onPayTransaction(t.id)}
+                        className="mt-1.5 min-h-[28px] px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer active:scale-95 shadow-sm"
+                        title="Marcar como liquidada / dar baixa"
+                      >
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Dar Baixa</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )

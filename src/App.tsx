@@ -13,7 +13,7 @@ import { ProfileModal } from './components/modals/ProfileModal'
 import { DangerZoneModal } from './components/modals/DangerZoneModal'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
-import { useTransactions, useCreateTransaction } from './hooks/useTransactions'
+import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
 import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
 import { useTransferTransaction } from './hooks/useTransfer'
 import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
@@ -151,6 +151,7 @@ function MainApp() {
 
   const { categories: apiCategories } = useCategories()
   const createTxMutation = useCreateTransaction()
+  const payTxMutation = usePayTransaction()
 
   const {
     insight: apiInsight,
@@ -195,6 +196,11 @@ function MainApp() {
     fromAccountId?: string
     toAccountId?: string
     occurredAt: string
+    dueDate?: string
+    status?: 'completed' | 'pending'
+    isRecurring?: boolean
+    recurrencePeriod?: string
+    installmentTotal?: number
     type: TransactionMode
   }) => {
     if (user) {
@@ -217,12 +223,18 @@ function MainApp() {
             categoryId: data.categoryId,
             accountId: data.accountId,
             occurredAt: data.occurredAt,
+            dueDate: data.dueDate,
+            status: data.status,
+            paid: data.status === 'completed',
+            isRecurring: data.isRecurring,
+            recurrencePeriod: data.recurrencePeriod as any,
+            installmentTotal: data.installmentTotal,
             type: data.type
           })
           const successMsg =
-            data.type === 'income'
-              ? 'Receita registrada com sucesso!'
-              : 'Despesa registrada com sucesso!'
+            data.status === 'pending'
+              ? (data.type === 'income' ? 'Receita a receber registrada!' : 'Conta a pagar registrada!')
+              : (data.type === 'income' ? 'Receita registrada com sucesso!' : 'Despesa registrada com sucesso!')
           toast.success(successMsg)
         }
         setIsTxModalOpen(false)
@@ -252,6 +264,7 @@ function MainApp() {
           description: `Transferência enviada para ${toAcc?.name || 'conta'}`,
           amount: -data.amount,
           paid: true,
+          status: 'completed',
           occurred_at: data.occurredAt || new Date().toISOString(),
           category: { name: 'Transferência', color: '#3b82f6', icon: 'arrow-left-right' },
           type: 'transfer',
@@ -263,6 +276,7 @@ function MainApp() {
           description: `Transferência recebida de ${fromAcc?.name || 'conta'}`,
           amount: data.amount,
           paid: true,
+          status: 'completed',
           occurred_at: data.occurredAt || new Date().toISOString(),
           category: { name: 'Transferência', color: '#3b82f6', icon: 'arrow-left-right' },
           type: 'transfer',
@@ -276,6 +290,7 @@ function MainApp() {
       }
 
       const isExpense = data.type === 'expense'
+      const isPending = data.status === 'pending'
       const finalAmount = isExpense ? -Math.abs(data.amount) : Math.abs(data.amount)
       const cat = activeCategories.find((c) => c.id === data.categoryId)
 
@@ -283,15 +298,22 @@ function MainApp() {
         id: `tx-${Date.now()}`,
         description: data.description || (data.type === 'income' ? 'Nova Receita' : 'Nova Despesa'),
         amount: finalAmount,
-        paid: true,
+        paid: !isPending,
+        status: isPending ? 'pending' : 'completed',
+        dueDate: data.dueDate || null,
+        isRecurring: data.isRecurring || false,
+        recurrencePeriod: data.recurrencePeriod || null,
+        installmentTotal: data.installmentTotal || null,
+        installmentCurrent: data.installmentTotal ? 1 : null,
         occurred_at: data.occurredAt || new Date().toISOString(),
         category: cat ? { name: cat.name, color: isExpense ? '#f43f5e' : '#10b981' } : null,
         type: data.type,
         accountId: data.accountId
       }
 
+      // Somente afeta o saldo bancário se a transação estiver liquidada/paga
       const targetAccId = data.accountId || demoAccounts[0]?.id
-      if (targetAccId) {
+      if (targetAccId && !isPending) {
         setDemoAccounts((prev) =>
           prev.map((acc) =>
             acc.id === targetAccId
@@ -363,6 +385,44 @@ function MainApp() {
     } else {
       setDemoPixKeys((prev) => prev.filter((k) => k.id !== id))
       toast.success('Chave Pix removida (modo demonstração)!')
+    }
+  }
+
+  const handlePayTransaction = async (txId: string) => {
+    if (user) {
+      try {
+        await payTxMutation.mutateAsync({ transactionId: txId })
+        toast.success('Transação baixada com sucesso!')
+      } catch (err: any) {
+        toast.error(err?.message || 'Erro ao dar baixa na transação')
+      }
+    } else {
+      setDemoTransactions((prev) =>
+        prev.map((t) => {
+          if (t.id === txId) {
+            if (!t.paid) {
+              const targetAccId = t.accountId || demoAccounts[0]?.id
+              if (targetAccId) {
+                setDemoAccounts((accs) =>
+                  accs.map((a) =>
+                    a.id === targetAccId
+                      ? { ...a, balance: a.balance + t.amount }
+                      : a
+                  )
+                )
+              }
+            }
+            return {
+              ...t,
+              paid: true,
+              status: 'completed',
+              paidAt: new Date().toISOString()
+            }
+          }
+          return t
+        })
+      )
+      toast.success('Transação liquidada (modo demonstração)!')
     }
   }
 
@@ -536,6 +596,7 @@ function MainApp() {
           isAiLoading={Boolean(user && isAiLoading)}
           isAiGenerating={isAiGenerating}
           onGenerateAiInsight={user ? () => generateInsights() : undefined}
+          onPayTransaction={handlePayTransaction}
         />
       </main>
 

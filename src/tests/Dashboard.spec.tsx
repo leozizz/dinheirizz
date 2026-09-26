@@ -215,5 +215,154 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.queryByRole('button', { name: /carregar mais movimentações/i })).not.toBeInTheDocument()
     expect(screen.getByText(/você visualizou todas as 2 movimentações/i)).toBeInTheDocument()
   })
+
+  it('deve renderizar abas de status (Todas, Concluídas, Pendentes) e filtrar a listagem', () => {
+    const mixedTransactions = [
+      {
+        id: 'tx-completed-1',
+        description: 'Salário Recebido',
+        amount: 5000,
+        paid: true,
+        status: 'completed' as const,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'income'
+      },
+      {
+        id: 'tx-pending-1',
+        description: 'Fatura de Luz a Pagar',
+        amount: -180,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-09-26T00:00:00Z',
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    const handleFilterChange = vi.fn()
+
+    render(
+      <Dashboard
+        totalBalance={4820}
+        totalIncome={5000}
+        totalExpense={180}
+        transactions={mixedTransactions}
+        onActionClick={vi.fn()}
+        onStatusFilterChange={handleFilterChange}
+      />
+    )
+
+    // Inicialmente no modo "Todas": ambas transações visíveis
+    expect(screen.getByText('Salário Recebido')).toBeInTheDocument()
+    expect(screen.getByText('Fatura de Luz a Pagar')).toBeInTheDocument()
+
+    // Clica na aba Pendentes
+    const pendingTab = screen.getByTestId('filter-pending-btn')
+    fireEvent.click(pendingTab)
+    expect(handleFilterChange).toHaveBeenCalledWith('pending')
+    expect(screen.queryByText('Salário Recebido')).not.toBeInTheDocument()
+    expect(screen.getByText('Fatura de Luz a Pagar')).toBeInTheDocument()
+
+    // Clica na aba Concluídas
+    const completedTab = screen.getByTestId('filter-completed-btn')
+    fireEvent.click(completedTab)
+    expect(handleFilterChange).toHaveBeenCalledWith('completed')
+    expect(screen.getByText('Salário Recebido')).toBeInTheDocument()
+    expect(screen.queryByText('Fatura de Luz a Pagar')).not.toBeInTheDocument()
+
+    // Clica na aba Todas
+    const allTab = screen.getByTestId('filter-all-btn')
+    fireEvent.click(allTab)
+    expect(handleFilterChange).toHaveBeenCalledWith('all')
+    expect(screen.getByText('Salário Recebido')).toBeInTheDocument()
+    expect(screen.getByText('Fatura de Luz a Pagar')).toBeInTheDocument()
+  })
+
+  it('deve exibir badges contextuais de vencimento, parcelamento e recorrência', () => {
+    const todayStr = new Date().toISOString().split('T')[0]
+    const transactions = [
+      {
+        id: 'tx-due-today',
+        description: 'Aluguel Vencendo',
+        amount: -1200,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: `${todayStr}T12:00:00Z`,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      },
+      {
+        id: 'tx-overdue',
+        description: 'Boleto Atrasado',
+        amount: -80,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-09-10T00:00:00Z',
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      },
+      {
+        id: 'tx-installment',
+        description: 'Notebook Gamer',
+        amount: -450,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-10-15T00:00:00Z',
+        installmentCurrent: 3,
+        installmentTotal: 10,
+        isRecurring: false,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={1000}
+        totalIncome={1000}
+        totalExpense={1730}
+        transactions={transactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Vence Hoje')).toBeInTheDocument()
+    expect(screen.getByText('Atrasado')).toBeInTheDocument()
+    expect(screen.getByText('3/10')).toBeInTheDocument()
+  })
+
+  it('deve exibir botão de baixa rápida para transação pendente e acionar onPayTransaction ao clicar', () => {
+    const transactions = [
+      {
+        id: 'tx-pending-pay',
+        description: 'Conta de Água',
+        amount: -95,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-09-26T00:00:00Z',
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    const handlePay = vi.fn()
+
+    render(
+      <Dashboard
+        totalBalance={500}
+        totalIncome={500}
+        totalExpense={95}
+        transactions={transactions}
+        onActionClick={vi.fn()}
+        onPayTransaction={handlePay}
+      />
+    )
+
+    const payBtn = screen.getByTestId('pay-tx-btn-tx-pending-pay')
+    expect(payBtn).toBeInTheDocument()
+    fireEvent.click(payBtn)
+
+    expect(handlePay).toHaveBeenCalledWith('tx-pending-pay')
+  })
 })
 

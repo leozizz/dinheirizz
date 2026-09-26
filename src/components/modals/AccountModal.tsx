@@ -162,7 +162,7 @@ export function AccountModal({
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Ex: Nubank Principal, Itaú Reserva"
-                  className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                  className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -175,7 +175,7 @@ export function AccountModal({
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
                   >
                     <option value="checking" className="bg-neutral-900">Conta Corrente</option>
                     <option value="savings" className="bg-neutral-900">Poupança / Reserva</option>
@@ -194,7 +194,7 @@ export function AccountModal({
                     value={bank}
                     onChange={(e) => handleBankChange(e.target.value)}
                     placeholder="Ex: Nubank, Inter, Itaú"
-                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                   />
                   {detectedBank.slug !== 'generic' && (
                     <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-neutral-300">
@@ -209,18 +209,18 @@ export function AccountModal({
               </div>
 
               {/* Saldo Inicial */}
-              <div className="bg-white/5 p-3.5 sm:p-4 rounded-2xl border border-white/5 text-center">
-                <label className="block text-xs font-medium text-neutral-400 mb-1">
+              <div className="bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/5 text-center">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Saldo Inicial (R$)
                 </label>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-xl sm:text-2xl font-bold text-neutral-400">R$</span>
+                  <span className="text-xl sm:text-2xl font-bold text-muted-foreground">R$</span>
                   <input
                     type="text"
                     value={balanceStr}
                     onChange={(e) => setBalanceStr(e.target.value)}
                     placeholder="0,00"
-                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display"
+                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display font-tabular"
                   />
                 </div>
               </div>
@@ -239,7 +239,7 @@ export function AccountModal({
                       style={{ backgroundColor: c.value }}
                       title={c.label}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        color === c.value ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+                        color === c.value ? 'ring-2 ring-white scale-110 shadow-lg' : 'opacity-70 hover:opacity-100'
                       }`}
                     >
                       {color === c.value && <Check className="w-4 h-4 text-white" />}
@@ -260,7 +260,7 @@ export function AccountModal({
                 <button
                   type="submit"
                   disabled={submitting || isLoading}
-                  className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium transition-all shadow-lg shadow-blue-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-primary/20 active:scale-98 disabled:opacity-50 cursor-pointer"
                 >
                   {submitting || isLoading ? 'Salvando...' : 'Salvar Conta'}
                 </button>

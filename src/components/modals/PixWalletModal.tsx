@@ -146,14 +146,14 @@ export function PixWalletModal({
             {/* Header */}
             <div className="flex items-center justify-between mb-4 sm:mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-inner flex-shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-inner flex-shrink-0">
                   <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-white font-display">
                     Carteira Pix
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-neutral-400">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">
                     Selecione uma chave para receber pagamentos
                   </p>
                 </div>
@@ -163,21 +163,21 @@ export function PixWalletModal({
                 type="button"
                 data-testid="close-pix-modal-btn"
                 onClick={onClose}
-                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Navegação por Abas */}
-            <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/10 rounded-xl mb-4">
+            <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl mb-4">
               <button
                 type="button"
                 onClick={() => setActiveTab('my_keys')}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex-1 min-h-[40px] py-2 rounded-xl text-xs font-medium transition-colors ${
                   activeTab === 'my_keys'
-                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-primary/20 text-primary border border-primary/30 font-semibold shadow-sm'
+                    : 'text-muted-foreground hover:text-white'
                 }`}
               >
                 Minhas Chaves
@@ -185,10 +185,10 @@ export function PixWalletModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('new_key')}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                className={`flex-1 min-h-[40px] py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
                   activeTab === 'new_key'
-                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-primary/20 text-primary border border-primary/30 font-semibold shadow-sm'
+                    : 'text-muted-foreground hover:text-white'
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -198,13 +198,13 @@ export function PixWalletModal({
 
             {activeTab === 'my_keys' ? (
               pixKeys.length === 0 ? (
-                <div className="py-8 text-center text-neutral-400 text-sm">
+                <div className="py-8 text-center text-muted-foreground text-sm">
                   Nenhuma chave Pix cadastrada no momento.
                   <div className="mt-3">
                     <button
                       type="button"
                       onClick={() => setActiveTab('new_key')}
-                      className="px-3.5 py-2 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-semibold hover:bg-teal-500/30"
+                      className="px-4 py-2.5 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-semibold hover:bg-primary/30 transition-colors"
                     >
                       Cadastrar Primeira Chave
                     </button>
@@ -215,7 +215,7 @@ export function PixWalletModal({
                   {/* Seletor de Chave */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5 ml-1">
-                      <label className="block text-xs font-medium text-neutral-400">
+                      <label className="block text-xs font-medium text-muted-foreground">
                         Chave Ativa
                       </label>
                       {selectedKey && onDeletePixKey && (
@@ -237,7 +237,7 @@ export function PixWalletModal({
                         setSelectedKeyId(e.target.value)
                         setCopied(false)
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all [&>option]:bg-[#1a1625]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
                     >
                       {pixKeys.map((key) => (
                         <option key={key.id} value={key.id}>
@@ -248,8 +248,8 @@ export function PixWalletModal({
                   </div>
 
                   {/* QR Code Container */}
-                  <div className="flex flex-col items-center justify-center p-4 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner">
-                    <div className="p-3 sm:p-3.5 rounded-2xl bg-white shadow-xl mb-3">
+                  <div className="flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner">
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white shadow-xl mb-3">
                       <svg
                         className="w-32 h-32 sm:w-36 sm:h-36"
                         viewBox="0 0 100 100"
@@ -299,8 +299,8 @@ export function PixWalletModal({
                       </svg>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-                      <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                       <span>Pagamento instantâneo protegido</span>
                     </div>
                   </div>
@@ -308,10 +308,10 @@ export function PixWalletModal({
                   {/* Exibição da Chave e Botão Copiar */}
                   <div className="p-3 sm:p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2.5 sm:gap-3">
                     <div className="overflow-hidden min-w-0 flex-1">
-                      <span className="text-[10px] uppercase font-semibold tracking-wider text-teal-400 block mb-0.5">
+                      <span className="text-[10px] uppercase font-semibold tracking-wider text-primary block mb-0.5">
                         {selectedKey && formatKeyType(selectedKey.key_type)}
                       </span>
-                      <p data-testid="active-pix-key-value" className="text-xs sm:text-sm font-medium text-white truncate">
+                      <p data-testid="active-pix-key-value" className="text-xs sm:text-sm font-medium text-white truncate font-mono">
                         {selectedKey?.key_value}
                       </p>
                     </div>
@@ -321,7 +321,7 @@ export function PixWalletModal({
                       onClick={handleCopy}
                       className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 min-h-[40px] active:scale-95 ${
                         copied
-                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                           : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
                       }`}
                     >
@@ -344,12 +344,12 @@ export function PixWalletModal({
               /* Aba: Nova Chave */
               <form onSubmit={handleCreateKey} className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <KeyRound className="w-4 h-4 text-teal-400" />
+                  <KeyRound className="w-4 h-4 text-primary" />
                   <h4 className="text-sm font-semibold text-white">Cadastrar Nova Chave</h4>
                 </div>
 
                 {formError && (
-                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs">
+                  <div className="p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-rose-300 text-xs">
                     {formError}
                   </div>
                 )}
@@ -361,7 +361,7 @@ export function PixWalletModal({
                   <select
                     value={newKeyType}
                     onChange={(e) => setNewKeyType(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 [&>option]:bg-[#1a1625]"
+                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent [&>option]:bg-neutral-900"
                   >
                     <option value="cpf">CPF</option>
                     <option value="cnpj">CNPJ</option>
@@ -380,7 +380,7 @@ export function PixWalletModal({
                     value={newKeyValue}
                     onChange={(e) => setNewKeyValue(e.target.value)}
                     placeholder="Digite sua chave Pix (ex: email, CPF...)"
-                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 placeholder-neutral-500"
+                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder-neutral-500 font-mono"
                   />
                 </div>
 
@@ -394,7 +394,7 @@ export function PixWalletModal({
                       value={newBankName}
                       onChange={(e) => setNewBankName(e.target.value)}
                       placeholder="Ex: Nubank, Inter"
-                      className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 placeholder-neutral-500"
+                      className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder-neutral-500"
                     />
                   </div>
                   <div>
@@ -406,7 +406,7 @@ export function PixWalletModal({
                       value={newLabel}
                       onChange={(e) => setNewLabel(e.target.value)}
                       placeholder="Ex: Principal"
-                      className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 placeholder-neutral-500"
+                      className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder-neutral-500"
                     />
                   </div>
                 </div>
@@ -422,7 +422,7 @@ export function PixWalletModal({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-medium transition-all shadow-lg shadow-teal-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
+                    className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-primary/20 active:scale-98 disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? 'Salvando...' : 'Salvar Chave'}
                   </button>

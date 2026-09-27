@@ -583,7 +583,12 @@ function MainApp() {
           totalExpense={activeExpense}
           transactions={activeTransactions}
           onActionClick={handleActionClick}
-          isLoading={Boolean(user && (isTxLoading || isAccountsLoading))}
+          isLoading={Boolean(
+            user &&
+            apiAccounts.length === 0 &&
+            apiTransactions.length === 0 &&
+            (isAccountsLoading || isTxLoading)
+          )}
           accounts={activeAccounts}
           selectedAccountId={selectedAccountId}
           onSelectAccount={setSelectedAccountId}

@@ -4,6 +4,7 @@ import { AnimatedNumber } from '../ui/AnimatedNumber'
 import { QuickActions, ActionType } from './QuickActions'
 import { AccountsBar } from './AccountsBar'
 import { AiInsightsCard } from './AiInsightsCard'
+import { CategoryDonutChart } from './CategoryDonutChart'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 import {
@@ -15,7 +16,11 @@ import {
   Clock,
   Check,
   Layers,
-  Repeat
+  Repeat,
+  CreditCard,
+  ArrowLeftRight,
+  AlertCircle,
+  Sparkles
 } from 'lucide-react'
 
 export interface TransactionItem {
@@ -160,6 +165,41 @@ export function Dashboard({
       else displayExpense += Math.abs(t.amount)
     }
   }
+
+  // Cálculo de receitas e despesas pendentes para Saldo Previsto e Visão Geral
+  let pendingIncome = 0
+  let pendingExpense = 0
+  let pendingIncomeCount = 0
+  let pendingExpenseCount = 0
+
+  for (const t of transactions) {
+    if (selectedAccountId && (t.accountId || t.account_id) !== selectedAccountId) {
+      continue
+    }
+    const isPending = !t.paid || t.status === 'pending'
+    if (isPending) {
+      if (t.amount > 0 || t.type === 'income') {
+        pendingIncome += Math.abs(t.amount)
+        pendingIncomeCount++
+      } else {
+        pendingExpense += Math.abs(t.amount)
+        pendingExpenseCount++
+      }
+    }
+  }
+
+  const projectedBalance = displayBalance + pendingIncome - pendingExpense
+
+  // Resumo de contas de crédito e transferências
+  const creditAccounts = accounts.filter((a) => a.type === 'credit')
+  const creditCardTotal = creditAccounts.reduce((sum, a) => sum + Math.abs(Number(a.balance) || 0), 0)
+
+  const transferTransactions = transactions.filter(
+    (t) => t.type === 'transfer' || (t.category?.name && t.category.name.toLowerCase().includes('transfer'))
+  )
+  const transferTotal = transferTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const transferCount = transferTransactions.length
+
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
@@ -217,6 +257,26 @@ export function Dashboard({
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white font-display break-words">
             <AnimatedNumber value={displayBalance} formatter={formatBRL} />
           </h2>
+
+          {/* Saldo Previsto (com impacto das pendências do mês) */}
+          <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.05] border border-white/10 text-xs">
+              <span className="text-neutral-400 font-medium">Saldo Previsto:</span>
+              <span
+                data-testid="projected-balance-value"
+                className="font-bold text-white tabular-nums font-display"
+              >
+                <AnimatedNumber value={projectedBalance} formatter={formatBRL} />
+              </span>
+            </div>
+            {projectedBalance !== displayBalance && (
+              <span className="text-[11px] text-neutral-400 font-medium">
+                {projectedBalance >= displayBalance
+                  ? `(+${formatBRL(projectedBalance - displayBalance)} com pendências)`
+                  : `(-${formatBRL(displayBalance - projectedBalance)} a liquidar)`}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
@@ -230,6 +290,11 @@ export function Dashboard({
               <span className="text-xs sm:text-base font-semibold text-primary block truncate tabular-nums">
                 <AnimatedNumber value={displayIncome} formatter={formatBRL} />
               </span>
+              {pendingIncome > 0 && (
+                <span className="text-[10px] text-primary/80 block truncate font-medium">
+                  +{formatBRL(pendingIncome)} a receber
+                </span>
+              )}
             </div>
           </div>
 
@@ -242,10 +307,109 @@ export function Dashboard({
               <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
                 <AnimatedNumber value={displayExpense} formatter={formatBRL} />
               </span>
+              {pendingExpense > 0 && (
+                <span className="text-[10px] text-rose-400/80 block truncate font-medium">
+                  {formatBRL(pendingExpense)} a pagar
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Bloco de Visão Geral (Compromissos, Cartões e Balanços) */}
+      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">Visão Geral</h3>
+              <p className="text-[11px] text-neutral-400">Compromissos e movimentações do período</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          {/* A Pagar (Despesas Pendentes) */}
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] text-neutral-400 font-medium">A Pagar</span>
+              <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <AlertCircle className="w-3 h-3" />
+              </span>
+            </div>
+            <div>
+              <span className="text-sm sm:text-base font-bold text-rose-400 block tabular-nums">
+                <AnimatedNumber value={pendingExpense} formatter={formatBRL} />
+              </span>
+              <span className="text-[10px] text-neutral-500 block truncate">
+                {pendingExpenseCount} conta{pendingExpenseCount !== 1 ? 's' : ''} a vencer
+              </span>
+            </div>
+          </div>
+
+          {/* A Receber (Receitas Pendentes) */}
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] text-neutral-400 font-medium">A Receber</span>
+              <span className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                <ArrowDownLeft className="w-3 h-3" />
+              </span>
+            </div>
+            <div>
+              <span className="text-sm sm:text-base font-bold text-primary block tabular-nums">
+                <AnimatedNumber value={pendingIncome} formatter={formatBRL} />
+              </span>
+              <span className="text-[10px] text-neutral-500 block truncate">
+                {pendingIncomeCount} entrada{pendingIncomeCount !== 1 ? 's' : ''} prevista{pendingIncomeCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Cartão de Crédito */}
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] text-neutral-400 font-medium">Cartão de Crédito</span>
+              <span className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <CreditCard className="w-3 h-3" />
+              </span>
+            </div>
+            <div>
+              <span className="text-sm sm:text-base font-bold text-neutral-200 block tabular-nums">
+                <AnimatedNumber value={creditCardTotal} formatter={formatBRL} />
+              </span>
+              <span className="text-[10px] text-neutral-500 block truncate">
+                {creditAccounts.length > 0
+                  ? `${creditAccounts.length} cartão(ões) vinculado(s)`
+                  : 'Sem faturas em aberto'}
+              </span>
+            </div>
+          </div>
+
+          {/* Balanço de Transferências */}
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] text-neutral-400 font-medium">Transferências</span>
+              <span className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <ArrowLeftRight className="w-3 h-3" />
+              </span>
+            </div>
+            <div>
+              <span className="text-sm sm:text-base font-bold text-blue-300 block tabular-nums">
+                <AnimatedNumber value={transferTotal} formatter={formatBRL} />
+              </span>
+              <span className="text-[10px] text-neutral-500 block truncate">
+                {transferCount} movimentação{transferCount !== 1 ? 'ões' : ''}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Distribuição por Categoria (Gráfico em Aro / Donut - Pierre & Minhas Finanças benchmark) */}
+      <CategoryDonutChart transactions={filteredTransactions} />
 
       {/* Barra de Contas */}
       {accounts.length > 0 && onSelectAccount && onNewAccount && (

@@ -29,11 +29,11 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
 
     expect(screen.getByText(/modo de demonstração/i)).toBeInTheDocument()
     expect(screen.getByText(/saldo total/i)).toBeInTheDocument()
-    expect(screen.getByText(/R\$ 14\.850,20/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /receita/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /despesa/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /transferir/i })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /pix/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText(/R\$ 14\.850,20/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByTestId('quick-action-income')).toBeInTheDocument()
+    expect(screen.getByTestId('quick-action-expense')).toBeInTheDocument()
+    expect(screen.getByTestId('quick-action-transfer')).toBeInTheDocument()
+    expect(screen.getByTestId('quick-action-pix')).toBeInTheDocument()
   })
 
   it('deve abrir modal de Nova Conta e permitir cadastrar nova conta no modo demo', async () => {
@@ -76,10 +76,10 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     const demoBtn = screen.getByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
-    expect(screen.getByText(/R\$ 14\.850,20/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/R\$ 14\.850,20/i).length).toBeGreaterThanOrEqual(1)
 
     // Abre modal de despesa
-    const despesaBtn = screen.getByRole('button', { name: /despesa/i })
+    const despesaBtn = screen.getByTestId('quick-action-expense')
     fireEvent.click(despesaBtn)
 
     const amountInput = screen.getByPlaceholderText('0,00')
@@ -89,7 +89,7 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     fireEvent.click(submitBtn)
 
     // O saldo anterior era 14.850,20 - 850,20 = 14.000,00
-    expect(await screen.findByText(/R\$ 14\.000,00/i)).toBeInTheDocument()
+    expect((await screen.findAllByText(/R\$ 14\.000,00/i)).length).toBeGreaterThanOrEqual(1)
   })
 })
 

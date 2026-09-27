@@ -37,7 +37,7 @@ describe('Dashboard & QuickActions (TDD)', () => {
     )
 
     expect(screen.getByText('Saldo total disponível')).toBeInTheDocument()
-    expect(screen.getByText('R$ 12.450,75')).toBeInTheDocument()
+    expect(screen.getAllByText('R$ 12.450,75').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Receitas do Mês')).toBeInTheDocument()
     expect(screen.getByText('Despesas do Mês')).toBeInTheDocument()
   })
@@ -82,8 +82,8 @@ describe('Dashboard & QuickActions (TDD)', () => {
 
     expect(screen.getByText('Salário Mensal')).toBeInTheDocument()
     expect(screen.getByText('Supermercado Mensal')).toBeInTheDocument()
-    expect(screen.getByText('Renda')).toBeInTheDocument()
-    expect(screen.getByText('Alimentação')).toBeInTheDocument()
+    expect(screen.getAllByText('Renda').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Alimentação').length).toBeGreaterThanOrEqual(1)
   })
 
   it('deve exibir AccountsBar e filtrar transações quando uma conta é selecionada', () => {
@@ -364,5 +364,79 @@ describe('Dashboard & QuickActions (TDD)', () => {
 
     expect(handlePay).toHaveBeenCalledWith('tx-pending-pay')
   })
+
+  it('deve calcular e exibir o Saldo Previsto considerando receitas e despesas pendentes no card principal', () => {
+    // Saldo atual = 5000. Despesa pendente = 800. Receita pendente = 300.
+    // Saldo Previsto = 5000 + 300 - 800 = 4500.
+    const transactions = [
+      {
+        id: 'tx-p-exp',
+        description: 'Boleto Faculdade',
+        amount: -800,
+        paid: false,
+        status: 'pending' as const,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      },
+      {
+        id: 'tx-p-inc',
+        description: 'Venda de Item',
+        amount: 300,
+        paid: false,
+        status: 'pending' as const,
+        occurred_at: '2026-09-02T10:00:00Z',
+        type: 'income'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={5000}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={transactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/saldo previsto/i)).toBeInTheDocument()
+    expect(screen.getByTestId('projected-balance-value')).toHaveTextContent('R$ 4.500,00')
+  })
+
+  it('deve renderizar o bloco de Visão Geral com pendências e resumo de cartões de crédito', () => {
+    const mockAccounts = [
+      { id: 'acc-chk', name: 'Conta Corrente', balance: 4000, type: 'checking' as const },
+      { id: 'acc-crd', name: 'Cartão Black', balance: -1250, type: 'credit' as const }
+    ]
+
+    const transactions = [
+      {
+        id: 'tx-p1',
+        description: 'Condomínio',
+        amount: -600,
+        paid: false,
+        status: 'pending' as const,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={2750}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={transactions}
+        accounts={mockAccounts}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Visão Geral')).toBeInTheDocument()
+    expect(screen.getByText('A Pagar')).toBeInTheDocument()
+    expect(screen.getByText('Cartão de Crédito')).toBeInTheDocument()
+    expect(screen.getByText('R$ 1.250,00')).toBeInTheDocument()
+  })
 })
+
 

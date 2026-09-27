@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import type { TransactionItem } from '../components/dashboard/Dashboard'
@@ -70,6 +70,7 @@ export function useTransactions(options?: UseTransactionsOptions) {
     queryKey: getTransactionsQueryKey(options),
     enabled: Boolean(token),
     initialPageParam: 1,
+    placeholderData: keepPreviousData,
     queryFn: async ({ pageParam = 1 }): Promise<PaginatedTransactionsResponse> => {
       const origin = getApiOrigin()
       const headers: Record<string, string> = {}
@@ -150,19 +151,26 @@ export function useTransactions(options?: UseTransactionsOptions) {
     }
   }
 
-  // Cálculo consolidado de receitas, despesas e saldo disponível
+  // Cálculo consolidado de receitas, despesas, pendências e saldo projetado
   let totalIncome = 0
   let totalExpense = 0
+  let pendingIncome = 0
+  let pendingExpense = 0
 
   for (const t of transactions) {
+    const isPending = !t.paid || t.status === 'pending'
     if (t.amount > 0) {
       totalIncome += t.amount
+      if (isPending) pendingIncome += t.amount
     } else {
-      totalExpense += Math.abs(t.amount)
+      const absAmount = Math.abs(t.amount)
+      totalExpense += absAmount
+      if (isPending) pendingExpense += absAmount
     }
   }
 
   const totalBalance = totalIncome - totalExpense
+  const projectedBalance = totalBalance + pendingIncome - pendingExpense
 
   return {
     transactions,
@@ -175,6 +183,9 @@ export function useTransactions(options?: UseTransactionsOptions) {
     totalBalance,
     totalIncome,
     totalExpense,
+    pendingIncome,
+    pendingExpense,
+    projectedBalance,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

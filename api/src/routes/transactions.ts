@@ -210,8 +210,9 @@ transactionsRouter.get('/', async (c) => {
       totalPages,
       hasMore
     })
-  } catch (error) {
-    return c.json({ error: 'Falha ao buscar transações' }, 500)
+  } catch (error: any) {
+    console.error('Erro ao buscar transações no banco:', error)
+    return c.json({ error: 'Falha ao buscar transações', details: error?.message }, 500)
   }
 })
 

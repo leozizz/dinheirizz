@@ -29,6 +29,13 @@
       "when": 1790433000000,
       "tag": "0003_byok_and_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790529925490,
+      "tag": "0004_overrated_veda",
+      "breakpoints": true
     }
   ]
 }

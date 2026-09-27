@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useTransactions, useCreateTransaction, useDeleteTransaction } from '../hooks/useTransactions'
+import { useTransactions, useCreateTransaction, useDeleteTransaction, usePayTransaction } from '../hooks/useTransactions'
 import { useCategories } from '../hooks/useCategories'
 import { AuthProvider } from '../contexts/AuthContext'
 
@@ -73,6 +73,19 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
           } as Response
         }
 
+        if (init?.method === 'PATCH' && urlStr.includes('/pay')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              id: 'tx-pending-1',
+              status: 'completed',
+              paid: true,
+              paidAt: new Date().toISOString()
+            })
+          } as Response
+        }
+
         if (init?.method === 'DELETE') {
           return {
             ok: true,
@@ -84,6 +97,36 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
         // GET /api/v1/transactions
         const urlObj = new URL(urlStr, 'http://localhost:3000')
         const page = parseInt(urlObj.searchParams.get('page') || '1', 10)
+        const statusParam = urlObj.searchParams.get('status')
+
+        if (statusParam === 'pending') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: [
+                {
+                  id: 'tx-pending-1',
+                  amount: '-350.00',
+                  description: 'Fatura de Internet',
+                  occurredAt: '2026-09-26T00:00:00Z',
+                  dueDate: '2026-10-05T00:00:00Z',
+                  paid: false,
+                  status: 'pending',
+                  isRecurring: true,
+                  recurrencePeriod: 'monthly',
+                  installmentCurrent: null,
+                  installmentTotal: null
+                }
+              ],
+              total: 1,
+              page: 1,
+              limit: 20,
+              totalPages: 1,
+              hasMore: false
+            })
+          } as Response
+        }
 
         if (page === 2) {
           return {
@@ -267,5 +310,47 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
     })
 
     expect(result.current.hasMore).toBe(false)
+  })
+
+  it('deve filtrar transações por status e mapear campos de vencimento e recorrência', async () => {
+    const { result } = renderHook(() => useTransactions({ status: 'pending' }), {
+      wrapper: createWrapper()
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(result.current.transactions).toHaveLength(1)
+    const tx = result.current.transactions[0]
+    expect(tx.status).toBe('pending')
+    expect(tx.paid).toBe(false)
+    expect(tx.dueDate).toBe('2026-10-05T00:00:00Z')
+    expect(tx.isRecurring).toBe(true)
+
+    // Verifica que a URL da requisição continha status=pending
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('status=pending'),
+      expect.any(Object)
+    )
+  })
+
+  it('deve disparar mutação para dar baixa em transação pendente via usePayTransaction', async () => {
+    const { result } = renderHook(() => usePayTransaction(), {
+      wrapper: createWrapper()
+    })
+
+    const response = await result.current.mutateAsync({
+      transactionId: 'tx-pending-1'
+    })
+
+    expect(response.paid).toBe(true)
+    expect(response.status).toBe('completed')
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/transactions/tx-pending-1/pay'),
+      expect.objectContaining({
+        method: 'PATCH'
+      })
+    )
   })
 })

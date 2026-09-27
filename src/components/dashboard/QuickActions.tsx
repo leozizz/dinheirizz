@@ -54,6 +54,7 @@ export function QuickActions({ onAction }: QuickActionsProps) {
           <button
             key={action.id}
             type="button"
+            data-testid={`quick-action-${action.id}`}
             onClick={() => onAction(action.id)}
             className={`glass-card-interactive p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-white/10 bg-gradient-to-b min-h-[80px] sm:min-h-[96px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
           >

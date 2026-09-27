@@ -37,7 +37,7 @@ describe('Dashboard & QuickActions (TDD)', () => {
     )
 
     expect(screen.getByText('Saldo total disponível')).toBeInTheDocument()
-    expect(screen.getByText('R$ 12.450,75')).toBeInTheDocument()
+    expect(screen.getAllByText('R$ 12.450,75').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Receitas do Mês')).toBeInTheDocument()
     expect(screen.getByText('Despesas do Mês')).toBeInTheDocument()
   })
@@ -82,8 +82,8 @@ describe('Dashboard & QuickActions (TDD)', () => {
 
     expect(screen.getByText('Salário Mensal')).toBeInTheDocument()
     expect(screen.getByText('Supermercado Mensal')).toBeInTheDocument()
-    expect(screen.getByText('Renda')).toBeInTheDocument()
-    expect(screen.getByText('Alimentação')).toBeInTheDocument()
+    expect(screen.getAllByText('Renda').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Alimentação').length).toBeGreaterThanOrEqual(1)
   })
 
   it('deve exibir AccountsBar e filtrar transações quando uma conta é selecionada', () => {
@@ -215,5 +215,228 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.queryByRole('button', { name: /carregar mais movimentações/i })).not.toBeInTheDocument()
     expect(screen.getByText(/você visualizou todas as 2 movimentações/i)).toBeInTheDocument()
   })
+
+  it('deve renderizar abas de status (Todas, Concluídas, Pendentes) e filtrar a listagem', () => {
+    const mixedTransactions = [
+      {
+        id: 'tx-completed-1',
+        description: 'Salário Recebido',
+        amount: 5000,
+        paid: true,
+        status: 'completed' as const,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'income'
+      },
+      {
+        id: 'tx-pending-1',
+        description: 'Fatura de Luz a Pagar',
+        amount: -180,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-09-26T00:00:00Z',
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    const handleFilterChange = vi.fn()
+
+    render(
+      <Dashboard
+        totalBalance={4820}
+        totalIncome={5000}
+        totalExpense={180}
+        transactions={mixedTransactions}
+        onActionClick={vi.fn()}
+        onStatusFilterChange={handleFilterChange}
+      />
+    )
+
+    // Inicialmente no modo "Todas": ambas transações visíveis
+    expect(screen.getByText('Salário Recebido')).toBeInTheDocument()
+    expect(screen.getByText('Fatura de Luz a Pagar')).toBeInTheDocument()
+
+    // Clica na aba Pendentes
+    const pendingTab = screen.getByTestId('filter-pending-btn')
+    fireEvent.click(pendingTab)
+    expect(handleFilterChange).toHaveBeenCalledWith('pending')
+    expect(screen.queryByText('Salário Recebido')).not.toBeInTheDocument()
+    expect(screen.getByText('Fatura de Luz a Pagar')).toBeInTheDocument()
+
+    // Clica na aba Concluídas
+    const completedTab = screen.getByTestId('filter-completed-btn')
+    fireEvent.click(completedTab)
+    expect(handleFilterChange).toHaveBeenCalledWith('completed')
+    expect(screen.getByText('Salário Recebido')).toBeInTheDocument()
+    expect(screen.queryByText('Fatura de Luz a Pagar')).not.toBeInTheDocument()
+
+    // Clica na aba Todas
+    const allTab = screen.getByTestId('filter-all-btn')
+    fireEvent.click(allTab)
+    expect(handleFilterChange).toHaveBeenCalledWith('all')
+    expect(screen.getByText('Salário Recebido')).toBeInTheDocument()
+    expect(screen.getByText('Fatura de Luz a Pagar')).toBeInTheDocument()
+  })
+
+  it('deve exibir badges contextuais de vencimento, parcelamento e recorrência', () => {
+    const todayStr = new Date().toISOString().split('T')[0]
+    const transactions = [
+      {
+        id: 'tx-due-today',
+        description: 'Aluguel Vencendo',
+        amount: -1200,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: `${todayStr}T12:00:00Z`,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      },
+      {
+        id: 'tx-overdue',
+        description: 'Boleto Atrasado',
+        amount: -80,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-09-10T00:00:00Z',
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      },
+      {
+        id: 'tx-installment',
+        description: 'Notebook Gamer',
+        amount: -450,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-10-15T00:00:00Z',
+        installmentCurrent: 3,
+        installmentTotal: 10,
+        isRecurring: false,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={1000}
+        totalIncome={1000}
+        totalExpense={1730}
+        transactions={transactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Vence Hoje')).toBeInTheDocument()
+    expect(screen.getByText('Atrasado')).toBeInTheDocument()
+    expect(screen.getByText('3/10')).toBeInTheDocument()
+  })
+
+  it('deve exibir botão de baixa rápida para transação pendente e acionar onPayTransaction ao clicar', () => {
+    const transactions = [
+      {
+        id: 'tx-pending-pay',
+        description: 'Conta de Água',
+        amount: -95,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: '2026-09-26T00:00:00Z',
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    const handlePay = vi.fn()
+
+    render(
+      <Dashboard
+        totalBalance={500}
+        totalIncome={500}
+        totalExpense={95}
+        transactions={transactions}
+        onActionClick={vi.fn()}
+        onPayTransaction={handlePay}
+      />
+    )
+
+    const payBtn = screen.getByTestId('pay-tx-btn-tx-pending-pay')
+    expect(payBtn).toBeInTheDocument()
+    fireEvent.click(payBtn)
+
+    expect(handlePay).toHaveBeenCalledWith('tx-pending-pay')
+  })
+
+  it('deve calcular e exibir o Saldo Previsto considerando receitas e despesas pendentes no card principal', () => {
+    // Saldo atual = 5000. Despesa pendente = 800. Receita pendente = 300.
+    // Saldo Previsto = 5000 + 300 - 800 = 4500.
+    const transactions = [
+      {
+        id: 'tx-p-exp',
+        description: 'Boleto Faculdade',
+        amount: -800,
+        paid: false,
+        status: 'pending' as const,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      },
+      {
+        id: 'tx-p-inc',
+        description: 'Venda de Item',
+        amount: 300,
+        paid: false,
+        status: 'pending' as const,
+        occurred_at: '2026-09-02T10:00:00Z',
+        type: 'income'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={5000}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={transactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/saldo previsto/i)).toBeInTheDocument()
+    expect(screen.getByTestId('projected-balance-value')).toHaveTextContent('R$ 4.500,00')
+  })
+
+  it('deve renderizar o bloco de Visão Geral com pendências e resumo de cartões de crédito', () => {
+    const mockAccounts = [
+      { id: 'acc-chk', name: 'Conta Corrente', balance: 4000, type: 'checking' as const },
+      { id: 'acc-crd', name: 'Cartão Black', balance: -1250, type: 'credit' as const }
+    ]
+
+    const transactions = [
+      {
+        id: 'tx-p1',
+        description: 'Condomínio',
+        amount: -600,
+        paid: false,
+        status: 'pending' as const,
+        occurred_at: '2026-09-01T10:00:00Z',
+        type: 'expense'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={2750}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={transactions}
+        accounts={mockAccounts}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Visão Geral')).toBeInTheDocument()
+    expect(screen.getByText('A Pagar')).toBeInTheDocument()
+    expect(screen.getByText('Cartão de Crédito')).toBeInTheDocument()
+    expect(screen.getByText('R$ 1.250,00')).toBeInTheDocument()
+  })
 })
+
 

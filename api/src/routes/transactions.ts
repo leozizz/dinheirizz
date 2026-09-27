@@ -15,7 +15,15 @@ export const createTransactionSchema = z.object({
   accountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   occurredAt: z.string().optional(),
-  paid: z.boolean().optional().default(true)
+  dueDate: z.string().optional().nullable(),
+  paidAt: z.string().optional().nullable(),
+  paid: z.boolean().optional(),
+  status: z.enum(['completed', 'pending', 'cancelled']).optional(),
+  isRecurring: z.boolean().optional(),
+  recurrencePeriod: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional().nullable(),
+  installmentCurrent: z.number().int().positive().optional().nullable(),
+  installmentTotal: z.number().int().positive().optional().nullable(),
+  parentTransactionId: z.string().optional().nullable()
 })
 
 export interface MockTransaction {
@@ -26,6 +34,14 @@ export interface MockTransaction {
   amount: string
   description: string | null
   paid: boolean
+  status?: string
+  dueDate?: string | null
+  paidAt?: string | null
+  isRecurring?: boolean
+  recurrencePeriod?: string | null
+  installmentCurrent?: number | null
+  installmentTotal?: number | null
+  parentTransactionId?: string | null
   type?: 'income' | 'expense' | 'transfer'
   occurredAt: string
   createdAt: string
@@ -63,8 +79,11 @@ transactionsRouter.get('/', async (c) => {
   const limit = isNaN(rawLimit) || rawLimit < 1 ? 20 : Math.min(rawLimit, 100)
 
   const accountId = c.req.query('accountId')
+  const status = c.req.query('status')
   const startDate = c.req.query('startDate')
   const endDate = c.req.query('endDate')
+  const dueDateStart = c.req.query('dueDateStart')
+  const dueDateEnd = c.req.query('dueDateEnd')
 
   if (!db) {
     let filtered = Array.from(mockTransactionsStore.values()).filter((t) => {
@@ -72,6 +91,9 @@ transactionsRouter.get('/', async (c) => {
         return false
       }
       if (accountId && t.accountId !== accountId) {
+        return false
+      }
+      if (status && t.status !== status) {
         return false
       }
       if (startDate) {
@@ -83,6 +105,18 @@ transactionsRouter.get('/', async (c) => {
       if (endDate) {
         const pEnd = new Date(endDate).getTime()
         if (!isNaN(pEnd) && new Date(t.occurredAt).getTime() > pEnd) {
+          return false
+        }
+      }
+      if (dueDateStart) {
+        const pStart = new Date(dueDateStart).getTime()
+        if (!isNaN(pStart) && (!t.dueDate || new Date(t.dueDate).getTime() < pStart)) {
+          return false
+        }
+      }
+      if (dueDateEnd) {
+        const pEnd = new Date(dueDateEnd).getTime()
+        if (!isNaN(pEnd) && (!t.dueDate || new Date(t.dueDate).getTime() > pEnd)) {
           return false
         }
       }
@@ -120,6 +154,9 @@ transactionsRouter.get('/', async (c) => {
     if (accountId) {
       conditions.push(eq(transactions.accountId, accountId))
     }
+    if (status) {
+      conditions.push(eq(transactions.status, status))
+    }
     if (startDate) {
       const pStart = new Date(startDate)
       if (!isNaN(pStart.getTime())) {
@@ -130,6 +167,18 @@ transactionsRouter.get('/', async (c) => {
       const pEnd = new Date(endDate)
       if (!isNaN(pEnd.getTime())) {
         conditions.push(lte(transactions.occurredAt, pEnd))
+      }
+    }
+    if (dueDateStart) {
+      const pStart = new Date(dueDateStart)
+      if (!isNaN(pStart.getTime())) {
+        conditions.push(gte(transactions.dueDate, pStart))
+      }
+    }
+    if (dueDateEnd) {
+      const pEnd = new Date(dueDateEnd)
+      if (!isNaN(pEnd.getTime())) {
+        conditions.push(lte(transactions.dueDate, pEnd))
       }
     }
 
@@ -161,8 +210,9 @@ transactionsRouter.get('/', async (c) => {
       totalPages,
       hasMore
     })
-  } catch (error) {
-    return c.json({ error: 'Falha ao buscar transações' }, 500)
+  } catch (error: any) {
+    console.error('Erro ao buscar transações no banco:', error)
+    return c.json({ error: 'Falha ao buscar transações', details: error?.message }, 500)
   }
 })
 
@@ -194,31 +244,74 @@ transactionsRouter.post('/', async (c) => {
     signedAmountNumber = Math.abs(data.amount)
   }
 
-  // Se type não foi enviado (ex: testes legados), preserva positivo para compatibilidade com assertions
-  const formattedAmount = data.type ? signedAmountNumber.toFixed(2) : data.amount.toFixed(2)
+  // Determina status e paid
+  const status = data.status || (data.paid === false ? 'pending' : 'completed')
+  const isPaid = status === 'completed'
+  const isRecurring = Boolean(data.isRecurring)
+  const recurrencePeriod = data.recurrencePeriod || (isRecurring ? 'monthly' : null)
+  const installmentTotal = data.installmentTotal || null
+
+  const installmentCount = installmentTotal && installmentTotal > 1 ? installmentTotal : 1
+  const installmentAmountNumber = signedAmountNumber / installmentCount
+  const formattedInstallmentAmount = data.type ? installmentAmountNumber.toFixed(2) : (data.amount / installmentCount).toFixed(2)
 
   if (!db) {
     // Retorno e persistência em memória quando db não está conectado (testes e modo offline)
-    const mockId = crypto.randomUUID()
-    const newTx: MockTransaction = {
-      id: mockId,
-      userId,
-      amount: formattedAmount,
-      description: data.description ?? null,
-      paid: data.paid,
-      type: data.type,
-      accountId: data.accountId || '00000000-0000-0000-0000-000000000000',
-      categoryId: data.categoryId ?? null,
-      occurredAt: data.occurredAt ?? new Date().toISOString(),
-      createdAt: new Date().toISOString()
+    const baseOccurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date()
+    const baseDueDate = data.dueDate ? new Date(data.dueDate) : (status === 'pending' ? baseOccurredAt : null)
+
+    const createdList: MockTransaction[] = []
+
+    for (let i = 1; i <= installmentCount; i++) {
+      const mockId = crypto.randomUUID()
+
+      // Incrementa meses para parcelas futuras
+      const itemOccurred = new Date(baseOccurredAt)
+      itemOccurred.setMonth(itemOccurred.getMonth() + (i - 1))
+
+      let itemDue: Date | null = null
+      if (baseDueDate) {
+        itemDue = new Date(baseDueDate)
+        itemDue.setMonth(itemDue.getMonth() + (i - 1))
+      }
+
+      const itemDesc = installmentCount > 1
+        ? `${data.description || 'Transação'} (${i}/${installmentCount})`
+        : (data.description ?? null)
+
+      const newTx: MockTransaction = {
+        id: mockId,
+        userId,
+        amount: formattedInstallmentAmount,
+        description: itemDesc,
+        paid: isPaid,
+        status,
+        dueDate: itemDue ? itemDue.toISOString() : null,
+        paidAt: isPaid ? new Date().toISOString() : null,
+        isRecurring,
+        recurrencePeriod,
+        installmentCurrent: installmentCount > 1 ? i : null,
+        installmentTotal: installmentCount > 1 ? installmentCount : null,
+        parentTransactionId: null,
+        type: data.type,
+        accountId: data.accountId || '00000000-0000-0000-0000-000000000000',
+        categoryId: data.categoryId ?? null,
+        occurredAt: itemOccurred.toISOString(),
+        createdAt: new Date().toISOString()
+      }
+
+      mockTransactionsStore.set(mockId, newTx)
+      createdList.push(newTx)
     }
-    if (data.accountId && mockAccountsStore.has(data.accountId)) {
+
+    // Apenas afeta o saldo bancário se a transação foi criada como 'completed'
+    if (isPaid && data.accountId && mockAccountsStore.has(data.accountId)) {
       const acc = mockAccountsStore.get(data.accountId)!
       const cur = Number(acc.balance) || 0
       acc.balance = (cur + signedAmountNumber).toFixed(2)
     }
-    mockTransactionsStore.set(mockId, newTx)
-    return c.json(newTx, 201)
+
+    return c.json(createdList[0], 201)
   }
 
   try {
@@ -275,26 +368,189 @@ transactionsRouter.post('/', async (c) => {
     // 3. Sanitização de categoria (garante UUID válido para Postgres)
     const validCategoryId = data.categoryId && UUID_REGEX.test(data.categoryId) ? data.categoryId : null
 
-    // 4. Inserção persistente da transação
-    const inserted = await db.insert(transactions).values({
-      userId,
-      accountId: targetAccountId,
-      categoryId: validCategoryId,
-      amount: formattedAmount,
-      description: data.description ?? null,
-      paid: data.paid,
-      occurredAt: data.occurredAt ? new Date(data.occurredAt) : new Date()
-    }).returning()
+    // 4. Inserção das transações (suporte a parcelas)
+    const baseOccurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date()
+    const baseDueDate = data.dueDate ? new Date(data.dueDate) : (status === 'pending' ? baseOccurredAt : null)
 
-    // 5. Atualização atômica do saldo da conta
-    await db
-      .update(accounts)
-      .set({ balance: sql`${accounts.balance} + ${formattedAmount}` })
-      .where(eq(accounts.id, targetAccountId))
+    const insertPayloads = []
+    for (let i = 1; i <= installmentCount; i++) {
+      const itemOccurred = new Date(baseOccurredAt)
+      itemOccurred.setMonth(itemOccurred.getMonth() + (i - 1))
+
+      let itemDue: Date | null = null
+      if (baseDueDate) {
+        itemDue = new Date(baseDueDate)
+        itemDue.setMonth(itemDue.getMonth() + (i - 1))
+      }
+
+      const itemDesc = installmentCount > 1
+        ? `${data.description || 'Transação'} (${i}/${installmentCount})`
+        : (data.description ?? null)
+
+      insertPayloads.push({
+        userId,
+        accountId: targetAccountId,
+        categoryId: validCategoryId,
+        amount: formattedInstallmentAmount,
+        description: itemDesc,
+        paid: isPaid,
+        status,
+        dueDate: itemDue,
+        paidAt: isPaid ? new Date() : null,
+        isRecurring,
+        recurrencePeriod,
+        installmentCurrent: installmentCount > 1 ? i : null,
+        installmentTotal: installmentCount > 1 ? installmentCount : null,
+        occurredAt: itemOccurred
+      })
+    }
+
+    const inserted = await db.insert(transactions).values(insertPayloads).returning()
+
+    // 5. Atualização atômica do saldo da conta APENAS se for concluída
+    if (isPaid) {
+      await db
+        .update(accounts)
+        .set({ balance: sql`${accounts.balance} + ${formattedInstallmentAmount}` })
+        .where(eq(accounts.id, targetAccountId))
+    }
 
     return c.json(inserted[0], 201)
   } catch (error: any) {
     return c.json({ error: 'Erro ao persistir transação', details: error?.message }, 500)
+  }
+})
+
+// PATCH /api/v1/transactions/:id/pay - Conciliação e Baixa Rápida
+transactionsRouter.patch('/:id/pay', async (c) => {
+  const id = c.req.param('id')
+  const db = getDb()
+
+  if (!db) {
+    const tx = mockTransactionsStore.get(id)
+    if (!tx) {
+      return c.json({ error: 'Transação não encontrada' }, 404)
+    }
+
+    tx.status = 'completed'
+    tx.paid = true
+    tx.paidAt = new Date().toISOString()
+
+    // Credita/debita conta vinculada
+    let newBalanceStr = '0.00'
+    if (tx.accountId && mockAccountsStore.has(tx.accountId)) {
+      const acc = mockAccountsStore.get(tx.accountId)!
+      const cur = Number(acc.balance) || 0
+      acc.balance = (cur + Number(tx.amount)).toFixed(2)
+      newBalanceStr = acc.balance
+    }
+
+    // Se for recorrente contínua (sem limite de parcelas), gera próxima ocorrência para o mês seguinte
+    let nextRecurringTransaction = null
+    if (tx.isRecurring && !tx.installmentTotal) {
+      const nextDue = tx.dueDate ? new Date(tx.dueDate) : new Date(tx.occurredAt)
+      nextDue.setMonth(nextDue.getMonth() + 1)
+
+      const nextOccurred = new Date(tx.occurredAt)
+      nextOccurred.setMonth(nextOccurred.getMonth() + 1)
+
+      const nextId = crypto.randomUUID()
+      nextRecurringTransaction = {
+        id: nextId,
+        userId: tx.userId,
+        accountId: tx.accountId,
+        categoryId: tx.categoryId,
+        amount: tx.amount,
+        description: tx.description,
+        paid: false,
+        status: 'pending',
+        dueDate: nextDue.toISOString(),
+        paidAt: null,
+        isRecurring: true,
+        recurrencePeriod: tx.recurrencePeriod || 'monthly',
+        type: tx.type,
+        occurredAt: nextOccurred.toISOString(),
+        createdAt: new Date().toISOString()
+      }
+      mockTransactionsStore.set(nextId, nextRecurringTransaction)
+    }
+
+    return c.json({
+      success: true,
+      transaction: tx,
+      account: {
+        id: tx.accountId,
+        newBalance: newBalanceStr
+      },
+      nextRecurringTransaction
+    }, 200)
+  }
+
+  try {
+    const [tx] = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1)
+    if (!tx) {
+      return c.json({ error: 'Transação não encontrada' }, 404)
+    }
+
+    const now = new Date()
+    const [updatedTx] = await db
+      .update(transactions)
+      .set({
+        status: 'completed',
+        paid: true,
+        paidAt: now
+      })
+      .where(eq(transactions.id, id))
+      .returning()
+
+    // Atualiza saldo bancário da conta
+    const [updatedAcc] = await db
+      .update(accounts)
+      .set({ balance: sql`${accounts.balance} + ${tx.amount}` })
+      .where(eq(accounts.id, tx.accountId))
+      .returning({ id: accounts.id, balance: accounts.balance })
+
+    // Se for recorrente fixa, projeta a próxima ocorrência
+    let nextRecurring = null
+    if (tx.isRecurring && !tx.installmentTotal) {
+      const nextOccurred = new Date(tx.occurredAt)
+      nextOccurred.setMonth(nextOccurred.getMonth() + 1)
+
+      let nextDue: Date | null = null
+      if (tx.dueDate) {
+        nextDue = new Date(tx.dueDate)
+        nextDue.setMonth(nextDue.getMonth() + 1)
+      }
+
+      const [createdNext] = await db.insert(transactions).values({
+        userId: tx.userId,
+        accountId: tx.accountId,
+        categoryId: tx.categoryId,
+        amount: tx.amount,
+        description: tx.description,
+        paid: false,
+        status: 'pending',
+        dueDate: nextDue,
+        paidAt: null,
+        isRecurring: true,
+        recurrencePeriod: tx.recurrencePeriod || 'monthly',
+        occurredAt: nextOccurred
+      }).returning()
+
+      nextRecurring = createdNext
+    }
+
+    return c.json({
+      success: true,
+      transaction: updatedTx,
+      account: {
+        id: updatedAcc.id,
+        newBalance: updatedAcc.balance
+      },
+      nextRecurringTransaction: nextRecurring
+    }, 200)
+  } catch (error: any) {
+    return c.json({ error: 'Erro ao conciliar transação', details: error?.message }, 500)
   }
 })
 

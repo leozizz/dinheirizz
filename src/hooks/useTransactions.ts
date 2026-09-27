@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import type { TransactionItem } from '../components/dashboard/Dashboard'
@@ -10,6 +10,11 @@ export interface CreateTransactionInput {
   accountId?: string
   occurredAt?: string
   paid?: boolean
+  dueDate?: string | null
+  status?: 'completed' | 'pending' | 'cancelled'
+  isRecurring?: boolean
+  recurrencePeriod?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+  installmentTotal?: number | null
   type?: 'income' | 'expense' | 'transfer'
 }
 
@@ -18,6 +23,10 @@ export interface UseTransactionsOptions {
   limit?: number
   startDate?: string
   endDate?: string
+  status?: 'all' | 'completed' | 'pending'
+  isRecurring?: boolean
+  dueDateStart?: string
+  dueDateEnd?: string
 }
 
 export interface PaginatedTransactionsResponse {
@@ -38,7 +47,11 @@ export const getTransactionsQueryKey = (options?: UseTransactionsOptions) =>
       accountId: options?.accountId || null,
       limit: options?.limit || 20,
       startDate: options?.startDate || null,
-      endDate: options?.endDate || null
+      endDate: options?.endDate || null,
+      status: options?.status || null,
+      isRecurring: options?.isRecurring ?? null,
+      dueDateStart: options?.dueDateStart || null,
+      dueDateEnd: options?.dueDateEnd || null
     }
   ] as const
 
@@ -57,6 +70,7 @@ export function useTransactions(options?: UseTransactionsOptions) {
     queryKey: getTransactionsQueryKey(options),
     enabled: Boolean(token),
     initialPageParam: 1,
+    placeholderData: keepPreviousData,
     queryFn: async ({ pageParam = 1 }): Promise<PaginatedTransactionsResponse> => {
       const origin = getApiOrigin()
       const headers: Record<string, string> = {}
@@ -70,6 +84,10 @@ export function useTransactions(options?: UseTransactionsOptions) {
       if (options?.accountId) params.set('accountId', options.accountId)
       if (options?.startDate) params.set('startDate', options.startDate)
       if (options?.endDate) params.set('endDate', options.endDate)
+      if (options?.status && options.status !== 'all') params.set('status', options.status)
+      if (typeof options?.isRecurring === 'boolean') params.set('isRecurring', String(options.isRecurring))
+      if (options?.dueDateStart) params.set('dueDateStart', options.dueDateStart)
+      if (options?.dueDateEnd) params.set('dueDateEnd', options.dueDateEnd)
 
       const res = await fetch(`${origin}/api/v1/transactions?${params.toString()}`, { headers })
       if (!res.ok) {
@@ -81,11 +99,21 @@ export function useTransactions(options?: UseTransactionsOptions) {
 
       const mapped = rawList.map((item: any): TransactionItem => {
         const amountNum = Number(item.amount) || 0
+        const isPaid = item.paid ?? (item.status === 'completed')
+        const statusVal = item.status || (isPaid ? 'completed' : 'pending')
         return {
           id: item.id,
           description: item.description ?? null,
           amount: amountNum,
-          paid: item.paid ?? true,
+          paid: isPaid,
+          status: statusVal,
+          dueDate: item.dueDate || item.due_date || null,
+          paidAt: item.paidAt || item.paid_at || null,
+          isRecurring: item.isRecurring ?? item.is_recurring ?? false,
+          recurrencePeriod: item.recurrencePeriod || item.recurrence_period || null,
+          installmentCurrent: item.installmentCurrent ?? item.installment_current ?? null,
+          installmentTotal: item.installmentTotal ?? item.installment_total ?? null,
+          parentTransactionId: item.parentTransactionId || item.parent_transaction_id || null,
           occurred_at: item.occurredAt || item.occurred_at || new Date().toISOString(),
           category: item.category ?? null,
           type: item.type || (amountNum >= 0 ? 'income' : 'expense'),
@@ -123,19 +151,26 @@ export function useTransactions(options?: UseTransactionsOptions) {
     }
   }
 
-  // Cálculo consolidado de receitas, despesas e saldo disponível
+  // Cálculo consolidado de receitas, despesas, pendências e saldo projetado
   let totalIncome = 0
   let totalExpense = 0
+  let pendingIncome = 0
+  let pendingExpense = 0
 
   for (const t of transactions) {
+    const isPending = !t.paid || t.status === 'pending'
     if (t.amount > 0) {
       totalIncome += t.amount
+      if (isPending) pendingIncome += t.amount
     } else {
-      totalExpense += Math.abs(t.amount)
+      const absAmount = Math.abs(t.amount)
+      totalExpense += absAmount
+      if (isPending) pendingExpense += absAmount
     }
   }
 
   const totalBalance = totalIncome - totalExpense
+  const projectedBalance = totalBalance + pendingIncome - pendingExpense
 
   return {
     transactions,
@@ -148,6 +183,9 @@ export function useTransactions(options?: UseTransactionsOptions) {
     totalBalance,
     totalIncome,
     totalExpense,
+    pendingIncome,
+    pendingExpense,
+    projectedBalance,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
@@ -183,7 +221,12 @@ export function useCreateTransaction() {
         categoryId: input.categoryId || null,
         accountId: input.accountId || undefined,
         occurredAt: input.occurredAt || new Date().toISOString(),
-        paid: input.paid ?? true
+        paid: input.paid ?? (input.status === 'pending' ? false : true),
+        status: input.status || (input.paid === false ? 'pending' : 'completed'),
+        dueDate: input.dueDate || undefined,
+        isRecurring: input.isRecurring ?? false,
+        recurrencePeriod: input.recurrencePeriod || undefined,
+        installmentTotal: input.installmentTotal || undefined
       }
 
       const res = await fetch(`${origin}/api/v1/transactions`, {
@@ -201,6 +244,46 @@ export function useCreateTransaction() {
     },
     onSuccess: () => {
       // Invalidação reativa imediata do cache de transações e contas
+      queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+    }
+  })
+}
+
+export interface PayTransactionInput {
+  transactionId: string
+  paidAt?: string
+}
+
+export function usePayTransaction() {
+  const queryClient = useQueryClient()
+  const { session } = useAuth()
+  const token = session?.access_token
+
+  return useMutation({
+    mutationFn: async ({ transactionId, paidAt }: PayTransactionInput) => {
+      const origin = getApiOrigin()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const res = await fetch(`${origin}/api/v1/transactions/${transactionId}/pay`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(paidAt ? { paidAt } : {})
+      })
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}))
+        throw new Error(errJson.error || 'Erro ao dar baixa na transação')
+      }
+
+      return res.json()
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
     }

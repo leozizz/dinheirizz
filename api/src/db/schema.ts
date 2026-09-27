@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -44,7 +44,15 @@ export const transactions = pgTable('transactions', {
   amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
   description: text('description'),
   occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
   paid: boolean('paid').default(true).notNull(),
+  status: text('status').default('completed').notNull(), // 'completed' | 'pending' | 'cancelled'
+  isRecurring: boolean('is_recurring').default(false).notNull(),
+  recurrencePeriod: text('recurrence_period'), // 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+  installmentCurrent: integer('installment_current'),
+  installmentTotal: integer('installment_total'),
+  parentTransactionId: uuid('parent_transaction_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 })
 

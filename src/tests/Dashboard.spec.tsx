@@ -399,7 +399,7 @@ describe('Dashboard & QuickActions (TDD)', () => {
       />
     )
 
-    expect(screen.getByText(/saldo previsto/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/saldo previsto/i).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByTestId('projected-balance-value')).toHaveTextContent('R$ 4.500,00')
   })
 

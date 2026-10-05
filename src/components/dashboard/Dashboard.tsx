@@ -5,6 +5,7 @@ import { QuickActions, ActionType } from './QuickActions'
 import { AccountsBar } from './AccountsBar'
 import { AiInsightsCard } from './AiInsightsCard'
 import { CategoryDonutChart } from './CategoryDonutChart'
+import { ForecastCard } from './ForecastCard'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 import {
@@ -407,6 +408,9 @@ export function Dashboard({
           </div>
         </div>
       </div>
+
+      {/* Previsão de Saldo & Fluxo de Caixa (Forecast 30/60 dias - Issue #30) */}
+      <ForecastCard accountId={selectedAccountId} />
 
       {/* Distribuição por Categoria (Gráfico em Aro / Donut - Pierre & Minhas Finanças benchmark) */}
       <CategoryDonutChart transactions={filteredTransactions} />

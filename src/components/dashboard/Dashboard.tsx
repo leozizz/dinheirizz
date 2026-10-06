@@ -43,6 +43,8 @@ export interface TransactionItem {
   status?: 'completed' | 'pending' | 'cancelled'
   isRecurring?: boolean
   recurrencePeriod?: string | null
+  recurrenceDay?: number | null
+  adjustBusinessDay?: boolean
   installmentCurrent?: number | null
   installmentTotal?: number | null
   parentTransactionId?: string | null
@@ -68,9 +70,9 @@ export interface DashboardProps {
   isAiLoading?: boolean
   isAiGenerating?: boolean
   onGenerateAiInsight?: () => void
-  // Issue #29: Gestão de Vencimentos, Status e Baixa Rápida
-  statusFilter?: 'all' | 'completed' | 'pending'
-  onStatusFilterChange?: (status: 'all' | 'completed' | 'pending') => void
+  // Issue #29 & #39: Gestão de Vencimentos, Status e Baixa Rápida
+  statusFilter?: 'all' | 'completed' | 'pending' | 'future'
+  onStatusFilterChange?: (status: 'all' | 'completed' | 'pending' | 'future') => void
   onPayTransaction?: (transactionId: string) => void | Promise<void>
 }
 
@@ -117,10 +119,10 @@ export function Dashboard({
   isAiGenerating = false,
   onGenerateAiInsight
 }: DashboardProps) {
-  const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending'>('all')
+  const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
 
-  const handleStatusChange = (newStatus: 'all' | 'completed' | 'pending') => {
+  const handleStatusChange = (newStatus: 'all' | 'completed' | 'pending' | 'future') => {
     setInternalStatusFilter(newStatus)
     onStatusFilterChange?.(newStatus)
   }
@@ -138,22 +140,43 @@ export function Dashboard({
     ? `Saldo da conta ${selectedAccount.name}`
     : 'Saldo total disponível'
 
+  const now = new Date()
+  const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+  const futureCount = transactions.filter((t) => {
+    const targetTime = new Date(t.dueDate || t.occurred_at).getTime()
+    return targetTime > endOfCurrentMonth.getTime()
+  }).length
+
   const filteredTransactions = transactions
     .filter((t) => {
       if (selectedAccountId && (t.accountId || t.account_id) !== selectedAccountId) {
         return false
       }
       const isCompleted = t.status === 'completed' || (t.status === undefined && t.paid === true)
+      const targetTime = new Date(t.dueDate || t.occurred_at).getTime()
+      const isFuture = targetTime > endOfCurrentMonth.getTime()
+
+      if (activeStatusFilter === 'future') {
+        return isFuture
+      }
       if (activeStatusFilter === 'completed') {
-        return isCompleted
+        return isCompleted && !isFuture
       }
       if (activeStatusFilter === 'pending') {
-        return !isCompleted
+        return !isCompleted && !isFuture
       }
-      return true
+      return !isFuture
     })
     .slice()
-    .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+    .sort((a, b) => {
+      if (activeStatusFilter === 'future') {
+        const timeA = new Date(a.dueDate || a.occurred_at).getTime()
+        const timeB = new Date(b.dueDate || b.occurred_at).getTime()
+        return timeA - timeB
+      }
+      return new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+    })
 
   let displayIncome = totalIncome
   let displayExpense = totalExpense
@@ -495,6 +518,23 @@ export function Dashboard({
               }`}
             >
               Pendentes
+            </button>
+            <button
+              type="button"
+              data-testid="filter-future-btn"
+              onClick={() => handleStatusChange('future')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeStatusFilter === 'future'
+                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-semibold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <span>Futuras</span>
+              {futureCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 bg-primary/20 text-primary rounded-full font-bold">
+                  {futureCount}
+                </span>
+              )}
             </button>
           </div>
         </div>

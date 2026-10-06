@@ -2,9 +2,10 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { getDb } from '../db/client'
 import { transactions, accounts, users } from '../db/schema'
-import { eq, desc, sql, and, gte, lte } from 'drizzle-orm'
+import { eq, desc, asc, sql, and, gte, lte } from 'drizzle-orm'
 import { mockAccountsStore } from './accounts'
 import type { AuthEnv } from '../middlewares/auth'
+import { calculateRecurringDueDate } from '../services/business-days'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -21,6 +22,8 @@ export const createTransactionSchema = z.object({
   status: z.enum(['completed', 'pending', 'cancelled']).optional(),
   isRecurring: z.boolean().optional(),
   recurrencePeriod: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional().nullable(),
+  recurrenceDay: z.number().int().min(1).max(31).optional().nullable(),
+  adjustBusinessDay: z.boolean().optional(),
   installmentCurrent: z.number().int().positive().optional().nullable(),
   installmentTotal: z.number().int().positive().optional().nullable(),
   parentTransactionId: z.string().optional().nullable()
@@ -39,6 +42,8 @@ export interface MockTransaction {
   paidAt?: string | null
   isRecurring?: boolean
   recurrencePeriod?: string | null
+  recurrenceDay?: number | null
+  adjustBusinessDay?: boolean
   installmentCurrent?: number | null
   installmentTotal?: number | null
   parentTransactionId?: string | null
@@ -84,6 +89,21 @@ transactionsRouter.get('/', async (c) => {
   const endDate = c.req.query('endDate')
   const dueDateStart = c.req.query('dueDateStart')
   const dueDateEnd = c.req.query('dueDateEnd')
+  const scope = c.req.query('scope') // 'current_month' | 'future' | 'all'
+  const month = c.req.query('month') // 'YYYY-MM'
+
+  const now = new Date()
+  const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+  let targetMonthStart: Date | null = null
+  let targetMonthEnd: Date | null = null
+  if (month && /^\d{4}-\d{2}$/.test(month)) {
+    const [yStr, mStr] = month.split('-')
+    const y = parseInt(yStr, 10)
+    const m = parseInt(mStr, 10) - 1
+    targetMonthStart = new Date(y, m, 1, 0, 0, 0, 0)
+    targetMonthEnd = new Date(y, m + 1, 0, 23, 59, 59, 999)
+  }
 
   if (!db) {
     let filtered = Array.from(mockTransactionsStore.values()).filter((t) => {
@@ -120,15 +140,40 @@ transactionsRouter.get('/', async (c) => {
           return false
         }
       }
+      if (scope === 'future') {
+        const d = new Date(t.dueDate || t.occurredAt).getTime()
+        if (d <= endOfCurrentMonth.getTime()) {
+          return false
+        }
+      } else if (scope === 'current_month') {
+        const d = new Date(t.dueDate || t.occurredAt).getTime()
+        if (d > endOfCurrentMonth.getTime()) {
+          return false
+        }
+      }
+      if (targetMonthStart && targetMonthEnd) {
+        const d = new Date(t.dueDate || t.occurredAt).getTime()
+        if (d < targetMonthStart.getTime() || d > targetMonthEnd.getTime()) {
+          return false
+        }
+      }
       return true
     })
 
-    filtered.sort((a, b) => {
-      const timeA = new Date(a.occurredAt).getTime()
-      const timeB = new Date(b.occurredAt).getTime()
-      if (timeB !== timeA) return timeB - timeA
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
+    if (scope === 'future') {
+      filtered.sort((a, b) => {
+        const timeA = new Date(a.dueDate || a.occurredAt).getTime()
+        const timeB = new Date(b.dueDate || b.occurredAt).getTime()
+        return timeA - timeB
+      })
+    } else {
+      filtered.sort((a, b) => {
+        const timeA = new Date(a.occurredAt).getTime()
+        const timeB = new Date(b.occurredAt).getTime()
+        if (timeB !== timeA) return timeB - timeA
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+    }
 
     const total = filtered.length
     const totalPages = Math.max(1, Math.ceil(total / limit))
@@ -181,6 +226,14 @@ transactionsRouter.get('/', async (c) => {
         conditions.push(lte(transactions.dueDate, pEnd))
       }
     }
+    if (scope === 'future') {
+      conditions.push(sql`coalesce(${transactions.dueDate}, ${transactions.occurredAt}) > ${endOfCurrentMonth}`)
+    } else if (scope === 'current_month') {
+      conditions.push(sql`coalesce(${transactions.dueDate}, ${transactions.occurredAt}) <= ${endOfCurrentMonth}`)
+    }
+    if (targetMonthStart && targetMonthEnd) {
+      conditions.push(sql`coalesce(${transactions.dueDate}, ${transactions.occurredAt}) >= ${targetMonthStart} and coalesce(${transactions.dueDate}, ${transactions.occurredAt}) <= ${targetMonthEnd}`)
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
@@ -194,11 +247,15 @@ transactionsRouter.get('/', async (c) => {
     const offset = (page - 1) * limit
     const hasMore = page < totalPages
 
+    const orderByClause = scope === 'future'
+      ? [asc(sql`coalesce(${transactions.dueDate}, ${transactions.occurredAt})`), asc(transactions.createdAt)]
+      : [desc(transactions.occurredAt), desc(transactions.createdAt)]
+
     const list = await db
       .select()
       .from(transactions)
       .where(whereClause)
-      .orderBy(desc(transactions.occurredAt), desc(transactions.createdAt))
+      .orderBy(...orderByClause)
       .limit(limit)
       .offset(offset)
 
@@ -249,6 +306,8 @@ transactionsRouter.post('/', async (c) => {
   const isPaid = status === 'completed'
   const isRecurring = Boolean(data.isRecurring)
   const recurrencePeriod = data.recurrencePeriod || (isRecurring ? 'monthly' : null)
+  const recurrenceDay = data.recurrenceDay ?? null
+  const adjustBusinessDay = data.adjustBusinessDay ?? false
   const installmentTotal = data.installmentTotal || null
 
   const installmentCount = installmentTotal && installmentTotal > 1 ? installmentTotal : 1
@@ -258,7 +317,19 @@ transactionsRouter.post('/', async (c) => {
   if (!db) {
     // Retorno e persistência em memória quando db não está conectado (testes e modo offline)
     const baseOccurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date()
-    const baseDueDate = data.dueDate ? new Date(data.dueDate) : (status === 'pending' ? baseOccurredAt : null)
+    let baseDueDate: Date | null = null
+    if (data.dueDate) {
+      baseDueDate = new Date(data.dueDate)
+    } else if (isRecurring && recurrenceDay) {
+      baseDueDate = calculateRecurringDueDate(
+        baseOccurredAt.getFullYear(),
+        baseOccurredAt.getMonth(),
+        recurrenceDay,
+        adjustBusinessDay
+      )
+    } else if (status === 'pending') {
+      baseDueDate = baseOccurredAt
+    }
 
     const createdList: MockTransaction[] = []
 
@@ -270,7 +341,14 @@ transactionsRouter.post('/', async (c) => {
       itemOccurred.setMonth(itemOccurred.getMonth() + (i - 1))
 
       let itemDue: Date | null = null
-      if (baseDueDate) {
+      if (recurrenceDay) {
+        itemDue = calculateRecurringDueDate(
+          baseOccurredAt.getFullYear(),
+          baseOccurredAt.getMonth() + (i - 1),
+          recurrenceDay,
+          adjustBusinessDay
+        )
+      } else if (baseDueDate) {
         itemDue = new Date(baseDueDate)
         itemDue.setMonth(itemDue.getMonth() + (i - 1))
       }
@@ -290,6 +368,8 @@ transactionsRouter.post('/', async (c) => {
         paidAt: isPaid ? new Date().toISOString() : null,
         isRecurring,
         recurrencePeriod,
+        recurrenceDay,
+        adjustBusinessDay,
         installmentCurrent: installmentCount > 1 ? i : null,
         installmentTotal: installmentCount > 1 ? installmentCount : null,
         parentTransactionId: null,
@@ -370,7 +450,19 @@ transactionsRouter.post('/', async (c) => {
 
     // 4. Inserção das transações (suporte a parcelas)
     const baseOccurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date()
-    const baseDueDate = data.dueDate ? new Date(data.dueDate) : (status === 'pending' ? baseOccurredAt : null)
+    let baseDueDate: Date | null = null
+    if (data.dueDate) {
+      baseDueDate = new Date(data.dueDate)
+    } else if (isRecurring && recurrenceDay) {
+      baseDueDate = calculateRecurringDueDate(
+        baseOccurredAt.getFullYear(),
+        baseOccurredAt.getMonth(),
+        recurrenceDay,
+        adjustBusinessDay
+      )
+    } else if (status === 'pending') {
+      baseDueDate = baseOccurredAt
+    }
 
     const insertPayloads = []
     for (let i = 1; i <= installmentCount; i++) {
@@ -378,7 +470,14 @@ transactionsRouter.post('/', async (c) => {
       itemOccurred.setMonth(itemOccurred.getMonth() + (i - 1))
 
       let itemDue: Date | null = null
-      if (baseDueDate) {
+      if (recurrenceDay) {
+        itemDue = calculateRecurringDueDate(
+          baseOccurredAt.getFullYear(),
+          baseOccurredAt.getMonth() + (i - 1),
+          recurrenceDay,
+          adjustBusinessDay
+        )
+      } else if (baseDueDate) {
         itemDue = new Date(baseDueDate)
         itemDue.setMonth(itemDue.getMonth() + (i - 1))
       }
@@ -399,6 +498,8 @@ transactionsRouter.post('/', async (c) => {
         paidAt: isPaid ? new Date() : null,
         isRecurring,
         recurrencePeriod,
+        recurrenceDay,
+        adjustBusinessDay,
         installmentCurrent: installmentCount > 1 ? i : null,
         installmentTotal: installmentCount > 1 ? installmentCount : null,
         occurredAt: itemOccurred
@@ -448,11 +549,23 @@ transactionsRouter.patch('/:id/pay', async (c) => {
     // Se for recorrente contínua (sem limite de parcelas), gera próxima ocorrência para o mês seguinte
     let nextRecurringTransaction = null
     if (tx.isRecurring && !tx.installmentTotal) {
-      const nextDue = tx.dueDate ? new Date(tx.dueDate) : new Date(tx.occurredAt)
-      nextDue.setMonth(nextDue.getMonth() + 1)
-
       const nextOccurred = new Date(tx.occurredAt)
       nextOccurred.setMonth(nextOccurred.getMonth() + 1)
+
+      let nextDue: Date | null = null
+      if (tx.recurrenceDay) {
+        nextDue = calculateRecurringDueDate(
+          nextOccurred.getFullYear(),
+          nextOccurred.getMonth(),
+          tx.recurrenceDay,
+          !!tx.adjustBusinessDay
+        )
+      } else if (tx.dueDate) {
+        nextDue = new Date(tx.dueDate)
+        nextDue.setMonth(nextDue.getMonth() + 1)
+      } else {
+        nextDue = nextOccurred
+      }
 
       const nextId = crypto.randomUUID()
       nextRecurringTransaction = {
@@ -464,10 +577,12 @@ transactionsRouter.patch('/:id/pay', async (c) => {
         description: tx.description,
         paid: false,
         status: 'pending',
-        dueDate: nextDue.toISOString(),
+        dueDate: nextDue ? nextDue.toISOString() : null,
         paidAt: null,
         isRecurring: true,
         recurrencePeriod: tx.recurrencePeriod || 'monthly',
+        recurrenceDay: tx.recurrenceDay ?? null,
+        adjustBusinessDay: tx.adjustBusinessDay ?? false,
         type: tx.type,
         occurredAt: nextOccurred.toISOString(),
         createdAt: new Date().toISOString()
@@ -517,9 +632,18 @@ transactionsRouter.patch('/:id/pay', async (c) => {
       nextOccurred.setMonth(nextOccurred.getMonth() + 1)
 
       let nextDue: Date | null = null
-      if (tx.dueDate) {
+      if (tx.recurrenceDay) {
+        nextDue = calculateRecurringDueDate(
+          nextOccurred.getFullYear(),
+          nextOccurred.getMonth(),
+          tx.recurrenceDay,
+          !!tx.adjustBusinessDay
+        )
+      } else if (tx.dueDate) {
         nextDue = new Date(tx.dueDate)
         nextDue.setMonth(nextDue.getMonth() + 1)
+      } else {
+        nextDue = nextOccurred
       }
 
       const [createdNext] = await db.insert(transactions).values({
@@ -534,6 +658,8 @@ transactionsRouter.patch('/:id/pay', async (c) => {
         paidAt: null,
         isRecurring: true,
         recurrencePeriod: tx.recurrencePeriod || 'monthly',
+        recurrenceDay: tx.recurrenceDay,
+        adjustBusinessDay: tx.adjustBusinessDay,
         occurredAt: nextOccurred
       }).returning()
 

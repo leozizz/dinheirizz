@@ -14,6 +14,8 @@ export interface CreateTransactionInput {
   status?: 'completed' | 'pending' | 'cancelled'
   isRecurring?: boolean
   recurrencePeriod?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+  recurrenceDay?: number | null
+  adjustBusinessDay?: boolean
   installmentTotal?: number | null
   type?: 'income' | 'expense' | 'transfer'
 }
@@ -27,6 +29,8 @@ export interface UseTransactionsOptions {
   isRecurring?: boolean
   dueDateStart?: string
   dueDateEnd?: string
+  scope?: 'current_month' | 'future' | 'all'
+  month?: string
 }
 
 export interface PaginatedTransactionsResponse {
@@ -51,7 +55,9 @@ export const getTransactionsQueryKey = (options?: UseTransactionsOptions) =>
       status: options?.status || null,
       isRecurring: options?.isRecurring ?? null,
       dueDateStart: options?.dueDateStart || null,
-      dueDateEnd: options?.dueDateEnd || null
+      dueDateEnd: options?.dueDateEnd || null,
+      scope: options?.scope || null,
+      month: options?.month || null
     }
   ] as const
 
@@ -88,6 +94,8 @@ export function useTransactions(options?: UseTransactionsOptions) {
       if (typeof options?.isRecurring === 'boolean') params.set('isRecurring', String(options.isRecurring))
       if (options?.dueDateStart) params.set('dueDateStart', options.dueDateStart)
       if (options?.dueDateEnd) params.set('dueDateEnd', options.dueDateEnd)
+      if (options?.scope) params.set('scope', options.scope)
+      if (options?.month) params.set('month', options.month)
 
       const res = await fetch(`${origin}/api/v1/transactions?${params.toString()}`, { headers })
       if (!res.ok) {
@@ -111,6 +119,8 @@ export function useTransactions(options?: UseTransactionsOptions) {
           paidAt: item.paidAt || item.paid_at || null,
           isRecurring: item.isRecurring ?? item.is_recurring ?? false,
           recurrencePeriod: item.recurrencePeriod || item.recurrence_period || null,
+          recurrenceDay: item.recurrenceDay ?? item.recurrence_day ?? null,
+          adjustBusinessDay: item.adjustBusinessDay ?? item.adjust_business_day ?? false,
           installmentCurrent: item.installmentCurrent ?? item.installment_current ?? null,
           installmentTotal: item.installmentTotal ?? item.installment_total ?? null,
           parentTransactionId: item.parentTransactionId || item.parent_transaction_id || null,
@@ -122,8 +132,14 @@ export function useTransactions(options?: UseTransactionsOptions) {
       })
 
       const sorted = (mapped as TransactionItem[]).sort(
-        (a: TransactionItem, b: TransactionItem) =>
-          new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+        (a: TransactionItem, b: TransactionItem) => {
+          if (options?.scope === 'future') {
+            const timeA = new Date(a.dueDate || a.occurred_at).getTime()
+            const timeB = new Date(b.dueDate || b.occurred_at).getTime()
+            return timeA - timeB
+          }
+          return new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+        }
       )
 
       return {

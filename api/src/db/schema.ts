@@ -50,6 +50,8 @@ export const transactions = pgTable('transactions', {
   status: text('status').default('completed').notNull(), // 'completed' | 'pending' | 'cancelled'
   isRecurring: boolean('is_recurring').default(false).notNull(),
   recurrencePeriod: text('recurrence_period'), // 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+  recurrenceDay: integer('recurrence_day'),
+  adjustBusinessDay: boolean('adjust_business_day').default(false).notNull(),
   installmentCurrent: integer('installment_current'),
   installmentTotal: integer('installment_total'),
   parentTransactionId: uuid('parent_transaction_id'),

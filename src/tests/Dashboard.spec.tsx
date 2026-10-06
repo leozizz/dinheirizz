@@ -279,7 +279,12 @@ describe('Dashboard & QuickActions (TDD)', () => {
   })
 
   it('deve exibir badges contextuais de vencimento, parcelamento e recorrência', () => {
-    const todayStr = new Date().toISOString().split('T')[0]
+    const localNow = new Date()
+    const y = localNow.getFullYear()
+    const m = String(localNow.getMonth() + 1).padStart(2, '0')
+    const d = String(localNow.getDate()).padStart(2, '0')
+    const todayStr = `${y}-${m}-${d}`
+
     const transactions = [
       {
         id: 'tx-due-today',
@@ -287,7 +292,7 @@ describe('Dashboard & QuickActions (TDD)', () => {
         amount: -1200,
         paid: false,
         status: 'pending' as const,
-        dueDate: `${todayStr}T12:00:00Z`,
+        dueDate: `${todayStr}T12:00:00`,
         occurred_at: '2026-09-01T10:00:00Z',
         type: 'expense'
       },
@@ -329,6 +334,55 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.getByText('Vence Hoje')).toBeInTheDocument()
     expect(screen.getByText('Atrasado')).toBeInTheDocument()
     expect(screen.getByText('3/10')).toBeInTheDocument()
+  })
+
+  it('deve segregar parcelas futuras distantes na aba Futuras e não poluir o feed padrão', () => {
+    const now = new Date()
+    const nextYear = now.getFullYear() + 1
+
+    const transactionsWithFuture = [
+      {
+        id: 'tx-current-1',
+        description: 'Mercado do Mês',
+        amount: -250,
+        paid: true,
+        occurred_at: new Date(now.getFullYear(), now.getMonth(), 2).toISOString(),
+        type: 'expense'
+      },
+      {
+        id: 'tx-future-installment',
+        description: 'Smartphone Parcelado (10/10)',
+        amount: -300,
+        paid: false,
+        status: 'pending' as const,
+        dueDate: new Date(nextYear, 5, 10).toISOString(),
+        occurred_at: new Date(nextYear, 5, 10).toISOString(),
+        installmentCurrent: 10,
+        installmentTotal: 10,
+        type: 'expense'
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={2000}
+        totalIncome={2500}
+        totalExpense={550}
+        transactions={transactionsWithFuture}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    // No modo padrão (Todas), apenas transações correntes/passadas aparecem; parcelas distantes não poluem
+    expect(screen.getByText('Mercado do Mês')).toBeInTheDocument()
+    expect(screen.queryByText('Smartphone Parcelado (10/10)')).not.toBeInTheDocument()
+
+    // Ao clicar na aba Futuras, a parcela futura é exibida
+    const futureTab = screen.getByTestId('filter-future-btn')
+    fireEvent.click(futureTab)
+
+    expect(screen.getByText('Smartphone Parcelado (10/10)')).toBeInTheDocument()
+    expect(screen.queryByText('Mercado do Mês')).not.toBeInTheDocument()
   })
 
   it('deve exibir botão de baixa rápida para transação pendente e acionar onPayTransaction ao clicar', () => {

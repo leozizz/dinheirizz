@@ -1,3 +1,5 @@
+import { calculateRecurringDueDate } from './business-days'
+
 export interface ForecastTransaction {
   id: string
   amount: number | string
@@ -7,6 +9,8 @@ export interface ForecastTransaction {
   occurredAt?: Date | string | null
   type?: string
   isRecurring?: boolean
+  recurrenceDay?: number | null
+  adjustBusinessDay?: boolean
   installmentTotal?: number | null
 }
 
@@ -143,6 +147,8 @@ export function calculateCashFlowForecast(options: ForecastOptions): ForecastRes
     if (!baseDateStr) continue
     const baseDate = new Date(baseDateStr)
     const dayOfMonth = baseDate.getUTCDate()
+    const recurrenceDay = r.recurrenceDay ?? dayOfMonth
+    const adjustBusinessDay = Boolean(r.adjustBusinessDay)
 
     const startYear = startDate.getUTCFullYear()
     const startMonth = startDate.getUTCMonth()
@@ -150,9 +156,7 @@ export function calculateCashFlowForecast(options: ForecastOptions): ForecastRes
     for (let m = -1; m <= 3; m++) {
       const year = startYear + Math.floor((startMonth + m) / 12)
       const month = ((startMonth + m) % 12 + 12) % 12
-      const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
-      const targetDay = Math.min(dayOfMonth, daysInMonth)
-      const occurrenceDate = new Date(Date.UTC(year, month, targetDay))
+      const occurrenceDate = calculateRecurringDueDate(year, month, recurrenceDay, adjustBusinessDay)
 
       if (occurrenceDate >= startDate && occurrenceDate < endDate) {
         const dateKey = formatDateToYMD(occurrenceDate)

@@ -47,7 +47,9 @@ forecastRouter.get('/', async (c) => {
         status: t.status,
         dueDate: t.dueDate ? new Date(t.dueDate) : null,
         occurredAt: t.occurredAt ? new Date(t.occurredAt) : new Date(t.createdAt),
-        isRecurring: t.isRecurring
+        isRecurring: t.isRecurring,
+        recurrenceDay: t.recurrenceDay,
+        adjustBusinessDay: t.adjustBusinessDay
       }
 
       if (isPaid) {
@@ -91,7 +93,9 @@ forecastRouter.get('/', async (c) => {
           status: t.status,
           dueDate: t.dueDate ? new Date(t.dueDate) : null,
           occurredAt: t.occurredAt ? new Date(t.occurredAt) : new Date(t.createdAt),
-          isRecurring: t.isRecurring
+          isRecurring: t.isRecurring,
+          recurrenceDay: t.recurrenceDay,
+          adjustBusinessDay: t.adjustBusinessDay
         }
 
         if (isPaid) {

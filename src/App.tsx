@@ -200,6 +200,8 @@ function MainApp() {
     status?: 'completed' | 'pending'
     isRecurring?: boolean
     recurrencePeriod?: string
+    recurrenceDay?: number
+    adjustBusinessDay?: boolean
     installmentTotal?: number
     type: TransactionMode
   }) => {
@@ -228,6 +230,8 @@ function MainApp() {
             paid: data.status === 'completed',
             isRecurring: data.isRecurring,
             recurrencePeriod: data.recurrencePeriod as any,
+            recurrenceDay: data.recurrenceDay,
+            adjustBusinessDay: data.adjustBusinessDay,
             installmentTotal: data.installmentTotal,
             type: data.type
           })

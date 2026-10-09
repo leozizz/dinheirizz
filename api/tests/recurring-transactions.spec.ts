@@ -214,5 +214,76 @@ describe('BFF Recurring Transactions & Due Dates API (Issue #29 TDD)', () => {
       expect(payJson.nextRecurringTransaction.status).toBe('pending')
       expect(payJson.nextRecurringTransaction.isRecurring).toBe(true)
     })
+
+    it('deve aceitar e persistir recurrenceDay e adjustBusinessDay ao cadastrar transação recorrente', async () => {
+      const res = await app.request('/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: 150,
+          type: 'expense',
+          description: 'Internet Fibra',
+          accountId: 'acc-recurring-1',
+          status: 'pending',
+          isRecurring: true,
+          recurrencePeriod: 'monthly',
+          recurrenceDay: 10,
+          adjustBusinessDay: true
+        })
+      })
+
+      expect(res.status).toBe(201)
+      const json = await res.json()
+      expect(json.recurrenceDay).toBe(10)
+      expect(json.adjustBusinessDay).toBe(true)
+      // Vencimento gerado automaticamente para o dia útil apropriado
+      expect(json.dueDate).toBeDefined()
+    })
+
+    it('deve filtrar transações por scope=current_month excluindo parcelas futuras distantes', async () => {
+      await app.request('/api/v1/transactions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: 1000,
+          type: 'expense',
+          description: 'Notebook Parcelado Teste',
+          accountId: 'acc-recurring-1',
+          occurredAt: new Date().toISOString(),
+          status: 'pending',
+          installmentTotal: 10
+        })
+      })
+
+      const res = await app.request('/api/v1/transactions?scope=current_month', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      expect(res.status).toBe(200)
+      const json = await res.json()
+
+      const hasDistantInstallment = json.data.some(
+        (t: any) => t.description && t.description.includes('(10/10)')
+      )
+      expect(hasDistantInstallment).toBe(false)
+    })
+
+    it('deve listar parcelas futuras em ordem crescente quando scope=future', async () => {
+      const res = await app.request('/api/v1/transactions?scope=future', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      expect(res.status).toBe(200)
+      const json = await res.json()
+
+      expect(json.data.length).toBeGreaterThan(0)
+      const firstTime = new Date(json.data[0].dueDate || json.data[0].occurredAt).getTime()
+      const lastTime = new Date(json.data[json.data.length - 1].dueDate || json.data[json.data.length - 1].occurredAt).getTime()
+      expect(firstTime).toBeLessThanOrEqual(lastTime)
+    })
   })
 })

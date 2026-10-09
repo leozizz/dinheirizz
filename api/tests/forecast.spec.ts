@@ -216,4 +216,35 @@ describe('Motor de Projeção de Fluxo de Caixa (Forecast - TDD)', () => {
     expect(pointNov15).toBeDefined()
     expect(pointNov15?.scheduledExpense).toBe(800)
   })
+
+  it('deve projetar recorrência respeitando recurrenceDay e adjustBusinessDay (ajustando fim de semana para próximo dia útil)', () => {
+    // Em maio de 2026: dia 10 é Domingo. Com adjustBusinessDay: true, deve projetar em 11/05/2026 (Segunda-feira).
+    const recurringTx: ForecastTransaction = {
+      id: 'rec-sunday-adjust',
+      amount: -450,
+      paid: true,
+      isRecurring: true,
+      recurrenceDay: 10,
+      adjustBusinessDay: true,
+      occurredAt: '2026-04-10T00:00:00Z',
+      type: 'expense'
+    }
+
+    const result = calculateCashFlowForecast({
+      startingBalance: 3000,
+      days: 30,
+      startDate: new Date('2026-05-01T00:00:00Z'),
+      historyTransactions: [recurringTx],
+      scheduledTransactions: []
+    })
+
+    // O dia 10/05 (domingo) NÃO deve ter o gasto agendado
+    const pointMay10 = result.timeline.find((p) => p.date === '2026-05-10')
+    expect(pointMay10?.scheduledExpense).toBe(0)
+
+    // O dia 11/05 (segunda-feira) DEVE ter o gasto agendado de 450
+    const pointMay11 = result.timeline.find((p) => p.date === '2026-05-11')
+    expect(pointMay11).toBeDefined()
+    expect(pointMay11?.scheduledExpense).toBe(450)
+  })
 })

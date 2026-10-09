@@ -15,6 +15,7 @@ import {
   Repeat
 } from 'lucide-react'
 import { parseCurrencyToNumber, formatBRL } from '../../lib/formatters'
+import { calculateRecurringDueDate } from '../../lib/businessDays'
 
 export type TransactionMode = 'income' | 'expense' | 'transfer'
 
@@ -49,6 +50,8 @@ interface TransactionModalProps {
     status?: 'completed' | 'pending'
     isRecurring?: boolean
     recurrencePeriod?: string
+    recurrenceDay?: number
+    adjustBusinessDay?: boolean
     installmentTotal?: number
     type: TransactionMode
   }) => Promise<void> | void
@@ -84,6 +87,8 @@ export function TransactionModal({
   const [installmentTotal, setInstallmentTotal] = useState(2)
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrencePeriod, setRecurrencePeriod] = useState('monthly')
+  const [recurrenceDay, setRecurrenceDay] = useState(10)
+  const [adjustBusinessDay, setAdjustBusinessDay] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -100,6 +105,8 @@ export function TransactionModal({
       setInstallmentTotal(2)
       setIsRecurring(false)
       setRecurrencePeriod('monthly')
+      setRecurrenceDay(10)
+      setAdjustBusinessDay(false)
 
       const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
       setCategoryId(filteredCats[0]?.id || '')
@@ -166,6 +173,23 @@ export function TransactionModal({
 
     setLoading(true)
     try {
+      let finalDueDate: string | undefined = undefined
+      if (status === 'pending' || isInstallment) {
+        finalDueDate = dueDate || occurredAt
+      } else if (isRecurring) {
+        const occDate = new Date(occurredAt)
+        const computed = calculateRecurringDueDate(
+          occDate.getUTCFullYear(),
+          occDate.getUTCMonth(),
+          recurrenceDay,
+          adjustBusinessDay
+        )
+        const y = computed.getUTCFullYear()
+        const m = String(computed.getUTCMonth() + 1).padStart(2, '0')
+        const d = String(computed.getUTCDate()).padStart(2, '0')
+        finalDueDate = `${y}-${m}-${d}`
+      }
+
       await onSubmit({
         amount: num,
         description,
@@ -174,10 +198,12 @@ export function TransactionModal({
         fromAccountId: mode === 'transfer' ? fromAccountId : undefined,
         toAccountId: mode === 'transfer' ? toAccountId : undefined,
         occurredAt,
-        dueDate: (status === 'pending' || isInstallment || isRecurring) ? (dueDate || occurredAt) : undefined,
+        dueDate: finalDueDate,
         status: mode === 'transfer' ? 'completed' : status,
         isRecurring: mode !== 'transfer' ? isRecurring : false,
         recurrencePeriod: mode !== 'transfer' && isRecurring ? recurrencePeriod : undefined,
+        recurrenceDay: mode !== 'transfer' && isRecurring ? recurrenceDay : undefined,
+        adjustBusinessDay: mode !== 'transfer' && isRecurring ? adjustBusinessDay : undefined,
         installmentTotal: mode !== 'transfer' && isInstallment ? installmentTotal : undefined,
         type: mode
       })
@@ -524,20 +550,86 @@ export function TransactionModal({
                   )}
 
                   {isRecurring && (
-                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3 animate-fade-in">
-                      <label className="text-xs font-medium text-neutral-300">
-                        Frequência de Repetição
-                      </label>
-                      <select
-                        data-testid="recurrence-period-select"
-                        value={recurrencePeriod}
-                        onChange={(e) => setRecurrencePeriod(e.target.value)}
-                        className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none"
-                      >
-                        <option value="monthly">Mensal</option>
-                        <option value="weekly">Semanal</option>
-                        <option value="yearly">Anual</option>
-                      </select>
+                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 animate-fade-in">
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-xs font-medium text-neutral-300">
+                          Frequência de Repetição
+                        </label>
+                        <select
+                          data-testid="recurrence-period-select"
+                          value={recurrencePeriod}
+                          onChange={(e) => setRecurrencePeriod(e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                        >
+                          <option value="monthly">Mensal</option>
+                          <option value="weekly">Semanal</option>
+                          <option value="yearly">Anual</option>
+                        </select>
+                      </div>
+
+                      {recurrencePeriod === 'monthly' && (
+                        <>
+                          <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
+                            <label className="text-xs font-medium text-neutral-300">
+                              Vence todo dia
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-neutral-400">Dia</span>
+                              <select
+                                data-testid="recurrence-day-select"
+                                value={recurrenceDay}
+                                onChange={(e) => setRecurrenceDay(Number(e.target.value))}
+                                className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none font-medium"
+                              >
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                  <option key={day} value={day}>
+                                    {day}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 pt-1">
+                            <div className="text-xs text-neutral-300">
+                              <span className="font-medium">Vencimento dinâmico em dia útil</span>
+                              <p className="text-[10px] text-neutral-400">
+                                Prorroga se o dia cair em fim de semana ou feriado
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              data-testid="adjust-business-day-toggle"
+                              onClick={() => setAdjustBusinessDay(!adjustBusinessDay)}
+                              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                                adjustBusinessDay ? 'bg-primary justify-end' : 'bg-white/10 justify-start'
+                              }`}
+                            >
+                              <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                            </button>
+                          </div>
+
+                          <div className="text-xs p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-center justify-between">
+                            <span className="text-neutral-400">Primeiro vencimento:</span>
+                            <span className="font-semibold text-white">
+                              {(() => {
+                                const occDate = new Date(occurredAt)
+                                const computed = calculateRecurringDueDate(
+                                  occDate.getUTCFullYear(),
+                                  occDate.getUTCMonth(),
+                                  recurrenceDay,
+                                  adjustBusinessDay
+                                )
+                                const d = String(computed.getUTCDate()).padStart(2, '0')
+                                const m = String(computed.getUTCMonth() + 1).padStart(2, '0')
+                                const y = computed.getUTCFullYear()
+                                const dayOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][computed.getUTCDay()]
+                                return `${d}/${m}/${y} (${dayOfWeek})`
+                              })()}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

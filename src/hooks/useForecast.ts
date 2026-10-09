@@ -28,6 +28,8 @@ export interface UseForecastOptions {
   accountId?: string | null
 }
 
+export const FORECAST_QUERY_KEY = ['forecast'] as const
+
 function getApiOrigin(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin

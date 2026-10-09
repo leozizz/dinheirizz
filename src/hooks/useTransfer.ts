@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import { TRANSACTIONS_QUERY_KEY } from './useTransactions'
+import { FORECAST_QUERY_KEY } from './useForecast'
 
 export interface CreateTransferInput {
   fromAccountId: string
@@ -47,9 +48,10 @@ export function useTransferTransaction() {
       return res.json()
     },
     onSuccess: () => {
-      // Invalidação simultânea de contas e transações
+      // Invalidação simultânea de contas, transações e projeção de saldo
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }

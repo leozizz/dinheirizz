@@ -319,7 +319,52 @@ describe('TransactionModal (TDD)', () => {
         expect.objectContaining({
           amount: 49.9,
           isRecurring: true,
-          recurrencePeriod: 'monthly'
+          recurrencePeriod: 'monthly',
+          recurrenceDay: 10,
+          adjustBusinessDay: false
+        })
+      )
+    })
+  })
+
+  it('deve permitir configurar dia fixo de recorrência e vencimento dinâmico em dia útil', async () => {
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="expense"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(amountInput, { target: { value: '120,00' } })
+
+    const recurringToggle = screen.getByTestId('recurring-toggle')
+    fireEvent.click(recurringToggle)
+
+    expect(screen.getByText('Vence todo dia')).toBeInTheDocument()
+    expect(screen.getByText('Vencimento dinâmico em dia útil')).toBeInTheDocument()
+
+    const daySelect = screen.getByTestId('recurrence-day-select')
+    fireEvent.change(daySelect, { target: { value: '25' } })
+
+    const businessDayToggle = screen.getByTestId('adjust-business-day-toggle')
+    fireEvent.click(businessDayToggle)
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 120.0,
+          isRecurring: true,
+          recurrenceDay: 25,
+          adjustBusinessDay: true
         })
       )
     })

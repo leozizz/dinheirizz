@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
+import { FORECAST_QUERY_KEY } from './useForecast'
 import type { TransactionItem } from '../components/dashboard/Dashboard'
 
 export interface CreateTransactionInput {
@@ -259,9 +260,10 @@ export function useCreateTransaction() {
       return res.json()
     },
     onSuccess: () => {
-      // Invalidação reativa imediata do cache de transações e contas
+      // Invalidação reativa imediata do cache de transações, contas e previsão de saldo
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }
@@ -302,6 +304,7 @@ export function usePayTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }
@@ -333,6 +336,7 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }

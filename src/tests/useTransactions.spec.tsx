@@ -353,4 +353,42 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
       })
     )
   })
+
+  it('deve invalidar a query de previsão de saldo (forecast) ao criar, liquidar ou deletar transação', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    })
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    )
+
+    const { result: createHook } = renderHook(() => useCreateTransaction(), { wrapper })
+    await createHook.current.mutateAsync({
+      amount: 100,
+      description: 'Conta de Teste'
+    })
+
+    expect(invalidateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['forecast'] })
+    )
+
+    const { result: payHook } = renderHook(() => usePayTransaction(), { wrapper })
+    await payHook.current.mutateAsync({ transactionId: 'tx-pending-1' })
+
+    expect(invalidateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['forecast'] })
+    )
+
+    const { result: deleteHook } = renderHook(() => useDeleteTransaction(), { wrapper })
+    await deleteHook.current.mutateAsync('tx-1')
+
+    expect(invalidateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['forecast'] })
+    )
+  })
 })

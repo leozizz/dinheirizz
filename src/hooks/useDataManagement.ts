@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import { PIX_KEYS_QUERY_KEY } from './usePixKeys'
+import { FORECAST_QUERY_KEY } from './useForecast'
 
 export const TRANSACTIONS_QUERY_KEY = ['transactions'] as const
 
@@ -40,6 +41,7 @@ export function useDeleteTransactions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }
@@ -103,6 +105,7 @@ export function useDeleteAccounts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }
@@ -136,6 +139,7 @@ export function useResetAllData() {
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: PIX_KEYS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
     }
   })
 }

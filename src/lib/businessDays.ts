@@ -101,3 +101,40 @@ export function calculateRecurringDueDate(
 
   return adjustToNextBusinessDay(rawDate)
 }
+
+export function getNationalHolidayName(date: Date): string | null {
+  const year = date.getUTCFullYear()
+  const md = formatDateMD(date)
+
+  const fixedHolidayNames: Record<string, string> = {
+    '01-01': 'Confraternização Universal',
+    '04-21': 'Tiradentes',
+    '05-01': 'Dia do Trabalho',
+    '09-07': 'Independência do Brasil',
+    '10-12': 'N. Sra. Aparecida',
+    '11-02': 'Finados',
+    '11-15': 'Proclamação da República',
+    '11-20': 'Consciência Negra',
+    '12-25': 'Natal'
+  }
+
+  if (fixedHolidayNames[md]) {
+    return fixedHolidayNames[md]
+  }
+
+  const easter = getEasterDate(year)
+  const easterTime = easter.getTime()
+  const ONE_DAY = 24 * 60 * 60 * 1000
+
+  const carnivalMonday = new Date(easterTime - 48 * ONE_DAY)
+  const carnivalTuesday = new Date(easterTime - 47 * ONE_DAY)
+  const goodFriday = new Date(easterTime - 2 * ONE_DAY)
+  const corpusChristi = new Date(easterTime + 60 * ONE_DAY)
+
+  if (formatDateMD(carnivalMonday) === md) return 'Carnaval'
+  if (formatDateMD(carnivalTuesday) === md) return 'Carnaval'
+  if (formatDateMD(goodFriday) === md) return 'Sexta-feira Santa'
+  if (formatDateMD(corpusChristi) === md) return 'Corpus Christi'
+
+  return null
+}

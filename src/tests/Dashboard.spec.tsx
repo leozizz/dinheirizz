@@ -491,6 +491,39 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.getByText('Cartão de Crédito')).toBeInTheDocument()
     expect(screen.getByText('R$ 1.250,00')).toBeInTheDocument()
   })
+
+  it('deve alternar entre o modo Feed (Lista) e o modo Calendário com persistência em localStorage', () => {
+    localStorage.clear()
+    render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    const btnFeed = screen.getByTestId('view-feed-btn')
+    const btnCalendar = screen.getByTestId('view-calendar-btn')
+    expect(btnFeed).toBeInTheDocument()
+    expect(btnCalendar).toBeInTheDocument()
+
+    // Inicialmente no modo Feed
+    expect(screen.getByText('Últimas Movimentações')).toBeInTheDocument()
+    expect(screen.getByText('Salário Mensal')).toBeInTheDocument()
+
+    // Clica para alternar para o modo Calendário
+    fireEvent.click(btnCalendar)
+
+    expect(localStorage.getItem('dinheirizz_view_mode')).toBe('calendar')
+    expect(screen.getByText(/visão de vencimentos e saldo diário/i)).toBeInTheDocument()
+
+    // Clica de volta no modo Feed
+    fireEvent.click(screen.getByTestId('view-feed-btn'))
+    expect(localStorage.getItem('dinheirizz_view_mode')).toBe('feed')
+    expect(screen.getByText('Últimas Movimentações')).toBeInTheDocument()
+  })
 })
 
 

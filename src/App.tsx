@@ -19,6 +19,8 @@ import { useTransferTransaction } from './hooks/useTransfer'
 import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
 import { useCategories } from './hooks/useCategories'
 import { useAiInsights } from './hooks/useAiInsights'
+import { calculateRecurringDueDate } from './lib/businessDays'
+import { formatYMD } from './lib/calendar'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
 
 const initialTransactions: TransactionItem[] = [
@@ -140,7 +142,7 @@ function MainApp() {
     hasMore: apiHasMore,
     isLoadingMore: apiIsLoadingMore,
     loadMore: apiLoadMore
-  } = useTransactions({ accountId: selectedAccountId || undefined })
+  } = useTransactions({ accountId: selectedAccountId || undefined, limit: 100 })
 
   const { accounts: apiAccounts, isLoading: isAccountsLoading } = useAccounts()
   const createAccountMutation = useCreateAccount()
@@ -307,6 +309,8 @@ function MainApp() {
         dueDate: data.dueDate || null,
         isRecurring: data.isRecurring || false,
         recurrencePeriod: data.recurrencePeriod || null,
+        recurrenceDay: data.recurrenceDay || null,
+        adjustBusinessDay: Boolean(data.adjustBusinessDay),
         installmentTotal: data.installmentTotal || null,
         installmentCurrent: data.installmentTotal ? 1 : null,
         occurred_at: data.occurredAt || new Date().toISOString(),
@@ -395,12 +399,89 @@ function MainApp() {
   const handlePayTransaction = async (txId: string) => {
     if (user) {
       try {
+        if (txId.startsWith('rec-proj-')) {
+          const parts = txId.split('-')
+          const seriesId = parts[2]
+          const year = parseInt(parts[3], 10)
+          const month = parseInt(parts[4], 10)
+          const parent = apiTransactions.find(
+            (t) => t.id === seriesId || t.parentTransactionId === seriesId
+          )
+          if (parent) {
+            const recDay = parent.recurrenceDay ?? (parent as any).recurrence_day ?? 1
+            const adjBD = Boolean(parent.adjustBusinessDay ?? (parent as any).adjust_business_day)
+            const computedDate = calculateRecurringDueDate(year, month, recDay, adjBD)
+            const dateStr = formatYMD(computedDate)
+            const occDate = `${dateStr}T12:00:00Z`
+            await createTxMutation.mutateAsync({
+              amount: Math.abs(parent.amount),
+              type: (parent.amount > 0 ? 'income' : 'expense') as 'income' | 'expense',
+              description: parent.description || undefined,
+              accountId: parent.accountId || undefined,
+              occurredAt: occDate,
+              dueDate: occDate,
+              paid: true,
+              status: 'completed',
+              isRecurring: true,
+              recurrenceDay: recDay,
+              adjustBusinessDay: adjBD
+            })
+            toast.success('Transação baixada com sucesso!')
+            return
+          }
+        }
         await payTxMutation.mutateAsync({ transactionId: txId })
         toast.success('Transação baixada com sucesso!')
       } catch (err: any) {
         toast.error(err?.message || 'Erro ao dar baixa na transação')
       }
     } else {
+      if (txId.startsWith('rec-proj-')) {
+        const parts = txId.split('-')
+        const seriesId = parts[2]
+        const year = parseInt(parts[3], 10)
+        const month = parseInt(parts[4], 10)
+        const parent = demoTransactions.find(
+          (t) => t.id === seriesId || t.parentTransactionId === seriesId
+        )
+        if (parent) {
+          const targetAccId = parent.accountId || demoAccounts[0]?.id
+          if (targetAccId) {
+            setDemoAccounts((accs) =>
+              accs.map((a) =>
+                a.id === targetAccId
+                  ? { ...a, balance: a.balance + parent.amount }
+                  : a
+              )
+            )
+          }
+          const recDay = parent.recurrenceDay ?? (parent as any).recurrence_day ?? 1
+          const adjBD = Boolean(parent.adjustBusinessDay ?? (parent as any).adjust_business_day)
+          const computedDate = calculateRecurringDueDate(year, month, recDay, adjBD)
+          const dateStr = formatYMD(computedDate)
+          const newCompletedTx: TransactionItem = {
+            id: `paid-${txId}`,
+            parentTransactionId: seriesId,
+            description: parent.description,
+            amount: parent.amount,
+            paid: true,
+            status: 'completed',
+            paidAt: new Date().toISOString(),
+            occurred_at: `${dateStr}T12:00:00Z`,
+            dueDate: `${dateStr}T12:00:00Z`,
+            category: parent.category,
+            type: parent.type,
+            accountId: targetAccId,
+            isRecurring: true,
+            recurrenceDay: recDay,
+            adjustBusinessDay: adjBD
+          }
+          setDemoTransactions((prev) => [newCompletedTx, ...prev])
+          toast.success('Transação liquidada (modo demonstração)!')
+          return
+        }
+      }
+
       setDemoTransactions((prev) =>
         prev.map((t) => {
           if (t.id === txId) {

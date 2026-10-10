@@ -6,6 +6,7 @@ import { AccountsBar } from './AccountsBar'
 import { AiInsightsCard } from './AiInsightsCard'
 import { CategoryDonutChart } from './CategoryDonutChart'
 import { ForecastCard } from './ForecastCard'
+import { FinancialCalendar } from './FinancialCalendar'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 import {
@@ -21,7 +22,9 @@ import {
   CreditCard,
   ArrowLeftRight,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  List,
+  Calendar
 } from 'lucide-react'
 
 export interface TransactionItem {
@@ -121,6 +124,21 @@ export function Dashboard({
 }: DashboardProps) {
   const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
+
+  const [viewMode, setViewMode] = useState<'feed' | 'calendar'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dinheirizz_view_mode')
+      if (saved === 'calendar' || saved === 'feed') return saved
+    }
+    return 'feed'
+  })
+
+  const handleViewModeChange = (mode: 'feed' | 'calendar') => {
+    setViewMode(mode)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dinheirizz_view_mode', mode)
+    }
+  }
 
   const handleStatusChange = (newStatus: 'all' | 'completed' | 'pending' | 'future') => {
     setInternalStatusFilter(newStatus)
@@ -466,8 +484,50 @@ export function Dashboard({
         />
       )}
 
-      {/* Extrato Recente */}
-      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">
+      {/* Seletor de Modo de Visualização: Feed vs Calendário */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+          Movimentações
+        </h3>
+        <div className="flex p-0.5 bg-white/5 border border-white/10 rounded-xl">
+          <button
+            type="button"
+            data-testid="view-feed-btn"
+            onClick={() => handleViewModeChange('feed')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              viewMode === 'feed'
+                ? 'bg-white/15 text-white shadow-sm font-bold'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            <span>Feed</span>
+          </button>
+          <button
+            type="button"
+            data-testid="view-calendar-btn"
+            onClick={() => handleViewModeChange('calendar')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              viewMode === 'calendar'
+                ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-bold'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Calendário</span>
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'calendar' ? (
+        <FinancialCalendar
+          transactions={transactions}
+          currentBalance={displayBalance}
+          onPayTransaction={onPayTransaction}
+        />
+      ) : (
+        /* Extrato Recente */
+        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-neutral-400" />
@@ -690,6 +750,7 @@ export function Dashboard({
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

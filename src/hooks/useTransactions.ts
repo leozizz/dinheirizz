@@ -243,6 +243,8 @@ export function useCreateTransaction() {
         dueDate: input.dueDate || undefined,
         isRecurring: input.isRecurring ?? false,
         recurrencePeriod: input.recurrencePeriod || undefined,
+        recurrenceDay: input.recurrenceDay ?? undefined,
+        adjustBusinessDay: input.adjustBusinessDay ?? undefined,
         installmentTotal: input.installmentTotal || undefined
       }
 

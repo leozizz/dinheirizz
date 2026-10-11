@@ -318,15 +318,15 @@ transactionsRouter.post('/', async (c) => {
     // Retorno e persistência em memória quando db não está conectado (testes e modo offline)
     const baseOccurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date()
     let baseDueDate: Date | null = null
-    if (data.dueDate) {
-      baseDueDate = new Date(data.dueDate)
-    } else if (isRecurring && recurrenceDay) {
+    if (isRecurring && recurrenceDay) {
       baseDueDate = calculateRecurringDueDate(
         baseOccurredAt.getFullYear(),
         baseOccurredAt.getMonth(),
         recurrenceDay,
         adjustBusinessDay
       )
+    } else if (data.dueDate) {
+      baseDueDate = new Date(data.dueDate)
     } else if (status === 'pending') {
       baseDueDate = baseOccurredAt
     }
@@ -451,15 +451,15 @@ transactionsRouter.post('/', async (c) => {
     // 4. Inserção das transações (suporte a parcelas)
     const baseOccurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date()
     let baseDueDate: Date | null = null
-    if (data.dueDate) {
-      baseDueDate = new Date(data.dueDate)
-    } else if (isRecurring && recurrenceDay) {
+    if (isRecurring && recurrenceDay) {
       baseDueDate = calculateRecurringDueDate(
         baseOccurredAt.getFullYear(),
         baseOccurredAt.getMonth(),
         recurrenceDay,
         adjustBusinessDay
       )
+    } else if (data.dueDate) {
+      baseDueDate = new Date(data.dueDate)
     } else if (status === 'pending') {
       baseDueDate = baseOccurredAt
     }

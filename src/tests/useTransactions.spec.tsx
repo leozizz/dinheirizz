@@ -257,6 +257,36 @@ describe('Finance Hooks with TanStack Query (TDD)', () => {
     )
   })
 
+  it('deve incluir recurrenceDay e adjustBusinessDay no payload de useCreateTransaction', async () => {
+    const { result } = renderHook(() => useCreateTransaction(), {
+      wrapper: createWrapper()
+    })
+
+    await result.current.mutateAsync({
+      amount: 150,
+      description: 'Conta Recorrente',
+      type: 'expense',
+      isRecurring: true,
+      recurrenceDay: 12,
+      adjustBusinessDay: true
+    })
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/transactions'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"recurrenceDay":12')
+      })
+    )
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/transactions'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"adjustBusinessDay":true')
+      })
+    )
+  })
+
   it('deve disparar mutação para deletar transação via useDeleteTransaction', async () => {
     const { result } = renderHook(() => useDeleteTransaction(), {
       wrapper: createWrapper()

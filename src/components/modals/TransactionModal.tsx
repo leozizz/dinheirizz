@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { parseCurrencyToNumber, formatBRL } from '../../lib/formatters'
 import { calculateRecurringDueDate } from '../../lib/businessDays'
+import { parseDateParts } from '../../lib/calendar'
 
 export type TransactionMode = 'income' | 'expense' | 'transfer'
 
@@ -174,13 +175,11 @@ export function TransactionModal({
     setLoading(true)
     try {
       let finalDueDate: string | undefined = undefined
-      if (status === 'pending' || isInstallment) {
-        finalDueDate = dueDate || occurredAt
-      } else if (isRecurring) {
-        const occDate = new Date(occurredAt)
+      if (mode !== 'transfer' && isRecurring && recurrencePeriod === 'monthly') {
+        const parts = parseDateParts(occurredAt)
         const computed = calculateRecurringDueDate(
-          occDate.getUTCFullYear(),
-          occDate.getUTCMonth(),
+          parts.year,
+          parts.month,
           recurrenceDay,
           adjustBusinessDay
         )
@@ -188,6 +187,8 @@ export function TransactionModal({
         const m = String(computed.getUTCMonth() + 1).padStart(2, '0')
         const d = String(computed.getUTCDate()).padStart(2, '0')
         finalDueDate = `${y}-${m}-${d}`
+      } else if (status === 'pending' || isInstallment) {
+        finalDueDate = dueDate || occurredAt
       }
 
       await onSubmit({
@@ -613,10 +614,10 @@ export function TransactionModal({
                             <span className="text-neutral-400">Primeiro vencimento:</span>
                             <span className="font-semibold text-white">
                               {(() => {
-                                const occDate = new Date(occurredAt)
+                                const parts = parseDateParts(occurredAt)
                                 const computed = calculateRecurringDueDate(
-                                  occDate.getUTCFullYear(),
-                                  occDate.getUTCMonth(),
+                                  parts.year,
+                                  parts.month,
                                   recurrenceDay,
                                   adjustBusinessDay
                                 )

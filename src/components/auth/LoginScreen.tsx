@@ -370,21 +370,15 @@ export const LoginScreen = () => {
 
           <button
             type="button"
-            disabled
-            aria-disabled="true"
-            aria-label="Entrar com conta Apple (Em breve)"
-            title="Login com Apple disponível em breve"
-            className="min-h-[44px] py-2 px-2.5 sm:px-3 rounded-xl bg-white/[0.03] border border-white/5 text-neutral-400 text-xs font-medium flex items-center justify-between gap-1.5 opacity-60 cursor-not-allowed select-none transition-all"
+            data-testid="oauth-apple-btn"
+            onClick={() => handleOAuth('apple')}
+            aria-label="Entrar com conta Apple"
+            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 active:bg-white/15 border border-white/10 text-white text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <svg className="w-3.5 h-3.5 flex-shrink-0 fill-current text-neutral-300 opacity-80" viewBox="0 0 170 170">
-                <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.93-12.04-14.54-6.08-9.28-10.87-19.98-14.34-32.09-3.48-12.11-5.22-23.49-5.22-34.14 0-15.02 3.8-27.42 11.41-37.21 7.61-9.79 17.06-14.79 28.34-15 4.35 0 9.28 1.16 14.79 3.48 5.51 2.32 9.4 3.52 11.66 3.6 2.03 0 5.92-1.22 11.66-3.66 5.74-2.44 10.47-3.56 14.21-3.35 10.57.51 19.34 4.35 26.29 11.51 6.95 7.16 11.21 16.03 12.79 26.6-9.51 5.74-14.18 13.93-14.01 24.58.17 8.35 3.35 15.35 9.53 21 6.18 5.65 13.43 9.09 21.75 10.32-2.12 6.55-4.72 13.06-7.8 19.53zm-28.71-105.7c0 7.15-2.61 13.9-7.83 20.25-5.22 6.35-11.64 10.4-19.26 12.15-.52-1.39-.78-2.78-.78-4.17 0-6.95 2.78-13.68 8.34-20.19 5.56-6.51 12.06-10.46 19.53-11.85 0 1.28 0 2.55 0 3.81z" />
-              </svg>
-              <span className="truncate">Apple</span>
-            </div>
-            <span className="text-[9px] sm:text-[10px] tracking-wide px-1.5 py-0.5 rounded-full bg-white/10 text-neutral-400 border border-white/5 font-normal flex-shrink-0">
-              Em breve
-            </span>
+            <svg className="w-3.5 h-3.5 flex-shrink-0 fill-current text-white" viewBox="0 0 170 170">
+              <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.93-12.04-14.54-6.08-9.28-10.87-19.98-14.34-32.09-3.48-12.11-5.22-23.49-5.22-34.14 0-15.02 3.8-27.42 11.41-37.21 7.61-9.79 17.06-14.79 28.34-15 4.35 0 9.28 1.16 14.79 3.48 5.51 2.32 9.4 3.52 11.66 3.6 2.03 0 5.92-1.22 11.66-3.66 5.74-2.44 10.47-3.56 14.21-3.35 10.57.51 19.34 4.35 26.29 11.51 6.95 7.16 11.21 16.03 12.79 26.6-9.51 5.74-14.18 13.93-14.01 24.58.17 8.35 3.35 15.35 9.53 21 6.18 5.65 13.43 9.09 21.75 10.32-2.12 6.55-4.72 13.06-7.8 19.53zm-28.71-105.7c0 7.15-2.61 13.9-7.83 20.25-5.22 6.35-11.64 10.4-19.26 12.15-.52-1.39-.78-2.78-.78-4.17 0-6.95 2.78-13.68 8.34-20.19 5.56-6.51 12.06-10.46 19.53-11.85 0 1.28 0 2.55 0 3.81z" />
+            </svg>
+            <span className="truncate">Apple</span>
           </button>
         </div>
       </div>

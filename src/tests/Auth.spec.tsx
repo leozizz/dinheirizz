@@ -83,18 +83,20 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
       }
 
       if (typeof url === 'string' && url.includes('/api/v1/users/sync')) {
+        const body = JSON.parse((init?.body as string) || '{}')
+        const isApple = body.provider === 'apple'
         return {
           ok: true,
           status: 200,
           json: async () => ({
             user: {
-              id: 'google-user-123',
-              email: 'usuario.google@gmail.com',
-              fullName: 'Usuário Google',
+              id: isApple ? 'apple-user-999' : 'google-user-123',
+              email: isApple ? 'usuario.apple@privaterelay.appleid.com' : 'usuario.google@gmail.com',
+              fullName: body.fullName ?? (isApple ? 'Usuário Apple' : 'Usuário Google'),
               username: null,
-              avatarUrl: 'https://lh3.googleusercontent.com/avatar.jpg',
-              provider: 'google',
-              providers: ['google']
+              avatarUrl: body.avatarUrl ?? null,
+              provider: isApple ? 'apple' : 'google',
+              providers: isApple ? ['apple'] : ['google']
             }
           })
         } as Response
@@ -162,7 +164,7 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     })
   })
 
-  it('deve exibir botão Google ativo e botão Apple bloqueado com badge "Em breve"', async () => {
+  it('deve renderizar a tela de login com botões Google e Apple habilitados e acessíveis', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
@@ -170,15 +172,56 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     )
 
     const googleBtn = screen.getByTestId('oauth-google-btn')
-    const appleBtn = screen.getByRole('button', { name: /apple/i })
+    const appleBtn = screen.getByTestId('oauth-apple-btn')
 
     expect(googleBtn).not.toBeDisabled()
     expect(googleBtn).toHaveAttribute('aria-label', 'Entrar com conta Google')
     expect(googleBtn.textContent).not.toContain('Em breve')
 
-    expect(appleBtn).toBeDisabled()
-    expect(appleBtn).toHaveAttribute('aria-disabled', 'true')
-    expect(appleBtn.textContent).toContain('Em breve')
+    expect(appleBtn).not.toBeDisabled()
+    expect(appleBtn).not.toHaveAttribute('aria-disabled', 'true')
+    expect(appleBtn).toHaveAttribute('aria-label', 'Entrar com conta Apple')
+    expect(appleBtn.textContent).not.toContain('Em breve')
+  })
+
+  it('deve invocar signInWithOAuth com provedor "apple" ao clicar no botão da Apple', async () => {
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    const appleBtn = screen.getByTestId('oauth-apple-btn')
+    fireEvent.click(appleBtn)
+
+    await waitFor(() => {
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+        provider: 'apple',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+    })
+  })
+
+  it('deve exibir mensagem de erro quando signInWithOAuth com Apple falha', async () => {
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValueOnce({
+      data: { provider: 'apple', url: null },
+      error: new AuthError('Sign in with Apple popup closed', 400, 'popup_closed')
+    })
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    const appleBtn = screen.getByTestId('oauth-apple-btn')
+    fireEvent.click(appleBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Sign in with Apple popup closed/i)).toBeInTheDocument()
+    })
   })
 
   it('deve invocar signInWithOAuth com provedor "google" ao clicar no botão do Google', async () => {
@@ -278,6 +321,63 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Logado como: usuario.google@gmail.com/i)).toBeInTheDocument()
+    })
+
+    expect(replaceStateSpy).toHaveBeenCalled()
+    replaceStateSpy.mockRestore()
+  })
+
+  it('deve sincronizar usuário Apple com BFF (incluindo Private Relay) e persistir sessão após retorno do OAuth', async () => {
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
+    window.location.hash = '#access_token=apple-access-token&token_type=bearer'
+
+    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'apple-oauth-access-token',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'apple-refresh-token',
+          user: {
+            id: 'apple-user-999',
+            email: 'usuario.apple@privaterelay.appleid.com',
+            app_metadata: { provider: 'apple', providers: ['apple'] },
+            user_metadata: {
+              full_name: 'Usuário Apple'
+            },
+            aud: 'authenticated',
+            created_at: '2026-11-06T20:00:00.000Z'
+          }
+        } as unknown as Session
+      },
+      error: null
+    })
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/users/sync'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer apple-oauth-access-token',
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify({
+            fullName: 'Usuário Apple',
+            provider: 'apple'
+          })
+        })
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/Logado como: usuario.apple@privaterelay.appleid.com/i)).toBeInTheDocument()
     })
 
     expect(replaceStateSpy).toHaveBeenCalled()

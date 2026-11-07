@@ -83,8 +83,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (supabaseSession?.access_token && supabaseSession.user) {
           const meta = (supabaseSession.user.user_metadata as Record<string, string | undefined>) || {}
-          const fullName = meta.full_name || meta.name || null
+          const fullName = meta.full_name || meta.name || (meta.first_name ? `${meta.first_name} ${meta.last_name || ''}`.trim() : null)
           const avatarUrl = meta.avatar_url || meta.picture || null
+          const provider = (supabaseSession.user.app_metadata?.provider as string) || 'apple'
 
           const origin = getApiOrigin()
           const syncRes = await fetch(`${origin}/api/v1/users/sync`, {
@@ -96,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             body: JSON.stringify({
               fullName: fullName ?? undefined,
               avatarUrl: avatarUrl ?? undefined,
-              provider: 'google'
+              provider: provider
             })
           }).catch(() => null)
 
@@ -109,8 +110,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 fullName: syncData.user.fullName ?? null,
                 username: syncData.user.username ?? null,
                 avatarUrl: syncData.user.avatarUrl ?? null,
-                provider: syncData.user.provider || 'google',
-                providers: syncData.user.providers || ['google'],
+                provider: syncData.user.provider || provider,
+                providers: syncData.user.providers || [provider],
                 user_metadata: {
                   full_name: syncData.user.fullName ?? null,
                   username: syncData.user.username ?? null,
@@ -346,23 +347,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const signInWithOAuth = async (provider: 'google' | 'apple'): Promise<{ error: AuthError | null }> => {
-    if (provider !== 'google') {
-      return {
-        error: { message: 'Login com Apple será disponibilizado na próxima fase (Fase 1.7).' }
-      }
-    }
-
     try {
       const origin = getApiOrigin()
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account'
-          }
+      const options: { redirectTo: string; queryParams?: Record<string, string> } = {
+        redirectTo: origin
+      }
+
+      if (provider === 'google') {
+        options.queryParams = {
+          access_type: 'offline',
+          prompt: 'select_account'
         }
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options
       })
 
       if (error) {
@@ -371,7 +371,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return { error: null }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Falha ao iniciar autenticação com Google'
+      const providerLabel = provider === 'apple' ? 'Apple' : 'Google'
+      const msg = err instanceof Error ? err.message : `Falha ao iniciar autenticação com ${providerLabel}`
       return { error: { message: msg } }
     }
   }

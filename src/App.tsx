@@ -11,6 +11,7 @@ import { AccountModal } from './components/modals/AccountModal'
 import { LogoutConfirmModal } from './components/modals/LogoutConfirmModal'
 import { ProfileModal } from './components/modals/ProfileModal'
 import { DangerZoneModal } from './components/modals/DangerZoneModal'
+import { BudgetModal } from './components/modals/BudgetModal'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
@@ -19,6 +20,13 @@ import { useTransferTransaction } from './hooks/useTransfer'
 import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
 import { useCategories } from './hooks/useCategories'
 import { useAiInsights } from './hooks/useAiInsights'
+import {
+  useBudgets,
+  useCreateBudget,
+  useUpdateBudget,
+  useDeleteBudget,
+  type BudgetProgressItem
+} from './hooks/useBudgets'
 import { calculateRecurringDueDate } from './lib/businessDays'
 import { formatYMD } from './lib/calendar'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
@@ -113,7 +121,7 @@ const initialAccounts: AccountItem[] = [
   { id: 'acc-2', name: 'Itaú Reserva de Emergência', type: 'savings', balance: 4350.2, bank: 'Itaú', color: '#ec7000' }
 ]
 
-function MainApp() {
+const MainApp = () => {
   const { user, signOut } = useAuth()
   const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
   const [demoTransactions, setDemoTransactions] = useState<TransactionItem[]>(initialTransactions)
@@ -130,6 +138,12 @@ function MainApp() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false)
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
+  const [demoBudgets, setDemoBudgets] = useState<Array<{ id: string; categoryId: string; amountLimit: number }>>([
+    { id: 'demo-b-1', categoryId: 'cat-1', amountLimit: 1500 },
+    { id: 'demo-b-2', categoryId: 'cat-3', amountLimit: 1200 },
+    { id: 'demo-b-3', categoryId: 'cat-4', amountLimit: 800 }
+  ])
 
   // TanStack Query Hooks (Carregamento reativo da API do BFF)
   const {
@@ -156,6 +170,15 @@ function MainApp() {
   const payTxMutation = usePayTransaction()
 
   const {
+    budgets: apiBudgets,
+    summary: apiBudgetSummary,
+    isLoading: isBudgetsLoading
+  } = useBudgets()
+  const createBudgetMutation = useCreateBudget()
+  const updateBudgetMutation = useUpdateBudget()
+  const deleteBudgetMutation = useDeleteBudget()
+
+  const {
     insight: apiInsight,
     isLoading: isAiLoading,
     isGenerating: isAiGenerating,
@@ -180,6 +203,90 @@ function MainApp() {
   const activeIncome = user ? apiIncome : demoIncome
   const activeExpense = user ? apiExpense : demoExpense
   const activeCategories = apiCategories.length > 0 ? apiCategories : initialCategories
+
+  // Orçamentos no modo demonstração
+  const computedDemoBudgets: BudgetProgressItem[] = demoBudgets.map((b) => {
+    const cat = initialCategories.find((c) => c.id === b.categoryId)
+    let spent = 0
+    for (const t of demoTransactions) {
+      if (t.amount < 0) {
+        const matchesCategory =
+          (t.category?.name && cat?.name && t.category.name.toLowerCase() === cat.name.toLowerCase()) ||
+          (t.categoryId && t.categoryId === cat?.id)
+        if (matchesCategory) {
+          spent += Math.abs(t.amount)
+        }
+      }
+    }
+    spent = Math.round(spent * 100) / 100
+    const remaining = Math.max(0, Math.round((b.amountLimit - spent) * 100) / 100)
+    const pct = b.amountLimit > 0 ? Math.round((spent / b.amountLimit) * 1000) / 10 : 0
+    let status: 'normal' | 'warning' | 'exceeded' = 'normal'
+    if (pct >= 100) status = 'exceeded'
+    else if (pct >= 75) status = 'warning'
+
+    return {
+      id: b.id,
+      categoryId: b.categoryId,
+      categoryName: cat?.name || 'Categoria',
+      categoryColor: cat?.name === 'Alimentação' ? '#10b981' : (cat?.name === 'Infraestrutura' ? '#8b5cf6' : '#3b82f6'),
+      categoryIcon: null,
+      amountLimit: b.amountLimit,
+      spentAmount: spent,
+      remainingAmount: remaining,
+      percentageUsed: pct,
+      isOverBudget: spent >= b.amountLimit,
+      status
+    }
+  })
+
+  const demoBudgetTotalLimit = demoBudgets.reduce((sum, b) => sum + b.amountLimit, 0)
+  const demoBudgetTotalSpent = computedDemoBudgets.reduce((sum, b) => sum + b.spentAmount, 0)
+  const demoBudgetSummary = {
+    period: new Date().toISOString().slice(0, 7),
+    totalBudgetLimit: demoBudgetTotalLimit,
+    totalSpent: demoBudgetTotalSpent,
+    totalRemaining: Math.max(0, demoBudgetTotalLimit - demoBudgetTotalSpent),
+    overallPercentageUsed:
+      demoBudgetTotalLimit > 0 ? Math.round((demoBudgetTotalSpent / demoBudgetTotalLimit) * 1000) / 10 : 0,
+    budgets: computedDemoBudgets
+  }
+
+  const activeBudgets = user ? apiBudgets : computedDemoBudgets
+  const activeBudgetSummary = user ? apiBudgetSummary : demoBudgetSummary
+
+  const handleSaveBudget = async (data: { categoryId: string; amountLimit: number }) => {
+    if (user) {
+      const existing = apiBudgets.find((b) => b.categoryId === data.categoryId)
+      if (existing) {
+        await updateBudgetMutation.mutateAsync({ id: existing.id, amountLimit: data.amountLimit })
+      } else {
+        await createBudgetMutation.mutateAsync({ categoryId: data.categoryId, amountLimit: data.amountLimit })
+      }
+      toast.success('Orçamento salvo com sucesso!')
+    } else {
+      setDemoBudgets((prev) => {
+        const idx = prev.findIndex((b) => b.categoryId === data.categoryId)
+        if (idx >= 0) {
+          const updated = [...prev]
+          updated[idx] = { ...updated[idx], amountLimit: data.amountLimit }
+          return updated
+        }
+        return [...prev, { id: `demo-b-${Date.now()}`, categoryId: data.categoryId, amountLimit: data.amountLimit }]
+      })
+      toast.success('Orçamento salvo (modo demo)!')
+    }
+  }
+
+  const handleDeleteBudget = async (budgetId: string) => {
+    if (user) {
+      await deleteBudgetMutation.mutateAsync(budgetId)
+      toast.success('Orçamento removido com sucesso!')
+    } else {
+      setDemoBudgets((prev) => prev.filter((b) => b.id !== budgetId))
+      toast.success('Orçamento removido (modo demo)!')
+    }
+  }
 
   const handleActionClick = (action: ActionType) => {
     if (action === 'pix') {
@@ -687,6 +794,10 @@ function MainApp() {
           isAiGenerating={isAiGenerating}
           onGenerateAiInsight={user ? () => generateInsights() : undefined}
           onPayTransaction={handlePayTransaction}
+          budgets={activeBudgets}
+          budgetSummary={activeBudgetSummary}
+          onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
+          isBudgetsLoading={Boolean(user && isBudgetsLoading)}
         />
       </main>
 
@@ -699,6 +810,19 @@ function MainApp() {
         defaultAccountId={selectedAccountId || undefined}
         onClose={() => setIsTxModalOpen(false)}
         onSubmit={handleCreateTransaction}
+      />
+
+      {/* Modal de Orçamentos Mensais por Categoria */}
+      <BudgetModal
+        isOpen={isBudgetModalOpen}
+        onClose={() => setIsBudgetModalOpen(false)}
+        categories={activeCategories}
+        budgets={activeBudgets}
+        onSaveBudget={handleSaveBudget}
+        onDeleteBudget={handleDeleteBudget}
+        isLoading={Boolean(
+          user && (createBudgetMutation.isPending || updateBudgetMutation.isPending || deleteBudgetMutation.isPending)
+        )}
       />
 
       {/* Modal de Carteira Pix */}
@@ -750,7 +874,7 @@ function MainApp() {
   )
 }
 
-export default function App() {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -759,3 +883,5 @@ export default function App() {
     </QueryClientProvider>
   )
 }
+
+export default App

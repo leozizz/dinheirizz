@@ -7,6 +7,8 @@ import { AiInsightsCard } from './AiInsightsCard'
 import { CategoryDonutChart } from './CategoryDonutChart'
 import { ForecastCard } from './ForecastCard'
 import { FinancialCalendar } from './FinancialCalendar'
+import { BudgetProgressWidget } from './BudgetProgressWidget'
+import type { BudgetProgressItem } from '../../hooks/useBudgets'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 import {
@@ -38,6 +40,7 @@ export interface TransactionItem {
     color?: string | null
     icon?: string | null
   } | null
+  categoryId?: string | null
   type?: string
   accountId?: string | null
   account_id?: string | null
@@ -77,9 +80,19 @@ export interface DashboardProps {
   statusFilter?: 'all' | 'completed' | 'pending' | 'future'
   onStatusFilterChange?: (status: 'all' | 'completed' | 'pending' | 'future') => void
   onPayTransaction?: (transactionId: string) => void | Promise<void>
+  // Issue #31: Orçamentos Mensais por Categoria
+  budgets?: BudgetProgressItem[]
+  budgetSummary?: {
+    totalBudgetLimit: number
+    totalSpent: number
+    totalRemaining: number
+    overallPercentageUsed: number
+  } | null
+  onOpenBudgetModal?: () => void
+  isBudgetsLoading?: boolean
 }
 
-function getDueStatus(dueDateStr?: string | null) {
+const getDueStatus = (dueDateStr?: string | null) => {
   if (!dueDateStr) return null
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
@@ -99,7 +112,7 @@ function getDueStatus(dueDateStr?: string | null) {
   return { label: `Vence em ${diffDays}d`, color: 'bg-white/5 text-neutral-300 border-white/10' }
 }
 
-export function Dashboard({
+export const Dashboard: React.FC<DashboardProps> = ({
   totalBalance,
   totalIncome,
   totalExpense,
@@ -120,8 +133,12 @@ export function Dashboard({
   insight = null,
   isAiLoading = false,
   isAiGenerating = false,
-  onGenerateAiInsight
-}: DashboardProps) {
+  onGenerateAiInsight,
+  budgets,
+  budgetSummary,
+  onOpenBudgetModal,
+  isBudgetsLoading = false
+}) => {
   const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
 
@@ -455,6 +472,19 @@ export function Dashboard({
 
       {/* Distribuição por Categoria (Gráfico em Aro / Donut - Pierre & Minhas Finanças benchmark) */}
       <CategoryDonutChart transactions={filteredTransactions} />
+
+      {/* Orçamentos Mensais por Categoria (Budget Envelopes - Issue #31) */}
+      {(budgets !== undefined || onOpenBudgetModal) && (
+        <BudgetProgressWidget
+          budgets={budgets || []}
+          totalBudgetLimit={budgetSummary?.totalBudgetLimit || 0}
+          totalSpent={budgetSummary?.totalSpent || 0}
+          totalRemaining={budgetSummary?.totalRemaining || 0}
+          overallPercentageUsed={budgetSummary?.overallPercentageUsed || 0}
+          onOpenBudgetModal={onOpenBudgetModal || (() => {})}
+          isLoading={isBudgetsLoading}
+        />
+      )}
 
       {/* Barra de Contas */}
       {accounts.length > 0 && onSelectAccount && onNewAccount && (

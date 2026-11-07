@@ -16,7 +16,12 @@
     "db:clean": "node scripts/clean_db.mjs",
     "db:inspect": "node scripts/inspect_db.mjs",
     "supabase:types": "supabase gen types typescript --project-id wkglkyxqbhlrnodgdscf > src/types/database.types.ts",
-    "pages:dev": "wrangler pages dev dist"
+    "pages:dev": "wrangler pages dev dist",
+    "task:handoff": "node scripts/paperclip-task.mjs",
+    "sync:status": "node scripts/paperclip-sync.mjs --status",
+    "sync:board": "node scripts/paperclip-sync.mjs --sync",
+    "sync:dispatch": "node scripts/paperclip-sync.mjs --dispatch-next",
+    "sync:close": "node scripts/paperclip-sync.mjs --close-current"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

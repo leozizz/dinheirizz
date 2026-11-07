@@ -98,6 +98,16 @@ export const userAiSettings = pgTable('user_ai_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
 
+export const budgets = pgTable('budgets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
+  amountLimit: numeric('amount_limit', { precision: 12, scale: 2 }).notNull(),
+  period: text('period').default('monthly').notNull(), // 'YYYY-MM' ou 'monthly'
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+})
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -118,3 +128,7 @@ export type NewInsight = typeof insights.$inferInsert
 
 export type UserAiSetting = typeof userAiSettings.$inferSelect
 export type NewUserAiSetting = typeof userAiSettings.$inferInsert
+
+export type Budget = typeof budgets.$inferSelect
+export type NewBudget = typeof budgets.$inferInsert
+

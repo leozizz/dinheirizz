@@ -312,7 +312,6 @@ describe('Dashboard & QuickActions (TDD)', () => {
         amount: -450,
         paid: false,
         status: 'pending' as const,
-        dueDate: '2026-10-15T00:00:00Z',
         installmentCurrent: 3,
         installmentTotal: 10,
         isRecurring: false,

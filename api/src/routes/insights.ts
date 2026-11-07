@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { getDb } from '../db/client'
-import { insights, transactions, userAiSettings, users } from '../db/schema'
+import { insights, transactions, userAiSettings, users, budgets, categories } from '../db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import type { AuthEnv } from '../middlewares/auth'
 import {
@@ -15,6 +15,8 @@ import {
 import { decryptApiKey } from '../services/crypto'
 import { mockTransactionsStore } from './transactions'
 import { mockUserAiSettingsStore } from './userAi'
+import { mockBudgetsStore } from './budgets'
+import { mockCategoriesStore } from './categories'
 
 export interface MockInsightRecord extends GeneratedInsight {
   id: string
@@ -104,6 +106,126 @@ async function getUserTransactions(
   } catch {
     return []
   }
+}
+
+/**
+ * Coleta alertas e recomendações de limites de orçamento
+ */
+const getBudgetThresholdAlerts = async (
+  userId: string,
+  period: string
+): Promise<{ alerts: string[]; recommendations: string[] }> => {
+  const db = getDb()
+  const budgetAlerts: string[] = []
+  const budgetRecs: string[] = []
+
+  let userBudgets: Array<{ categoryId: string; amountLimit: string; period: string }> = []
+  if (!db) {
+    userBudgets = Array.from(mockBudgetsStore.values()).filter(
+      (b) => b.userId === userId && (b.period === period || b.period === 'monthly')
+    )
+  } else {
+    try {
+      const rows = await db.select().from(budgets).where(eq(budgets.userId, userId))
+      userBudgets = rows.filter((b) => b.period === period || b.period === 'monthly')
+    } catch {
+      userBudgets = Array.from(mockBudgetsStore.values()).filter(
+        (b) => b.userId === userId && (b.period === period || b.period === 'monthly')
+      )
+    }
+  }
+
+  if (userBudgets.length === 0) {
+    return { alerts: budgetAlerts, recommendations: budgetRecs }
+  }
+
+  const categoriesMap = new Map<string, string>()
+  if (!db) {
+    for (const [id, cat] of mockCategoriesStore.entries()) {
+      if (!cat.userId || cat.userId === userId) {
+        categoriesMap.set(id, cat.name)
+      }
+    }
+  } else {
+    try {
+      const catRows = await db.select().from(categories).where(eq(categories.userId, userId))
+      for (const cat of catRows) {
+        categoriesMap.set(cat.id, cat.name)
+      }
+    } catch {
+      for (const [id, cat] of mockCategoriesStore.entries()) {
+        categoriesMap.set(id, cat.name)
+      }
+    }
+  }
+
+  const expensesByCategory = new Map<string, number>()
+  if (!db) {
+    for (const tx of mockTransactionsStore.values()) {
+      if (tx.userId === userId && tx.categoryId) {
+        const d = tx.occurredAt || tx.createdAt
+        if (d.startsWith(period)) {
+          const isExpense = tx.type === 'expense' || (!tx.type && parseFloat(tx.amount) < 0)
+          if (isExpense) {
+            const val = Math.abs(parseFloat(tx.amount) || 0)
+            expensesByCategory.set(tx.categoryId, (expensesByCategory.get(tx.categoryId) || 0) + val)
+          }
+        }
+      }
+    }
+  } else {
+    try {
+      const txRows = await db.select().from(transactions).where(eq(transactions.userId, userId))
+      for (const r of txRows) {
+        if (r.categoryId) {
+          const d = r.occurredAt instanceof Date ? r.occurredAt.toISOString() : String(r.occurredAt)
+          if (d.startsWith(period)) {
+            const val = Math.abs(parseFloat(r.amount) || 0)
+            expensesByCategory.set(r.categoryId, (expensesByCategory.get(r.categoryId) || 0) + val)
+          }
+        }
+      }
+    } catch {
+      for (const tx of mockTransactionsStore.values()) {
+        if (tx.userId === userId && tx.categoryId) {
+          const d = tx.occurredAt || tx.createdAt
+          if (d.startsWith(period)) {
+            const isExpense = tx.type === 'expense' || (!tx.type && parseFloat(tx.amount) < 0)
+            if (isExpense) {
+              const val = Math.abs(parseFloat(tx.amount) || 0)
+              expensesByCategory.set(tx.categoryId, (expensesByCategory.get(tx.categoryId) || 0) + val)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const b of userBudgets) {
+    const limit = parseFloat(b.amountLimit) || 0
+    if (limit <= 0) continue
+    const spent = expensesByCategory.get(b.categoryId) || 0
+    const pct = Math.round((spent / limit) * 100)
+    const catName = categoriesMap.get(b.categoryId) || 'Categoria'
+
+    if (pct >= 100) {
+      budgetAlerts.push(
+        `Orçamento estourado: a categoria "${catName}" atingiu ${pct}% do limite definido (gasto de R$ ${spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de R$ ${limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}).`
+      )
+      budgetRecs.push(
+        `Contenha imediatamente novos gastos na categoria "${catName}" para reequilibrar o orçamento mensal.`
+      )
+    } else if (pct >= 75) {
+      budgetAlerts.push(
+        `Atenção ao orçamento: a categoria "${catName}" já consumiu ${pct}% do teto estipulado.`
+      )
+      budgetRecs.push(
+        `Acompanhe com atenção as saídas em "${catName}" até o encerramento do período.`
+      )
+    }
+  }
+
+  return { alerts: budgetAlerts, recommendations: budgetRecs }
 }
 
 interface AiExecutionParams {
@@ -276,11 +398,15 @@ insightsRouter.get('/', async (c) => {
     modelName: aiParams.modelName
   })
 
+  const budgetFeed = await getBudgetThresholdAlerts(userId, period)
+
   const newRecord: MockInsightRecord = {
     id: `insight-${Date.now()}`,
     userId,
     period,
     ...generated,
+    alerts: [...budgetFeed.alerts, ...(generated.alerts || [])],
+    recommendations: [...budgetFeed.recommendations, ...(generated.recommendations || [])],
     metrics: {
       totalIncome: metrics.totalIncome,
       totalExpense: metrics.totalExpense,
@@ -355,11 +481,15 @@ insightsRouter.post('/generate', async (c) => {
     modelName: aiParams.modelName
   })
 
+  const budgetFeed = await getBudgetThresholdAlerts(userId, period)
+
   const record: MockInsightRecord = {
     id: `insight-${Date.now()}`,
     userId,
     period,
     ...generated,
+    alerts: [...budgetFeed.alerts, ...(generated.alerts || [])],
+    recommendations: [...budgetFeed.recommendations, ...(generated.recommendations || [])],
     metrics: {
       totalIncome: metrics.totalIncome,
       totalExpense: metrics.totalExpense,

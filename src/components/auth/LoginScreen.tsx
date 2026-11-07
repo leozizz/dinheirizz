@@ -16,7 +16,7 @@ import { loginSchema, signUpSchema } from '../../schemas/auth'
 
 import { toast, Toaster } from 'sonner'
 
-export function LoginScreen() {
+export const LoginScreen = () => {
   const { signInWithPassword, signUp, signInWithOAuth } = useAuth()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
@@ -108,8 +108,8 @@ export function LoginScreen() {
         }
       }
 
-    } catch (err: any) {
-      const msg = err.message || 'Erro inesperado ao processar a autenticação.'
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro inesperado ao processar a autenticação.'
       setErrorMessage(msg)
       toast.error(msg)
     } finally {
@@ -121,7 +121,9 @@ export function LoginScreen() {
     setErrorMessage(null)
     const { error } = await signInWithOAuth(provider)
     if (error) {
-      setErrorMessage(`Erro ao iniciar autenticação com ${provider}: ${error.message}`)
+      const msg = `Erro ao iniciar autenticação com ${provider}: ${error.message}`
+      setErrorMessage(msg)
+      toast.error(msg)
     }
   }
 
@@ -340,41 +342,37 @@ export function LoginScreen() {
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
           <button
             type="button"
-            disabled
-            aria-disabled="true"
-            title="Login com Google disponível em breve"
-            className="min-h-[44px] py-2 px-2.5 sm:px-3 rounded-xl bg-white/[0.03] border border-white/5 text-neutral-400 text-xs font-medium flex items-center justify-between gap-1.5 opacity-60 cursor-not-allowed select-none transition-all"
+            data-testid="oauth-google-btn"
+            onClick={() => handleOAuth('google')}
+            aria-label="Entrar com conta Google"
+            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 active:bg-white/15 border border-white/10 text-white text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <svg className="w-3.5 h-3.5 flex-shrink-0 opacity-80" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                />
-              </svg>
-              <span className="truncate">Google</span>
-            </div>
-            <span className="text-[9px] sm:text-[10px] tracking-wide px-1.5 py-0.5 rounded-full bg-white/10 text-neutral-400 border border-white/5 font-normal flex-shrink-0">
-              Em breve
-            </span>
+            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
+              />
+            </svg>
+            <span className="truncate">Google</span>
           </button>
 
           <button
             type="button"
             disabled
             aria-disabled="true"
+            aria-label="Entrar com conta Apple (Em breve)"
             title="Login com Apple disponível em breve"
             className="min-h-[44px] py-2 px-2.5 sm:px-3 rounded-xl bg-white/[0.03] border border-white/5 text-neutral-400 text-xs font-medium flex items-center justify-between gap-1.5 opacity-60 cursor-not-allowed select-none transition-all"
           >

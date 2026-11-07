@@ -1,9 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import type { Session } from '@supabase/supabase-js'
+import { AuthError } from '@supabase/supabase-js'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { LoginScreen } from '../components/auth/LoginScreen'
+import { supabase } from '../lib/supabase'
 
-function TestConsumer() {
+vi.mock('../lib/supabase', () => ({
+  supabase: {
+    auth: {
+      signInWithOAuth: vi.fn(),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+      signOut: vi.fn().mockResolvedValue({ error: null })
+    }
+  }
+}))
+
+const TestConsumer = () => {
   const { user, signOut } = useAuth()
   if (!user) return <LoginScreen />
   return (
@@ -18,6 +32,19 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     window.localStorage.clear()
+
+    // Configuração padrão dos mocks do Supabase
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
+      data: { provider: 'google', url: 'https://accounts.google.com/o/oauth2' },
+      error: null
+    })
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: null },
+      error: null
+    })
+    vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      error: null
+    })
 
     global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
       if (typeof url === 'string' && url.includes('/api/v1/auth/login')) {
@@ -52,6 +79,24 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
           ok: true,
           status: 200,
           json: async () => ({ success: true })
+        } as Response
+      }
+
+      if (typeof url === 'string' && url.includes('/api/v1/users/sync')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            user: {
+              id: 'google-user-123',
+              email: 'usuario.google@gmail.com',
+              fullName: 'Usuário Google',
+              username: null,
+              avatarUrl: 'https://lh3.googleusercontent.com/avatar.jpg',
+              provider: 'google',
+              providers: ['google']
+            }
+          })
         } as Response
       }
 
@@ -117,24 +162,173 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     })
   })
 
-  it('deve exibir botões sociais (Google e Apple) bloqueados com badge "Em breve" e desabilitados', async () => {
+  it('deve exibir botão Google ativo e botão Apple bloqueado com badge "Em breve"', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
       </AuthProvider>
     )
 
-    const googleBtn = screen.getByRole('button', { name: /google/i })
+    const googleBtn = screen.getByTestId('oauth-google-btn')
     const appleBtn = screen.getByRole('button', { name: /apple/i })
 
-    expect(googleBtn).toBeDisabled()
-    expect(appleBtn).toBeDisabled()
+    expect(googleBtn).not.toBeDisabled()
+    expect(googleBtn).toHaveAttribute('aria-label', 'Entrar com conta Google')
+    expect(googleBtn.textContent).not.toContain('Em breve')
 
-    const badges = screen.getAllByText(/em breve/i)
-    expect(badges.length).toBeGreaterThanOrEqual(2)
+    expect(appleBtn).toBeDisabled()
+    expect(appleBtn).toHaveAttribute('aria-disabled', 'true')
+    expect(appleBtn.textContent).toContain('Em breve')
   })
 
-  it('deve exibir mensagem de erro quando o login falha', async () => {
+  it('deve invocar signInWithOAuth com provedor "google" ao clicar no botão do Google', async () => {
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    const googleBtn = screen.getByTestId('oauth-google-btn')
+    fireEvent.click(googleBtn)
+
+    await waitFor(() => {
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account'
+          }
+        }
+      })
+    })
+  })
+
+  it('deve exibir mensagem de erro quando signInWithOAuth falha', async () => {
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValueOnce({
+      data: { provider: 'google', url: null },
+      error: new AuthError('Popup blocked by browser', 400, 'popup_closed')
+    })
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    const googleBtn = screen.getByTestId('oauth-google-btn')
+    fireEvent.click(googleBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Popup blocked by browser/i)).toBeInTheDocument()
+    })
+  })
+
+  it('deve sincronizar usuário com BFF e persistir sessão após retorno do Google OAuth', async () => {
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
+    window.location.hash = '#access_token=google-access-token&token_type=bearer'
+
+    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'google-oauth-access-token',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'google-refresh-token',
+          user: {
+            id: 'google-user-123',
+            email: 'usuario.google@gmail.com',
+            app_metadata: { provider: 'google', providers: ['google'] },
+            user_metadata: {
+              full_name: 'Usuário Google',
+              avatar_url: 'https://lh3.googleusercontent.com/avatar.jpg'
+            },
+            aud: 'authenticated',
+            created_at: '2026-11-06T20:00:00.000Z'
+          }
+        } as unknown as Session
+      },
+      error: null
+    })
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/users/sync'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer google-oauth-access-token',
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify({
+            fullName: 'Usuário Google',
+            avatarUrl: 'https://lh3.googleusercontent.com/avatar.jpg',
+            provider: 'google'
+          })
+        })
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/Logado como: usuario.google@gmail.com/i)).toBeInTheDocument()
+    })
+
+    expect(replaceStateSpy).toHaveBeenCalled()
+    replaceStateSpy.mockRestore()
+  })
+
+  it('deve revogar sessão no Supabase e no BFF ao executar signOut', async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'google-oauth-access-token',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'google-refresh-token',
+          user: {
+            id: 'google-user-123',
+            email: 'usuario.google@gmail.com',
+            app_metadata: { provider: 'google', providers: ['google'] },
+            user_metadata: { full_name: 'Usuário Google' },
+            aud: 'authenticated',
+            created_at: '2026-11-06T20:00:00.000Z'
+          }
+        } as unknown as Session
+      },
+      error: null
+    })
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Logado como: usuario.google@gmail.com/i)).toBeInTheDocument()
+    })
+
+    const logoutBtn = screen.getByRole('button', { name: /sair/i })
+    fireEvent.click(logoutBtn)
+
+    await waitFor(() => {
+      expect(supabase.auth.signOut).toHaveBeenCalled()
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/auth/logout'),
+        expect.objectContaining({ method: 'POST' })
+      )
+      expect(screen.getByText('Dinheirizz')).toBeInTheDocument()
+    })
+  })
+
+  it('deve exibir mensagem de erro quando o login com senha falha', async () => {
     render(
       <AuthProvider>
         <TestConsumer />

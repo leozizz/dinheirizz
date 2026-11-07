@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { hashPasswordClient } from '../lib/crypto'
 import { encryptedStorageAdapter } from '../lib/encryptedStorage'
+import { supabase } from '../lib/supabase'
 
 export interface AuthUser {
   id: string
@@ -59,28 +60,96 @@ const STORAGE_SESSION_KEY = 'dinheirizz_auth_session'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function getApiOrigin(): string {
+const getApiOrigin = (): string => {
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     return window.location.origin
   }
   return 'http://localhost:3000'
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<AuthSession | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function restoreSession() {
+    const restoreSession = async () => {
       try {
+        // 1. Verifica se há sessão ativa via Supabase Auth (ex: retorno de redirecionamento Google OAuth)
+        const { data: supabaseSessionData } = await supabase.auth
+          .getSession()
+          .catch(() => ({ data: { session: null } }))
+        const supabaseSession = supabaseSessionData?.session
+
+        if (supabaseSession?.access_token && supabaseSession.user) {
+          const meta = (supabaseSession.user.user_metadata as Record<string, string | undefined>) || {}
+          const fullName = meta.full_name || meta.name || null
+          const avatarUrl = meta.avatar_url || meta.picture || null
+
+          const origin = getApiOrigin()
+          const syncRes = await fetch(`${origin}/api/v1/users/sync`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${supabaseSession.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              fullName: fullName ?? undefined,
+              avatarUrl: avatarUrl ?? undefined,
+              provider: 'google'
+            })
+          }).catch(() => null)
+
+          if (syncRes && syncRes.ok) {
+            const syncData = await syncRes.json().catch(() => null)
+            if (syncData?.user) {
+              const syncedUser: AuthUser = {
+                id: syncData.user.id,
+                email: syncData.user.email,
+                fullName: syncData.user.fullName ?? null,
+                username: syncData.user.username ?? null,
+                avatarUrl: syncData.user.avatarUrl ?? null,
+                provider: syncData.user.provider || 'google',
+                providers: syncData.user.providers || ['google'],
+                user_metadata: {
+                  full_name: syncData.user.fullName ?? null,
+                  username: syncData.user.username ?? null,
+                  email: syncData.user.email
+                }
+              }
+              const syncedSession: AuthSession = {
+                access_token: supabaseSession.access_token,
+                user: syncedUser
+              }
+
+              await encryptedStorageAdapter.setItem(
+                STORAGE_SESSION_KEY,
+                JSON.stringify({ token: supabaseSession.access_token, user: syncedUser })
+              )
+
+              setUser(syncedUser)
+              setSession(syncedSession)
+
+              // Higienização de URL: remove fragmentos ou query params sensíveis de OAuth (#access_token ou ?code)
+              if (typeof window !== 'undefined' && window.history?.replaceState) {
+                const cleanUrl = window.location.pathname
+                window.history.replaceState({}, document.title, cleanUrl || '/')
+              }
+
+              setLoading(false)
+              return
+            }
+          }
+        }
+
+        // 2. Fallback: Verificação de sessão salva em encryptedStorage
         const stored = await encryptedStorageAdapter.getItem(STORAGE_SESSION_KEY)
         if (!stored) {
           setLoading(false)
           return
         }
 
-        const parsed = JSON.parse(stored)
+        const parsed = JSON.parse(stored) as { token?: string; user?: AuthUser } | null
         if (!parsed || !parsed.token) {
           setLoading(false)
           return
@@ -101,6 +170,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: data.user.email,
             fullName: data.user.fullName ?? null,
             username: data.user.username ?? null,
+            avatarUrl: data.user.avatarUrl ?? null,
+            provider: data.user.provider ?? undefined,
+            providers: data.user.providers ?? undefined,
             user_metadata: {
               full_name: data.user.fullName ?? null,
               username: data.user.username ?? null,
@@ -131,6 +203,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     restoreSession()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!newSession) {
+        // Sessão encerrada externamente
+      }
+    })
+
+    return () => {
+      authListener?.subscription?.unsubscribe()
+    }
   }, [])
 
   const signInWithPassword = async ({ email, password }: { email: string; password: string }): Promise<SignInResult> => {
@@ -164,6 +246,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.user.email,
         fullName: data.user.fullName ?? null,
         username: data.user.username ?? null,
+        avatarUrl: data.user.avatarUrl ?? null,
+        provider: data.user.provider ?? undefined,
+        providers: data.user.providers ?? undefined,
         user_metadata: {
           full_name: data.user.fullName ?? null,
           username: data.user.username ?? null,
@@ -185,9 +270,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(authSession)
 
       return { error: null, user: authUser, session: authSession }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha na comunicação com o servidor'
       return {
-        error: { message: err?.message || 'Falha na comunicação com o servidor' },
+        error: { message: msg },
         user: null,
         session: null
       }
@@ -248,9 +334,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session: null,
         isDuplicate: false
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha na comunicação com o servidor'
       return {
-        error: { message: err?.message || 'Falha na comunicação com o servidor' },
+        error: { message: msg },
         user: null,
         session: null,
         isDuplicate: false
@@ -258,22 +345,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signInWithOAuth = async (_provider: 'google' | 'apple') => {
-    return {
-      error: { message: 'Login social será disponibilizado nas próximas fases.' }
+  const signInWithOAuth = async (provider: 'google' | 'apple'): Promise<{ error: AuthError | null }> => {
+    if (provider !== 'google') {
+      return {
+        error: { message: 'Login com Apple será disponibilizado na próxima fase (Fase 1.7).' }
+      }
+    }
+
+    try {
+      const origin = getApiOrigin()
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account'
+          }
+        }
+      })
+
+      if (error) {
+        return { error: { message: error.message } }
+      }
+
+      return { error: null }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao iniciar autenticação com Google'
+      return { error: { message: msg } }
     }
   }
 
-  const signOut = async () => {
+  const signOut = async (): Promise<{ error: AuthError | null }> => {
     try {
       const origin = getApiOrigin()
+      await supabase.auth.signOut().catch(() => {})
       await fetch(`${origin}/api/v1/auth/logout`, { method: 'POST' }).catch(() => {})
       await encryptedStorageAdapter.removeItem(STORAGE_SESSION_KEY)
       setSession(null)
       setUser(null)
       return { error: null }
-    } catch (err: any) {
-      return { error: { message: err?.message || 'Erro ao deslogar' } }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao deslogar'
+      return { error: { message: msg } }
     }
   }
 
@@ -310,7 +424,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
     throw new Error('useAuth deve ser utilizado dentro de um AuthProvider')

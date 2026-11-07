@@ -159,7 +159,8 @@ describe('calendar utility (TDD)', () => {
         year: 2026,
         month: 9, // Outubro 2026
         transactions,
-        initialBalance
+        initialBalance,
+        referenceDate: new Date(2026, 9, 1, 12, 0, 0)
       })
 
       const day1 = result.find((d) => d.dateString === '2026-10-01')

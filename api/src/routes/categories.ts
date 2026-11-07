@@ -5,6 +5,18 @@ import { eq } from 'drizzle-orm'
 
 export const categoriesRouter = new Hono()
 
+export interface MockCategory {
+  id: string
+  userId?: string
+  name: string
+  type: string
+  icon?: string | null
+  color?: string | null
+  createdAt?: string
+}
+
+export const mockCategoriesStore = new Map<string, MockCategory>()
+
 // Default categories when DB is not populated yet or during mock
 export const DEFAULT_CATEGORIES = [
   { id: '1', name: 'Alimentação', type: 'expense', icon: 'utensils', color: '#fb923c' },
@@ -16,7 +28,13 @@ export const DEFAULT_CATEGORIES = [
 
 categoriesRouter.get('/', async (c) => {
   const db = getDb()
+  const userId = c.req.query('user_id')
+
   if (!db) {
+    if (mockCategoriesStore.size > 0) {
+      const list = Array.from(mockCategoriesStore.values()).filter(cat => !userId || cat.userId === userId)
+      return c.json({ data: list, count: list.length })
+    }
     return c.json({ data: DEFAULT_CATEGORIES, count: DEFAULT_CATEGORIES.length })
   }
 

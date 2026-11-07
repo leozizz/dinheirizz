@@ -1,12 +1,16 @@
 import { Hono } from 'hono'
-import { eq, or, sql } from 'drizzle-orm'
+import type { Context } from 'hono'
+import { eq, or, and, desc, sql } from 'drizzle-orm'
 import { sign } from 'hono/jwt'
 import { getDb } from '../db/client'
-import { users } from '../db/schema'
-import { signupSchema, loginSchema } from '../schemas/auth'
+import { users, verificationTokens } from '../db/schema'
+import { signupSchema, loginSchema, verifyEmailSchema, resendVerificationSchema } from '../schemas/auth'
+import { sendVerificationEmail } from '../services/email'
 import type { AuthEnv } from '../middlewares/auth'
 
 export const authRouter = new Hono<AuthEnv>()
+
+type UUIDString = `${string}-${string}-${string}-${string}-${string}`
 
 // Armazenamento em memória para testes unitários e modo offline
 interface LocalAuthUser {
@@ -17,32 +21,50 @@ interface LocalAuthUser {
   username: string | null
   provider: string
   providers: string[]
+  emailVerified: boolean
   createdAt: string | Date
   updatedAt?: string | Date | null
 }
 
-const mockAuthStore = new Map<string, LocalAuthUser>()
+interface LocalVerificationToken {
+  id: string
+  email: string
+  token: string
+  type: string
+  expiresAt: Date
+  usedAt: Date | null
+  createdAt: Date
+}
 
-function getJwtSecret(c: any): string {
+const mockAuthStore = new Map<string, LocalAuthUser>()
+const mockTokenStore: LocalVerificationToken[] = []
+
+const generateOtpCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+const getJwtSecret = (c: Context<AuthEnv>): string => {
+  const env = c.env as Record<string, string | undefined> | undefined
   return (
-    c.env?.JWT_SECRET ||
-    c.env?.SUPABASE_JWT_SECRET ||
+    env?.JWT_SECRET ||
+    env?.SUPABASE_JWT_SECRET ||
     process.env.JWT_SECRET ||
     process.env.SUPABASE_JWT_SECRET ||
     'dinheirizz-jwt-secret-dev-2026'
   )
 }
 
-function getSupabaseConfig(c: any) {
+const getSupabaseConfig = (c: Context<AuthEnv>): { url: string; anonKey: string } => {
+  const env = c.env as Record<string, string | undefined> | undefined
   const url =
-    c.env?.SUPABASE_URL ||
-    c.env?.VITE_SUPABASE_URL ||
+    env?.SUPABASE_URL ||
+    env?.VITE_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
     process.env.VITE_SUPABASE_URL ||
     ''
   const anonKey =
-    c.env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    c.env?.SUPABASE_ANON_KEY ||
+    env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    env?.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.SUPABASE_ANON_KEY ||
     ''
@@ -72,6 +94,10 @@ authRouter.post('/signup', async (c) => {
   const username = rawUsername ? rawUsername.toLowerCase().trim() : null
   const db = getDb()
 
+  const otpCode = generateOtpCode()
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000)
+
   // 1. Verificação prévia de duplicatas no banco de dados
   if (!db) {
     // Ambiente mock / testes
@@ -95,10 +121,27 @@ authRouter.post('/signup', async (c) => {
       username,
       provider: 'email',
       providers: ['email'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      emailVerified: false,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString()
     }
     mockAuthStore.set(mockId, mockUser)
+
+    mockTokenStore.push({
+      id: crypto.randomUUID(),
+      email,
+      token: otpCode,
+      type: 'email_verification',
+      expiresAt,
+      usedAt: null,
+      createdAt: now
+    })
+
+    await sendVerificationEmail({
+      to: email,
+      code: otpCode,
+      name: fullName || undefined
+    })
 
     return c.json(
       {
@@ -138,7 +181,7 @@ authRouter.post('/signup', async (c) => {
 
     // 2. Criação do usuário no Supabase Auth via REST server-to-server
     const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
-    let createdUserId = crypto.randomUUID()
+    let createdUserId: UUIDString = crypto.randomUUID() as UUIDString
 
     if (supabaseUrl && anonKey) {
       const supaRes = await fetch(`${supabaseUrl}/auth/v1/signup`, {
@@ -157,14 +200,20 @@ authRouter.post('/signup', async (c) => {
         })
       })
 
-      const supaData = await supaRes.json().catch(() => ({}))
+      const supaData = (await supaRes.json().catch(() => ({}))) as {
+        msg?: string
+        error_description?: string
+        message?: string
+        identities?: unknown[]
+        id?: UUIDString
+      }
 
       if (!supaRes.ok) {
         const errorMsg = supaData.msg || supaData.error_description || supaData.message || 'Erro ao cadastrar usuário'
         if (errorMsg.toLowerCase().includes('already registered')) {
           return c.json({ error: 'Este e-mail já está cadastrado.' }, 409)
         }
-        return c.json({ error: errorMsg }, supaRes.status as any)
+        return c.json({ error: errorMsg }, 400)
       }
 
       // Se identities for vazio, o Supabase já possuía o e-mail cadastrado
@@ -187,17 +236,34 @@ authRouter.post('/signup', async (c) => {
         username,
         provider: 'email',
         providers: ['email'],
-        createdAt: new Date(),
-        updatedAt: new Date()
+        emailVerified: false,
+        createdAt: now,
+        updatedAt: now
       })
       .onConflictDoUpdate({
         target: users.id,
         set: {
           fullName: fullName || null,
           username,
-          updatedAt: new Date()
+          updatedAt: now
         }
       })
+
+    // 4. Persistência do token de verificação e disparo do e-mail via Resend
+    await db.insert(verificationTokens).values({
+      id: crypto.randomUUID() as UUIDString,
+      email,
+      token: otpCode,
+      type: 'email_verification',
+      expiresAt,
+      createdAt: now
+    })
+
+    await sendVerificationEmail({
+      to: email,
+      code: otpCode,
+      name: fullName || undefined
+    })
 
     // Retorno estritamente sanitizado - Zero vazamento de dados internos
     return c.json(
@@ -207,8 +273,219 @@ authRouter.post('/signup', async (c) => {
       },
       201
     )
-  } catch (error: any) {
-    return c.json({ error: 'Erro interno ao processar cadastro', message: error?.message }, 500)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro interno ao processar cadastro'
+    return c.json({ error: 'Erro interno ao processar cadastro', message }, 500)
+  }
+})
+
+// POST /api/v1/auth/verify-email
+authRouter.post('/verify-email', async (c) => {
+  const rawBody = await c.req.json().catch(() => ({}))
+  const parsed = verifyEmailSchema.safeParse(rawBody)
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: 'Dados inválidos',
+        details: parsed.error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      },
+      400
+    )
+  }
+
+  const { email: rawEmail, token } = parsed.data
+  const email = rawEmail.toLowerCase().trim()
+  const db = getDb()
+  const now = new Date()
+
+  if (!db) {
+    const tokens = mockTokenStore
+      .filter((t) => t.email === email && t.type === 'email_verification')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+    const latestToken = tokens[0]
+
+    if (
+      !latestToken ||
+      latestToken.usedAt !== null ||
+      now.getTime() > new Date(latestToken.expiresAt).getTime() ||
+      latestToken.token !== token
+    ) {
+      return c.json({ error: 'Código de verificação inválido ou expirado.' }, 400)
+    }
+
+    latestToken.usedAt = now
+
+    const user = Array.from(mockAuthStore.values()).find((u) => u.email === email)
+    if (user) {
+      user.emailVerified = true
+      user.updatedAt = now.toISOString()
+    }
+
+    return c.json({
+      success: true,
+      message: 'E-mail verificado com sucesso.'
+    })
+  }
+
+  try {
+    const foundTokens = await db
+      .select()
+      .from(verificationTokens)
+      .where(and(eq(verificationTokens.email, email), eq(verificationTokens.type, 'email_verification')))
+      .orderBy(desc(verificationTokens.createdAt))
+      .limit(1)
+
+    const latestToken = foundTokens[0]
+
+    if (
+      !latestToken ||
+      latestToken.usedAt !== null ||
+      now.getTime() > new Date(latestToken.expiresAt).getTime() ||
+      latestToken.token !== token
+    ) {
+      return c.json({ error: 'Código de verificação inválido ou expirado.' }, 400)
+    }
+
+    await db
+      .update(verificationTokens)
+      .set({ usedAt: now })
+      .where(eq(verificationTokens.id, latestToken.id))
+
+    await db
+      .update(users)
+      .set({ emailVerified: true, updatedAt: now })
+      .where(eq(users.email, email))
+
+    return c.json({
+      success: true,
+      message: 'E-mail verificado com sucesso.'
+    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro ao processar verificação de e-mail'
+    return c.json({ error: 'Erro interno ao verificar e-mail', message }, 500)
+  }
+})
+
+// POST /api/v1/auth/resend-verification
+authRouter.post('/resend-verification', async (c) => {
+  const rawBody = await c.req.json().catch(() => ({}))
+  const parsed = resendVerificationSchema.safeParse(rawBody)
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: 'Dados inválidos',
+        details: parsed.error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      },
+      400
+    )
+  }
+
+  const { email: rawEmail } = parsed.data
+  const email = rawEmail.toLowerCase().trim()
+  const db = getDb()
+  const now = new Date()
+
+  if (!db) {
+    const user = Array.from(mockAuthStore.values()).find((u) => u.email === email)
+    if (user?.emailVerified) {
+      return c.json({ error: 'Este e-mail já foi verificado.' }, 400)
+    }
+
+    // Rate limiting: 60 segundos
+    const tokens = mockTokenStore
+      .filter((t) => t.email === email && t.type === 'email_verification')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+    const lastToken = tokens[0]
+
+    if (lastToken && now.getTime() - new Date(lastToken.createdAt).getTime() < 60 * 1000) {
+      return c.json({ error: 'Aguarde 60 segundos antes de solicitar um novo código.' }, 429)
+    }
+
+    const otpCode = generateOtpCode()
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000)
+
+    mockTokenStore.push({
+      id: crypto.randomUUID(),
+      email,
+      token: otpCode,
+      type: 'email_verification',
+      expiresAt,
+      usedAt: null,
+      createdAt: now
+    })
+
+    await sendVerificationEmail({
+      to: email,
+      code: otpCode,
+      name: user?.fullName || undefined
+    })
+
+    return c.json({
+      success: true,
+      message: 'Novo código de verificação enviado para o seu e-mail.'
+    })
+  }
+
+  try {
+    const existingUsers = await db
+      .select({ emailVerified: users.emailVerified, fullName: users.fullName })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
+
+    if (existingUsers.length > 0 && existingUsers[0].emailVerified) {
+      return c.json({ error: 'Este e-mail já foi verificado.' }, 400)
+    }
+
+    // Rate limiting: 60 segundos
+    const foundTokens = await db
+      .select({ createdAt: verificationTokens.createdAt })
+      .from(verificationTokens)
+      .where(and(eq(verificationTokens.email, email), eq(verificationTokens.type, 'email_verification')))
+      .orderBy(desc(verificationTokens.createdAt))
+      .limit(1)
+
+    const lastToken = foundTokens[0]
+
+    if (lastToken && now.getTime() - new Date(lastToken.createdAt).getTime() < 60 * 1000) {
+      return c.json({ error: 'Aguarde 60 segundos antes de solicitar um novo código.' }, 429)
+    }
+
+    const otpCode = generateOtpCode()
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000)
+
+    await db.insert(verificationTokens).values({
+      id: crypto.randomUUID() as UUIDString,
+      email,
+      token: otpCode,
+      type: 'email_verification',
+      expiresAt,
+      createdAt: now
+    })
+
+    await sendVerificationEmail({
+      to: email,
+      code: otpCode,
+      name: existingUsers[0]?.fullName || undefined
+    })
+
+    return c.json({
+      success: true,
+      message: 'Novo código de verificação enviado para o seu e-mail.'
+    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro ao reenviar código de verificação'
+    return c.json({ error: 'Erro interno ao reenviar verificação', message }, 500)
   }
 })
 
@@ -267,7 +544,7 @@ authRouter.post('/login', async (c) => {
 
   try {
     const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
-    let authUserId: string | null = null
+    let authUserId: UUIDString | null = null
 
     // 2. Autenticação server-side com Supabase Auth
     if (supabaseUrl && anonKey) {
@@ -283,7 +560,7 @@ authRouter.post('/login', async (c) => {
         })
       })
 
-      const supaData = await supaRes.json().catch(() => ({}))
+      const supaData = (await supaRes.json().catch(() => ({}))) as { user?: { id?: UUIDString } }
 
       if (!supaRes.ok) {
         return c.json({ error: 'E-mail ou senha incorretos' }, 401)
@@ -302,7 +579,7 @@ authRouter.post('/login', async (c) => {
     let userRecord = records[0]
 
     if (!userRecord) {
-      const newId = authUserId || crypto.randomUUID()
+      const newId: UUIDString = authUserId || (crypto.randomUUID() as UUIDString)
       const inserted = await db
         .insert(users)
         .values({
@@ -310,6 +587,7 @@ authRouter.post('/login', async (c) => {
           email,
           provider: 'email',
           providers: ['email'],
+          emailVerified: false,
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -340,8 +618,9 @@ authRouter.post('/login', async (c) => {
         username: userRecord.username ?? null
       }
     })
-  } catch (error: any) {
-    return c.json({ error: 'Erro interno ao autenticar usuário', message: error?.message }, 500)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro interno ao autenticar usuário'
+    return c.json({ error: 'Erro interno ao autenticar usuário', message }, 500)
   }
 })
 

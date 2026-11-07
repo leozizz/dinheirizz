@@ -13,6 +13,7 @@ export const users = pgTable('users', {
   proType: text('pro_type'), // 'subscriber' | 'invited'
   proExpiresAt: timestamp('pro_expires_at', { withTimezone: true }),
   invitedBy: uuid('invited_by'),
+  emailVerified: boolean('email_verified').default(false).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
@@ -108,6 +109,16 @@ export const budgets = pgTable('budgets', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
 
+export const verificationTokens = pgTable('verification_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  token: text('token').notNull(),
+  type: text('type').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+})
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -131,4 +142,8 @@ export type NewUserAiSetting = typeof userAiSettings.$inferInsert
 
 export type Budget = typeof budgets.$inferSelect
 export type NewBudget = typeof budgets.$inferInsert
+
+export type VerificationToken = typeof verificationTokens.$inferSelect
+export type NewVerificationToken = typeof verificationTokens.$inferInsert
+
 

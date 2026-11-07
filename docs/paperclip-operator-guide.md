@@ -82,3 +82,23 @@ pnpm task:handoff --assign devops --comment "Testes aprovados"
 # Concluir tarefa
 pnpm task:handoff --status done --comment "Demanda homologada"
 ```
+
+---
+
+## 5. Como Destravar Tarefas Canceladas ou Interrompidas (Execution Blocker)
+
+Quando uma execução em andamento é cancelada pelo operador (ex: para reiniciar o computador ou interromper um loop), o Paperclip ativa um mecanismo de segurança chamado **`Execution Blocker`** (`legacy_execution_requires_reconciliation`). 
+
+Enquanto esse bloqueio estiver ativo, o Paperclip propositalmente **ignora** o botão `Run now`, menções no chat e reatribuições, para proteger o repositório contra reexecuções cegas.
+
+### Como destravar via terminal (1 comando):
+```bash
+pnpm task:unblock
+```
+*O comando detecta a tarefa com bloqueio, resolve a ação de recuperação atestando a integridade dos arquivos em disco, recoloca a tarefa em `in_progress` e acorda o agente atribuído imediatamente.*
+
+### Como destravar via interface web do Paperclip:
+1. Abra a issue no navegador (`http://localhost:3100`).
+2. No banner superior **"Recovery needed"**, clique em **Inspect run**.
+3. Clique no botão de reconciliação (**Continue** ou **Retry**).
+4. Ou, no chat da tarefa, digite o comando `/new` para redefinir o contexto sem travas residuais.

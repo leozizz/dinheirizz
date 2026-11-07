@@ -45,3 +45,17 @@ export const updateUserSchema = z.object({
 })
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>
+
+export const verifyEmailSchema = z.object({
+  email: z.string().trim().email('E-mail inválido'),
+  token: z.string().trim().regex(/^\d{6}$/, 'O código de verificação deve conter exatamente 6 dígitos numéricos'),
+})
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
+
+export const resendVerificationSchema = z.object({
+  email: z.string().trim().email('E-mail inválido'),
+})
+
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>
+

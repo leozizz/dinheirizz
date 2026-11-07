@@ -82,6 +82,17 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
         } as Response
       }
 
+      if (typeof url === 'string' && url.includes('/api/v1/auth/signup')) {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            success: true,
+            message: 'Cadastro realizado com sucesso.'
+          })
+        } as Response
+      }
+
       if (typeof url === 'string' && url.includes('/api/v1/users/sync')) {
         const body = JSON.parse((init?.body as string) || '{}')
         const isApple = body.provider === 'apple'
@@ -441,6 +452,31 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/credenciais inválidas ou erro ao autenticar/i)).toBeInTheDocument()
+    })
+  })
+
+  it('deve abrir o modal de verificação OTP ao realizar cadastro com sucesso', async () => {
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    )
+
+    const createAccountTab = screen.getByRole('button', { name: /criar conta/i })
+    fireEvent.click(createAccountTab)
+
+    fireEvent.change(screen.getByPlaceholderText('Seu nome completo'), { target: { value: 'Novo Usuário' } })
+    fireEvent.change(screen.getByPlaceholderText('seu_usuario'), { target: { value: 'novousuario' } })
+    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), { target: { value: 'novo@dinheirizz.com' } })
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'SenhaForte123!' } })
+    fireEvent.change(screen.getByPlaceholderText('Repita sua senha'), { target: { value: 'SenhaForte123!' } })
+
+    const submitBtn = screen.getByTestId('auth-submit-btn')
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('email-verification-modal')).toBeInTheDocument()
+      expect(screen.getByText('novo@dinheirizz.com')).toBeInTheDocument()
     })
   })
 })

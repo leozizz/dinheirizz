@@ -40,6 +40,18 @@ export interface SignInResult {
   session: AuthSession | null
 }
 
+export interface VerifyEmailResult {
+  success: boolean
+  message: string
+  error?: string
+}
+
+export interface ResendVerificationResult {
+  success: boolean
+  message: string
+  error?: string
+}
+
 interface AuthContextType {
   user: AuthUser | null
   session: AuthSession | null
@@ -53,12 +65,14 @@ interface AuthContextType {
   }) => Promise<SignUpResult>
   signInWithOAuth: (provider: 'google' | 'apple') => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
+  verifyEmail: (email: string, token: string) => Promise<VerifyEmailResult>
+  resendVerification: (email: string) => Promise<ResendVerificationResult>
   updateUser: (updatedData: Partial<AuthUser>) => void
 }
 
 const STORAGE_SESSION_KEY = 'dinheirizz_auth_session'
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const getApiOrigin = (): string => {
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
@@ -392,6 +406,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const verifyEmail = async (email: string, token: string): Promise<VerifyEmailResult> => {
+    try {
+      const origin = getApiOrigin()
+      const res = await fetch(`${origin}/api/v1/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, token })
+      })
+      const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string; success?: boolean }
+      if (!res.ok) {
+        const msg = data.error || data.message || 'Código de verificação inválido ou expirado.'
+        return {
+          success: false,
+          message: msg,
+          error: msg
+        }
+      }
+      return {
+        success: true,
+        message: data.message || 'E-mail verificado com sucesso.'
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha na conexão ao verificar código.'
+      return { success: false, message: msg, error: msg }
+    }
+  }
+
+  const resendVerification = async (email: string): Promise<ResendVerificationResult> => {
+    try {
+      const origin = getApiOrigin()
+      const res = await fetch(`${origin}/api/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string; success?: boolean }
+      if (!res.ok) {
+        const msg = data.error || data.message || 'Não foi possível reenviar o código.'
+        return {
+          success: false,
+          message: msg,
+          error: msg
+        }
+      }
+      return {
+        success: true,
+        message: data.message || 'Novo código de verificação enviado para o seu e-mail.'
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha na conexão ao reenviar código.'
+      return { success: false, message: msg, error: msg }
+    }
+  }
+
   const updateUser = (updatedData: Partial<AuthUser>) => {
     setUser((prev) => {
       if (!prev) return null
@@ -417,6 +485,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signUp,
         signInWithOAuth,
         signOut,
+        verifyEmail,
+        resendVerification,
         updateUser
       }}
     >

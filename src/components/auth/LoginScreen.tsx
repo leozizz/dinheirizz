@@ -13,6 +13,7 @@ import {
   ShieldCheck
 } from 'lucide-react'
 import { loginSchema, signUpSchema } from '../../schemas/auth'
+import { EmailVerificationModal } from './EmailVerificationModal'
 
 import { toast, Toaster } from 'sonner'
 
@@ -26,6 +27,8 @@ export const LoginScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('')
 
   const passwordMatch =
     password.length > 0 && confirmPassword.length > 0 && password === confirmPassword
@@ -101,8 +104,9 @@ export const LoginScreen = () => {
           setErrorMessage(err)
           toast.error(err)
         } else {
-          toast.success('Conta criada com sucesso! Você já pode entrar.')
-          setMode('login')
+          toast.success('Conta criada com sucesso! Enviamos um código para o seu e-mail.')
+          setPendingVerificationEmail(email)
+          setShowVerificationModal(true)
           setPassword('')
           setConfirmPassword('')
         }
@@ -382,6 +386,20 @@ export const LoginScreen = () => {
           </button>
         </div>
       </div>
+
+      <EmailVerificationModal
+        isOpen={showVerificationModal}
+        email={pendingVerificationEmail}
+        onClose={() => {
+          setShowVerificationModal(false)
+          setMode('login')
+        }}
+        onSuccess={() => {
+          setShowVerificationModal(false)
+          setMode('login')
+          toast.success('E-mail verificado com sucesso! Você já pode entrar.')
+        }}
+      />
     </div>
   )
 }

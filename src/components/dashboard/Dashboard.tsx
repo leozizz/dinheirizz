@@ -26,7 +26,8 @@ import {
   AlertCircle,
   Sparkles,
   List,
-  Calendar
+  Calendar,
+  UploadCloud
 } from 'lucide-react'
 
 export interface TransactionItem {
@@ -90,6 +91,7 @@ export interface DashboardProps {
   } | null
   onOpenBudgetModal?: () => void
   isBudgetsLoading?: boolean
+  onImportStatement?: () => void
 }
 
 const getDueStatus = (dueDateStr?: string | null) => {
@@ -137,7 +139,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   budgets,
   budgetSummary,
   onOpenBudgetModal,
-  isBudgetsLoading = false
+  isBudgetsLoading = false,
+  onImportStatement
 }) => {
   const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
@@ -516,9 +519,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Seletor de Modo de Visualização: Feed vs Calendário */}
       <div className="flex items-center justify-between gap-3 px-1">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-          Movimentações
-        </h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+            Movimentações
+          </h3>
+          {onImportStatement && (
+            <button
+              type="button"
+              data-testid="dashboard-import-btn"
+              onClick={onImportStatement}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Importar Extrato</span>
+            </button>
+          )}
+        </div>
         <div className="flex p-0.5 bg-white/5 border border-white/10 rounded-xl">
           <button
             type="button"

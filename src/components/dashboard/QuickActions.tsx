@@ -1,12 +1,13 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, QrCode } from 'lucide-react'
+import React from 'react'
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, QrCode, UploadCloud } from 'lucide-react'
 
-export type ActionType = 'income' | 'expense' | 'transfer' | 'pix'
+export type ActionType = 'income' | 'expense' | 'transfer' | 'pix' | 'import'
 
-interface QuickActionsProps {
+export interface QuickActionsProps {
   onAction: (action: ActionType) => void
 }
 
-export function QuickActions({ onAction }: QuickActionsProps) {
+export const QuickActions = ({ onAction }: QuickActionsProps) => {
   const actions = [
     {
       id: 'income' as ActionType,
@@ -43,18 +44,27 @@ export function QuickActions({ onAction }: QuickActionsProps) {
       color: 'text-teal-300',
       bgGlow: 'from-teal-500/10 to-emerald-500/10',
       borderColor: 'hover:border-teal-500/40'
+    },
+    {
+      id: 'import' as ActionType,
+      label: 'Importar',
+      sublabel: 'Extrato bancário',
+      icon: UploadCloud,
+      color: 'text-amber-400',
+      bgGlow: 'from-amber-500/10 to-orange-500/10',
+      borderColor: 'hover:border-amber-500/40'
     }
   ]
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 my-4 sm:my-6">
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3 my-4 sm:my-6">
       {actions.map((action) => {
         const Icon = action.icon
         return (
           <button
             key={action.id}
             type="button"
-            data-testid={`quick-action-${action.id}`}
+            data-testid={action.id === 'import' ? 'import-statement-btn' : `quick-action-${action.id}`}
             onClick={() => onAction(action.id)}
             className={`glass-card-interactive p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-white/10 bg-gradient-to-b min-h-[80px] sm:min-h-[96px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
           >

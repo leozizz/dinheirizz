@@ -29,6 +29,22 @@ export const createTransactionSchema = z.object({
   parentTransactionId: z.string().optional().nullable()
 })
 
+export const batchCreateTransactionItemSchema = z.object({
+  accountId: z.string().optional().nullable(),
+  categoryId: z.string().optional().nullable(),
+  amount: z.number({ required_error: 'amount é obrigatório' }).positive('O valor deve ser positivo'),
+  type: z.enum(['income', 'expense', 'transfer']),
+  description: z.string().max(255).optional().nullable(),
+  occurredAt: z.string().min(1, 'Data é obrigatória'),
+  paid: z.boolean().default(true),
+  status: z.enum(['completed', 'pending', 'cancelled']).default('completed')
+})
+
+export const batchCreateTransactionsSchema = z.object({
+  accountId: z.string().min(1, 'ID de conta bancária inválido'),
+  transactions: z.array(batchCreateTransactionItemSchema).min(1, 'Ao menos uma transação deve ser informada')
+})
+
 export interface MockTransaction {
   id: string
   userId: string
@@ -519,6 +535,166 @@ transactionsRouter.post('/', async (c) => {
     return c.json(inserted[0], 201)
   } catch (error: any) {
     return c.json({ error: 'Erro ao persistir transação', details: error?.message }, 500)
+  }
+})
+
+transactionsRouter.post('/batch', async (c) => {
+  let body: unknown
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'Body JSON inválido' }, 400)
+  }
+
+  const result = batchCreateTransactionsSchema.safeParse(body)
+  if (!result.success) {
+    return c.json({
+      error: 'Dados inválidos',
+      details: result.error.errors.map((e) => ({ path: e.path.join('.'), message: e.message }))
+    }, 400)
+  }
+
+  const { accountId, transactions: txList } = result.data
+  const userId = c.get('userId') || '00000000-0000-0000-0000-000000000000'
+  const db = getDb()
+
+  if (!db) {
+    const created: { id: string; description: string | null; amount: number; occurredAt: string }[] = []
+    let netDelta = 0
+
+    for (const item of txList) {
+      const mockId = crypto.randomUUID()
+      const signedAmount = item.type === 'expense' ? -Math.abs(item.amount) : Math.abs(item.amount)
+      const isPaid = item.status === 'completed' || item.paid !== false
+
+      if (isPaid) {
+        netDelta += signedAmount
+      }
+
+      const itemOccurredAt = item.occurredAt ? new Date(item.occurredAt).toISOString() : new Date().toISOString()
+
+      const newTx: MockTransaction = {
+        id: mockId,
+        userId,
+        accountId: item.accountId || accountId,
+        categoryId: item.categoryId ?? null,
+        amount: signedAmount.toFixed(2),
+        description: item.description ?? null,
+        paid: isPaid,
+        status: item.status || 'completed',
+        type: item.type,
+        occurredAt: itemOccurredAt,
+        createdAt: new Date().toISOString()
+      }
+
+      mockTransactionsStore.set(mockId, newTx)
+      created.push({
+        id: mockId,
+        description: item.description ?? null,
+        amount: item.amount,
+        occurredAt: itemOccurredAt
+      })
+    }
+
+    let newBalance = 0
+    if (mockAccountsStore.has(accountId)) {
+      const acc = mockAccountsStore.get(accountId)!
+      const cur = Number(acc.balance) || 0
+      newBalance = cur + netDelta
+      acc.balance = newBalance.toFixed(2)
+    }
+
+    return c.json({
+      success: true,
+      importedCount: created.length,
+      accountId,
+      newBalance,
+      transactions: created
+    }, 201)
+  }
+
+  try {
+    let targetAccountId = accountId && UUID_REGEX.test(accountId) ? accountId : null
+    if (targetAccountId) {
+      const match = await db
+        .select({ id: accounts.id, balance: accounts.balance })
+        .from(accounts)
+        .where(sql`${accounts.id} = ${targetAccountId} and ${accounts.userId} = ${userId}`)
+        .limit(1)
+      if (match.length === 0) {
+        targetAccountId = null
+      }
+    }
+
+    if (!targetAccountId) {
+      return c.json({ error: 'Conta bancária não encontrada' }, 404)
+    }
+
+    let netDelta = 0
+    const insertPayloads: Array<{
+      userId: string
+      accountId: string
+      categoryId: string | null
+      amount: string
+      description: string | null
+      paid: boolean
+      status: 'completed' | 'pending' | 'cancelled'
+      occurredAt: Date
+    }> = []
+
+    for (const item of txList) {
+      const signedAmount = item.type === 'expense' ? -Math.abs(item.amount) : Math.abs(item.amount)
+      const isPaid = item.status === 'completed' || item.paid !== false
+      if (isPaid) {
+        netDelta += signedAmount
+      }
+
+      const validCategoryId = item.categoryId && UUID_REGEX.test(item.categoryId) ? item.categoryId : null
+
+      insertPayloads.push({
+        userId,
+        accountId: targetAccountId,
+        categoryId: validCategoryId,
+        amount: signedAmount.toFixed(2),
+        description: item.description ?? null,
+        paid: isPaid,
+        status: item.status || 'completed',
+        occurredAt: new Date(item.occurredAt)
+      })
+    }
+
+    const inserted = await db.transaction(async (tx) => {
+      const res = await tx.insert(transactions).values(insertPayloads).returning()
+      if (netDelta !== 0) {
+        await tx
+          .update(accounts)
+          .set({ balance: sql`${accounts.balance} + ${netDelta}` })
+          .where(eq(accounts.id, targetAccountId))
+      }
+      return res
+    })
+
+    const [acc] = await db
+      .select({ balance: accounts.balance })
+      .from(accounts)
+      .where(eq(accounts.id, targetAccountId))
+      .limit(1)
+
+    return c.json({
+      success: true,
+      importedCount: inserted.length,
+      accountId: targetAccountId,
+      newBalance: Number(acc?.balance ?? 0),
+      transactions: inserted.map((t) => ({
+        id: t.id,
+        description: t.description,
+        amount: Math.abs(Number(t.amount)),
+        occurredAt: t.occurredAt.toISOString()
+      }))
+    }, 201)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro desconhecido'
+    return c.json({ error: 'Erro ao persistir lote de transações', details: message }, 500)
   }
 })
 

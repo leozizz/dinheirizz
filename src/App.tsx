@@ -12,13 +12,15 @@ import { LogoutConfirmModal } from './components/modals/LogoutConfirmModal'
 import { ProfileModal } from './components/modals/ProfileModal'
 import { DangerZoneModal } from './components/modals/DangerZoneModal'
 import { BudgetModal } from './components/modals/BudgetModal'
+import { ImportStatementModal } from './components/modals/ImportStatementModal'
+import type { ParsedTransactionCandidate } from './types/import'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { WelcomeScreen } from './components/auth/WelcomeScreen'
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
 import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
 import { useTransferTransaction } from './hooks/useTransfer'
 import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
-import { useCategories } from './hooks/useCategories'
+import { useCategories, type CategoryItem } from './hooks/useCategories'
 import { useAiInsights } from './hooks/useAiInsights'
 import {
   useBudgets,
@@ -108,7 +110,7 @@ const initialPixKeys: PixKeyItem[] = [
   }
 ]
 
-const initialCategories = [
+const initialCategories: CategoryItem[] = [
   { id: 'cat-1', name: 'Alimentação', type: 'expense' },
   { id: 'cat-2', name: 'Renda / Salário', type: 'income' },
   { id: 'cat-3', name: 'Infraestrutura', type: 'expense' },
@@ -139,6 +141,7 @@ const MainApp = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [demoBudgets, setDemoBudgets] = useState<Array<{ id: string; categoryId: string; amountLimit: number }>>([
     { id: 'demo-b-1', categoryId: 'cat-1', amountLimit: 1500 },
     { id: 'demo-b-2', categoryId: 'cat-3', amountLimit: 1200 },
@@ -291,10 +294,53 @@ const MainApp = () => {
   const handleActionClick = (action: ActionType) => {
     if (action === 'pix') {
       setIsPixModalOpen(true)
+    } else if (action === 'import') {
+      setIsImportModalOpen(true)
     } else {
       setTxMode(action as TransactionMode)
       setIsTxModalOpen(true)
     }
+  }
+
+  const handleDemoImport = (imported: ParsedTransactionCandidate[], accountId: string) => {
+    let netDelta = 0
+    const newItems: TransactionItem[] = []
+
+    for (const item of imported) {
+      const isExpense = item.type === 'expense'
+      const finalAmount = isExpense ? -Math.abs(item.amount) : Math.abs(item.amount)
+      netDelta += finalAmount
+
+      const cat = activeCategories.find((c) => c.id === item.categoryId)
+
+      newItems.push({
+        id: `demo-import-${crypto.randomUUID()}`,
+        description: item.description,
+        amount: finalAmount,
+        paid: true,
+        status: 'completed',
+        occurred_at: item.date,
+        category: cat
+          ? { name: cat.name, color: isExpense ? '#f43f5e' : '#10b981' }
+          : item.categoryName
+          ? { name: item.categoryName }
+          : null,
+        type: item.type,
+        accountId
+      })
+    }
+
+    const targetAccId = accountId || demoAccounts[0]?.id
+    if (targetAccId) {
+      setDemoAccounts((prev) =>
+        prev.map((acc) => (acc.id === targetAccId ? { ...acc, balance: acc.balance + netDelta } : acc))
+      )
+    }
+
+    setDemoTransactions((prev) => {
+      const updated = [...newItems, ...prev]
+      return updated.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+    })
   }
 
   const handleCreateTransaction = async (data: {
@@ -798,6 +844,7 @@ const MainApp = () => {
           budgetSummary={activeBudgetSummary}
           onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
           isBudgetsLoading={Boolean(user && isBudgetsLoading)}
+          onImportStatement={() => setIsImportModalOpen(true)}
         />
       </main>
 
@@ -823,6 +870,16 @@ const MainApp = () => {
         isLoading={Boolean(
           user && (createBudgetMutation.isPending || updateBudgetMutation.isPending || deleteBudgetMutation.isPending)
         )}
+      />
+
+      {/* Modal de Importação Inteligente de Extratos Bancários */}
+      <ImportStatementModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        accounts={activeAccounts}
+        categories={activeCategories}
+        existingTransactions={activeTransactions}
+        onDemoImport={handleDemoImport}
       />
 
       {/* Modal de Carteira Pix */}

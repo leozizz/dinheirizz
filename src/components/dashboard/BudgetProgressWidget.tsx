@@ -38,7 +38,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
   // Estado vazio: nenhum orçamento configurado
   if (budgets.length === 0) {
     return (
-      <div className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4 text-center">
+      <div data-testid="widget-budget-progress-empty" className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4 text-center">
         <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
           <PieChart className="w-6 h-6" />
         </div>
@@ -52,7 +52,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
         </div>
         <button
           type="button"
-          data-testid="btn-define-budgets-empty"
+          data-testid="open-budget-modal-btn"
           onClick={onOpenBudgetModal}
           className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] min-w-[44px] rounded-xl bg-primary text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 cursor-pointer"
         >
@@ -72,7 +72,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
   }
 
   return (
-    <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4.5">
+    <div data-testid="widget-budget-progress" className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4.5">
       {/* Cabeçalho do Card */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -89,7 +89,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
 
         <button
           type="button"
-          data-testid="btn-adjust-budget-limits"
+          data-testid="open-budget-modal-btn"
           onClick={onOpenBudgetModal}
           className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
@@ -140,6 +140,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
           return (
             <div
               key={b.id}
+              data-testid={`budget-envelope-${b.categoryId}`}
               className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-2 hover:border-white/10 transition-colors"
             >
               {/* Topo do Envelope */}

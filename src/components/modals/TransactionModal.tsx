@@ -26,13 +26,13 @@ import type { CategorySummary } from '../../types/aiReceipt'
 
 export type TransactionMode = 'income' | 'expense' | 'transfer'
 
-interface CategoryOption {
+export interface CategoryOption {
   id: string
   name: string
   type: string
 }
 
-interface AccountOption {
+export interface AccountOption {
   id: string
   name: string
   balance?: number

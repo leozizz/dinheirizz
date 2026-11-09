@@ -16,6 +16,7 @@ import { adminRouter } from './src/routes/admin'
 import { forecastRouter } from './src/routes/forecast'
 import { budgetsRouter } from './src/routes/budgets'
 import { importRouter } from './src/routes/import'
+import { aiReceiptRouter } from './src/routes/aiReceipt'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 
 export const app = new Hono<AuthEnv>().basePath('/api')
@@ -85,6 +86,10 @@ app.route('/v1/budgets', budgetsRouter)
 app.use('/v1/import/*', authMiddleware)
 app.use('/v1/import', authMiddleware)
 app.route('/v1/import', importRouter)
+
+app.use('/v1/ai/*', authMiddleware)
+app.use('/v1/ai', authMiddleware)
+app.route('/v1/ai', aiReceiptRouter)
 
 export default app
 

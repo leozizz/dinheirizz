@@ -133,6 +133,7 @@ const MainApp = () => {
 
   // Modals state
   const [isTxModalOpen, setIsTxModalOpen] = useState(false)
+  const [isTxModalOcrInitial, setIsTxModalOcrInitial] = useState(false)
   const [txMode, setTxMode] = useState<TransactionMode>('income')
   const [isPixModalOpen, setIsPixModalOpen] = useState(false)
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
@@ -296,8 +297,13 @@ const MainApp = () => {
       setIsPixModalOpen(true)
     } else if (action === 'import') {
       setIsImportModalOpen(true)
+    } else if (action === 'scan') {
+      setTxMode('expense')
+      setIsTxModalOcrInitial(true)
+      setIsTxModalOpen(true)
     } else {
       setTxMode(action as TransactionMode)
+      setIsTxModalOcrInitial(false)
       setIsTxModalOpen(true)
     }
   }
@@ -855,7 +861,9 @@ const MainApp = () => {
         categories={activeCategories}
         accounts={activeAccounts}
         defaultAccountId={selectedAccountId || undefined}
+        initialOpenOcr={isTxModalOcrInitial}
         onClose={() => setIsTxModalOpen(false)}
+        onOpenAiSettings={() => setIsProfileModalOpen(true)}
         onSubmit={handleCreateTransaction}
       />
 

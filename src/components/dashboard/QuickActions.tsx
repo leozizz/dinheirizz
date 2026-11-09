@@ -1,7 +1,7 @@
 import React from 'react'
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, QrCode, UploadCloud } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, QrCode, UploadCloud, Camera } from 'lucide-react'
 
-export type ActionType = 'income' | 'expense' | 'transfer' | 'pix' | 'import'
+export type ActionType = 'income' | 'expense' | 'transfer' | 'pix' | 'import' | 'scan'
 
 export interface QuickActionsProps {
   onAction: (action: ActionType) => void
@@ -26,6 +26,15 @@ export const QuickActions = ({ onAction }: QuickActionsProps) => {
       color: 'text-rose-400',
       bgGlow: 'from-rose-500/10 to-red-500/10',
       borderColor: 'hover:border-rose-500/40'
+    },
+    {
+      id: 'scan' as ActionType,
+      label: 'Escanear',
+      sublabel: 'Comprovante IA',
+      icon: Camera,
+      color: 'text-purple-400',
+      bgGlow: 'from-purple-500/10 to-indigo-500/10',
+      borderColor: 'hover:border-purple-500/40'
     },
     {
       id: 'transfer' as ActionType,
@@ -56,15 +65,21 @@ export const QuickActions = ({ onAction }: QuickActionsProps) => {
     }
   ]
 
+  const getTestId = (id: ActionType) => {
+    if (id === 'import') return 'import-statement-btn'
+    if (id === 'scan') return 'quick-scan-receipt-btn'
+    return `quick-action-${id}`
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3 my-4 sm:my-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 my-4 sm:my-6">
       {actions.map((action) => {
         const Icon = action.icon
         return (
           <button
             key={action.id}
             type="button"
-            data-testid={action.id === 'import' ? 'import-statement-btn' : `quick-action-${action.id}`}
+            data-testid={getTestId(action.id)}
             onClick={() => onAction(action.id)}
             className={`glass-card-interactive p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-white/10 bg-gradient-to-b min-h-[80px] sm:min-h-[96px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
           >

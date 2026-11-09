@@ -12,11 +12,17 @@ import {
   CheckCircle2,
   Clock,
   Layers,
-  Repeat
+  Repeat,
+  Camera,
+  Sparkles
 } from 'lucide-react'
 import { parseCurrencyToNumber, formatBRL } from '../../lib/formatters'
 import { calculateRecurringDueDate } from '../../lib/businessDays'
 import { parseDateParts } from '../../lib/calendar'
+import { useReceiptOcr } from '../../hooks/useReceiptOcr'
+import { ReceiptScannerDropzone } from '../transactions/ReceiptScannerDropzone'
+import { AiKeyPromptModal } from './AiKeyPromptModal'
+import type { CategorySummary } from '../../types/aiReceipt'
 
 export type TransactionMode = 'income' | 'expense' | 'transfer'
 
@@ -38,7 +44,9 @@ interface TransactionModalProps {
   categories?: CategoryOption[]
   accounts?: AccountOption[]
   defaultAccountId?: string | null
+  initialOpenOcr?: boolean
   onClose: () => void
+  onOpenAiSettings?: () => void
   onSubmit: (data: {
     amount: number
     description: string
@@ -58,7 +66,7 @@ interface TransactionModalProps {
   }) => Promise<void> | void
 }
 
-function getTodayLocalDate(): string {
+const getTodayLocalDate = (): string => {
   const now = new Date()
   const y = now.getFullYear()
   const m = String(now.getMonth() + 1).padStart(2, '0')
@@ -66,15 +74,17 @@ function getTodayLocalDate(): string {
   return `${y}-${m}-${d}`
 }
 
-export function TransactionModal({
+export const TransactionModal = ({
   isOpen,
   mode,
   categories = [],
   accounts = [],
   defaultAccountId,
+  initialOpenOcr = false,
   onClose,
+  onOpenAiSettings,
   onSubmit
-}: TransactionModalProps) {
+}: TransactionModalProps) => {
   const [amountStr, setAmountStr] = useState('')
   const [description, setDescription] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -93,6 +103,22 @@ export function TransactionModal({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Estados de OCR e IA
+  const [isOcrOpen, setIsOcrOpen] = useState(false)
+  const [isAiKeyModalOpen, setIsAiKeyModalOpen] = useState(false)
+  const [aiExtractedInfo, setAiExtractedInfo] = useState<{
+    confidence?: number
+    paymentType?: string
+  } | null>(null)
+
+  const {
+    isScanning,
+    scanReceipt,
+    error: ocrError,
+    errorCode: ocrErrorCode,
+    resetScanState
+  } = useReceiptOcr()
+
   // Reset/ajusta defaults ao abrir ou trocar de modo
   useEffect(() => {
     if (isOpen) {
@@ -108,6 +134,9 @@ export function TransactionModal({
       setRecurrencePeriod('monthly')
       setRecurrenceDay(10)
       setAdjustBusinessDay(false)
+      setIsOcrOpen(Boolean(initialOpenOcr))
+      setAiExtractedInfo(null)
+      resetScanState()
 
       const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
       setCategoryId(filteredCats[0]?.id || '')
@@ -122,7 +151,39 @@ export function TransactionModal({
       const otherAccount = accounts.find((a) => a.id !== selectedOrFirst)
       setToAccountId(otherAccount?.id || accounts[1]?.id || selectedOrFirst)
     }
-  }, [isOpen, mode, categories, accounts, defaultAccountId])
+  }, [isOpen, mode, categories, accounts, defaultAccountId, initialOpenOcr, resetScanState])
+
+  const handleOcrFileSelected = async (file: File) => {
+    try {
+      const categorySummaries: CategorySummary[] = categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type === 'income' ? 'income' : 'expense'
+      }))
+
+      const extracted = await scanReceipt(file, categorySummaries)
+
+      // Preenche os campos automaticamente
+      const formattedAmount = extracted.amount.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+      setAmountStr(formattedAmount)
+      setDescription(extracted.description)
+      setOccurredAt(extracted.occurredAt)
+
+      if (extracted.categorySuggestion?.id) {
+        setCategoryId(extracted.categorySuggestion.id)
+      }
+
+      setAiExtractedInfo({
+        confidence: extracted.confidence,
+        paymentType: extracted.paymentType
+      })
+    } catch {
+      // O erro já é tratado e guardado dentro de useReceiptOcr
+    }
+  }
 
   const handleSwapAccounts = () => {
     setFromAccountId(toAccountId)
@@ -238,7 +299,7 @@ export function TransactionModal({
             className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
           >
             {/* Top Bar Header */}
-            <div className="flex items-center justify-between mb-5 sm:mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-5">
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center border shadow-inner ${colors[mode]}`}>
                   <CurrentIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -253,15 +314,46 @@ export function TransactionModal({
                 </div>
               </div>
 
-              <button
-                type="button"
-                data-testid="close-transaction-modal-btn"
-                onClick={onClose}
-                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  data-testid="trigger-receipt-ocr-btn"
+                  onClick={() => setIsOcrOpen((prev) => !prev)}
+                  className={`min-h-[44px] px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isOcrOpen
+                      ? 'bg-primary/20 text-primary border-primary/40'
+                      : 'bg-white/5 hover:bg-white/10 text-white/80 border-white/10'
+                  }`}
+                  title="Ler cupom ou comprovante com IA"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>📸 Ler Comprovante (IA)</span>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="close-transaction-modal-btn"
+                  onClick={onClose}
+                  className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+
+            {/* Dropzone de Leitura de Comprovante (OCR) */}
+            {isOcrOpen && (
+              <div className="mb-4">
+                <ReceiptScannerDropzone
+                  onFileSelected={handleOcrFileSelected}
+                  isScanning={isScanning}
+                  error={ocrError}
+                  errorCode={ocrErrorCode}
+                  onReset={resetScanState}
+                  onConfigureAiKey={() => setIsAiKeyModalOpen(true)}
+                />
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -290,6 +382,28 @@ export function TransactionModal({
                   />
                 </div>
               </div>
+
+              {/* Badge de extração via IA */}
+              {aiExtractedInfo && (
+                <div
+                  data-testid="ai-extracted-badge"
+                  className="p-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-xs flex items-center justify-between animate-fadeIn"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                    <span className="font-medium">
+                      ✨ Extraído via IA ({Math.round((aiExtractedInfo.confidence ?? 0.9) * 100)}% precisão)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAiExtractedInfo(null)}
+                    className="text-white/60 hover:text-white text-xs underline cursor-pointer"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              )}
 
               {/* Descrição */}
               <div>
@@ -655,6 +769,15 @@ export function TransactionModal({
           </motion.div>
         </div>
       )}
+
+      <AiKeyPromptModal
+        isOpen={isAiKeyModalOpen}
+        onClose={() => setIsAiKeyModalOpen(false)}
+        onConfigureKey={() => {
+          setIsAiKeyModalOpen(false)
+          onOpenAiSettings?.()
+        }}
+      />
     </AnimatePresence>
   )
 }

@@ -125,6 +125,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
   return (
     <div
       role="dialog"
+      data-testid="budget-modal"
       aria-modal="true"
       aria-labelledby="budget-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
@@ -237,7 +238,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                     {currentBudget && (
                       <button
                         type="button"
-                        data-testid={`btn-delete-budget-${cat.id}`}
+                        data-testid={`delete-budget-btn-${cat.name}`}
                         aria-label={`Remover orçamento de ${cat.name}`}
                         disabled={isSaving}
                         onClick={() => handleDelete(currentBudget.id, cat.id)}

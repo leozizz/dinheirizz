@@ -1,0 +1,37 @@
+# Diretrizes de Engenharia e Padrões de Código (Cursor IDE)
+
+> Gerado automaticamente por `@apenasgabs/agent-standards` a partir de `agent.config.json`.
+
+## 1. Padrões de Funções e Sintaxe
+- ❌ **NUNCA** usar `function` tradicional em arquivos de lógica/componentes.
+- ✅ **SEMPRE** utilizar arrow functions (`const fn = () => {}`).
+
+## 2. Tipagem TypeScript
+- ❌ **PROIBIDO** o uso de `any` em qualquer circunstância.
+- ✅ Tipar explicitamente parâmetros e retornos; usar `unknown` para valores indeterminados.
+- ✅ Preferir `interface` para objetos e contratos de dados complexos.
+- ✅ Parâmetros e retornos de funções devem possuir tipagem estrita explícita.
+
+## 3. Componentes e Estilo de UI
+- ✅ Biblioteca / Design System: **Tailwind CSS v4 + Radix UI / shadcn (new-york)**.
+- ✅ **OBRIGATÓRIO**: Todos os botões, campos de entrada e seletores interativos devem conter `data-testid`.
+- ❌ **PROIBIDO** o uso de `!important` no CSS. Respeite a especificidade e os tokens de design.
+- 🎨 **Temas Oficiais**: Escuro (Dark Luxury #0d0e12 + Neon Lime #7bc816), Claro Clean (Light Clean — Roadmap Ativo).
+
+## 4. Segurança e Higiene de Código
+- ❌ **XSS Proibido**: Nunca utilizar `innerHTML` sem sanitização.
+- ❌ **Credenciais Proibidas**: Nunca commitar API keys, senhas ou tokens hardcoded.
+- 🔐 **Criptografia**: Web Crypto API (crypto.subtle) no frontend/Edge Workers; Supabase Auth + RLS + criptografia ponta-a-ponta.
+- 🛡️ **Restrição de Runtime (src)**: Browser SPA + VitePWA apenas; proibido importar módulos nativos Node (node:fs, path, child_process, crypto).
+- 🛡️ **Restrição de Runtime (functions_and_api)**: Cloudflare Pages Functions + Hono 4 (nodejs_compat); validar payloads com Zod.
+- ❌ Remover `console.log` e chamadas de depuração residuais antes de finalizar.
+- ❌ Proibido blocos `catch` vazios sem tratamento ou logging estruturado.
+
+## 5. Arquitetura, SDD e Resiliência
+- ⚡ **Service Worker / PWA**: Estratégia mandatória **AUTOUPDATE (VITEPWA)** para navegação HTML.
+- 📋 **Spec-Driven Development (SDD)**: Nenhuma alteração de código sem spec/plano correspondente aprovado.
+- 🏛️ **ADRs (Architecture Decision Records)**: Consulte e registre decisões arquiteturais em `specs/`.
+
+## 6. Fluxo de Trabalho e Code Review
+- Toda entrega deve atender estritamente aos requisitos da tarefa/issue e aos padrões deste documento.
+- Para auditar a conformidade deste repositório, execute: `pnpm standards:review` (ou `node tools/agent-standards/bin/agent-standards.mjs review`).

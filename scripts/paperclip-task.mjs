@@ -5,8 +5,12 @@
  *
  * Usage:
  *   node scripts/paperclip-task.mjs --assign tech-lead --comment "Spec pronta para auditoria"
- *   node scripts/paperclip-task.mjs --assign fullstack --comment "Aprovado, iniciar desenvolvimento"
- *   node scripts/paperclip-task.mjs --assign qa --comment "PR aberto para testes"
+ *   node scripts/paperclip-task.mjs --assign backend --comment "Plano TDD aprovado, implementar API/DB"
+ *   node scripts/paperclip-task.mjs --assign frontend --comment "Contratos prontos, implementar UI"
+ *   node scripts/paperclip-task.mjs --assign ux-reviewer --comment "PR aberto para gate Anti-Slop"
+ *   node scripts/paperclip-task.mjs --assign qa --comment "UX aprovado, iniciar E2E e WCAG"
+ *   node scripts/paperclip-task.mjs --assign tech-lead --comment "QA aprovado, revisar PR final"
+ *   node scripts/paperclip-task.mjs --assign devops --comment "PR aprovado, realizar merge e deploy"
  *   node scripts/paperclip-task.mjs --status done --comment "Deploy homologado"
  */
 
@@ -14,8 +18,14 @@ const AGENT_MAP = {
   'pm': 'f7accc8b-e406-443c-b9c4-2c1845509723',
   'product-manager': 'f7accc8b-e406-443c-b9c4-2c1845509723',
   'tech-lead': '0e5af8f2-3ff8-4863-93ec-1989b4d2738d',
-  'fullstack': '5eb7f7ed-446e-4d40-9af7-59d6936e69f6',
-  'fullstack-developer': '5eb7f7ed-446e-4d40-9af7-59d6936e69f6',
+  'backend': 'cab7b4a3-bbbb-4783-835e-2a14339db56f',
+  'backend-developer': 'cab7b4a3-bbbb-4783-835e-2a14339db56f',
+  'be': 'cab7b4a3-bbbb-4783-835e-2a14339db56f',
+  'frontend': 'caf098be-9365-4e19-8a77-7207ec5bcbb9',
+  'frontend-developer': 'caf098be-9365-4e19-8a77-7207ec5bcbb9',
+  'fe': 'caf098be-9365-4e19-8a77-7207ec5bcbb9',
+  'ux-reviewer': '69ca9a91-5c0c-4644-b819-e7c3704eca80',
+  'ux': '69ca9a91-5c0c-4644-b819-e7c3704eca80',
   'qa': '2a962652-06f4-4420-83ff-2d2a647d6804',
   'qa-engineer': '2a962652-06f4-4420-83ff-2d2a647d6804',
   'devops': '2f8fe03a-6b86-43dc-9744-18c4a82cd4b6',

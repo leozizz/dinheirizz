@@ -22,7 +22,11 @@
     "sync:status": "node scripts/paperclip-sync.mjs --status",
     "sync:board": "node scripts/paperclip-sync.mjs --sync",
     "sync:dispatch": "node scripts/paperclip-sync.mjs --dispatch-next",
-    "sync:close": "node scripts/paperclip-sync.mjs --close-current"
+    "sync:close": "node scripts/paperclip-sync.mjs --close-current",
+    "db:status": "node scripts/check_migrations.mjs",
+    "standards:sync": "node tools/agent-standards/bin/agent-standards.mjs sync",
+    "standards:review": "node tools/agent-standards/bin/agent-standards.mjs review",
+    "standards:discover": "node tools/agent-standards/bin/agent-standards.mjs discover"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

@@ -1,6 +1,6 @@
 # Diretrizes de Engenharia e Padrões de Código (Universal Agent)
 
-> Padrões Técnicos e de Qualidade de Código do Projeto Dinheirizz
+> Gerado automaticamente por `@apenasgabs/agent-standards` a partir de `agent.config.json`.
 
 ## 1. Padrões de Funções e Sintaxe
 - ❌ **NUNCA** usar `function` tradicional em arquivos de lógica/componentes.
@@ -13,23 +13,25 @@
 - ✅ Parâmetros e retornos de funções devem possuir tipagem estrita explícita.
 
 ## 3. Componentes e Estilo de UI
-- ✅ Biblioteca / Design System: **Tailwind CSS + Radix UI + Design Tokens**.
+- ✅ Biblioteca / Design System: **Tailwind CSS v4 + Radix UI / shadcn (new-york)**.
 - ✅ **OBRIGATÓRIO**: Todos os botões, campos de entrada e seletores interativos devem conter `data-testid`.
 - ❌ **PROIBIDO** o uso de `!important` no CSS. Respeite a especificidade e os tokens de design.
-- 🎨 **Temas Oficiais**: Escuro (Dark) e Claro Clean (Light).
-- 📱 **Responsividade & UI/UX Gate**: Proibido overflow horizontal (`scrollWidth <= innerWidth`) em resoluções mobile (375px/390px), tablet (768px) e desktop (1280px+). Elementos não podem se sobrepor ou quebrar quebras de linha em viewports reduzidos.
+- 🎨 **Temas Oficiais**: Escuro (Dark Luxury #0d0e12 + Neon Lime #7bc816), Claro Clean (Light Clean — Roadmap Ativo).
 
 ## 4. Segurança e Higiene de Código
 - ❌ **XSS Proibido**: Nunca utilizar `innerHTML` sem sanitização.
 - ❌ **Credenciais Proibidas**: Nunca commitar API keys, senhas ou tokens hardcoded.
-- 🔐 **Criptografia & Dados**: Uso de APIs seguras e sanitização rigorosa de inputs.
+- 🔐 **Criptografia**: Web Crypto API (crypto.subtle) no frontend/Edge Workers; Supabase Auth + RLS + criptografia ponta-a-ponta.
+- 🛡️ **Restrição de Runtime (src)**: Browser SPA + VitePWA apenas; proibido importar módulos nativos Node (node:fs, path, child_process, crypto).
+- 🛡️ **Restrição de Runtime (functions_and_api)**: Cloudflare Pages Functions + Hono 4 (nodejs_compat); validar payloads com Zod.
 - ❌ Remover `console.log` e chamadas de depuração residuais antes de finalizar.
 - ❌ Proibido blocos `catch` vazios sem tratamento ou logging estruturado.
 
 ## 5. Arquitetura, SDD e Resiliência
+- ⚡ **Service Worker / PWA**: Estratégia mandatória **AUTOUPDATE (VITEPWA)** para navegação HTML.
 - 📋 **Spec-Driven Development (SDD)**: Nenhuma alteração de código sem spec/plano correspondente aprovado.
-- 🔄 **GitHub Backlog & Sync**: GitHub Issues/Kanban é a fonte da verdade. O fechamento e despacho contínuo de tarefas é orquestrado via `pnpm sync:*`.
+- 🏛️ **ADRs (Architecture Decision Records)**: Consulte e registre decisões arquiteturais em `specs/`.
 
 ## 6. Fluxo de Trabalho e Code Review
 - Toda entrega deve atender estritamente aos requisitos da tarefa/issue e aos padrões deste documento.
-- Validação contínua com `pnpm test` e `pnpm build`.
+- Para auditar a conformidade deste repositório, execute: `pnpm standards:review` (ou `node tools/agent-standards/bin/agent-standards.mjs review`).

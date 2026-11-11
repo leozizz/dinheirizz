@@ -175,3 +175,7 @@ dist/
 
 # Drizzle migrations / cache
 .drizzle/
+
+# Agent Standards review outputs
+REVIEW_REPORT.md
+review-fixes.patch

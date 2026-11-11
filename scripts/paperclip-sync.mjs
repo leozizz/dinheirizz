@@ -108,12 +108,14 @@ async function createPaperclipIssue(ghIssue) {
     ghIssue.body || 'Sem descrição fornecida no GitHub.',
     ``,
     `---`,
-    `> **Instrução ao Fluxo SDD Autônomo:**`,
-    `> 1. **PM:** crie a especificação SDD em \`specs/spec.${ghIssue.number}.md\` e reatribua a task para o **Tech Lead** (\`pnpm task:handoff --assign tech-lead\`).`,
-    `> 2. **Tech Lead:** aprove a spec, crie o plano TDD em \`specs/plan.${ghIssue.number}.md\` e reatribua para o **Fullstack** (\`pnpm task:handoff --assign fullstack\`).`,
-    `> 3. **Fullstack:** crie a branch \`feat/${ghIssue.number}-...\`, implemente o código seguindo TDD, passe nos testes unitários e de integração, comite, abra PR e reatribua para o **QA** (\`pnpm task:handoff --assign qa\`).`,
-    `> 4. **QA:** execute testes Playwright E2E e valide rigorosamente a integridade de UI/UX (responsividade mobile/desktop, ausência de quebras visuais e contraste). Se aprovado, reatribua para o **DevOps** (\`pnpm task:handoff --assign devops\`).`,
-    `> 5. **DevOps:** homologue o build de produção, faça o merge do PR na branch \`main\` e execute \`node scripts/paperclip-sync.mjs --close-current ${ghIssue.number} --pr <PR_NUMBER> --dispatch-next\` para engatar a próxima issue.`
+    `> **Instrução ao Fluxo SDD Autônomo (7 Etapas):**`,
+    `> 1. **PM:** crie a especificação SDD em \`specs/spec.${ghIssue.number}.md\` (contemplando Dual-Theme, \`data-testid\` e critérios Anti-Slop) e reatribua para o **Tech Lead** (\`pnpm task:handoff --assign tech-lead\`).`,
+    `> 2. **Tech Lead:** aprove a spec, crie o plano TDD em \`specs/plan.${ghIssue.number}.md\` e despache para o **Backend** (\`pnpm task:handoff --assign backend\`) ou diretamente para o **Frontend** (\`pnpm task:handoff --assign frontend\`) se não houver alteração de API/DB.`,
+    `> 3. **Backend / Frontend:** implemente em branch isolada (\`feat/${ghIssue.number}-...\`) seguindo TDD, arrow functions e zero \`any\`, valide \`pnpm test\`, \`pnpm build\` e \`pnpm standards:review\`, abra o PR e reatribua alterações visuais para o **UX Reviewer** (\`pnpm task:handoff --assign ux-reviewer\`; tasks puramente de API vão direto para \`qa\`).`,
+    `> 4. **UX Reviewer (Gate Anti-Slop):** inspecione em browser real (Playwright MCP / CLI) desktop + mobile, Dual-Theme (Dark Luxury / Light Clean), contraste e zero AI-Slop. Se reprovado, devolva para \`frontend\`; se aprovado, reatribua para o **QA** (\`pnpm task:handoff --assign qa\`).`,
+    `> 5. **QA:** execute Vitest, build, Playwright E2E funcional, WCAG AA e \`pnpm standards:review\`. Se aprovado, reatribua para revisão final do **Tech Lead** (\`pnpm task:handoff --assign tech-lead\`).`,
+    `> 6. **Tech Lead (PR Review):** confira evidências de UX Reviewer, QA e \`STANDARDS.md\`, aprove o PR e reatribua para o **DevOps** (\`pnpm task:handoff --assign devops\`).`,
+    `> 7. **DevOps:** homologue o build Cloudflare Pages, faça o merge do PR em \`main\`, valide healthcheck e execute \`pnpm sync:close ${ghIssue.number} --pr <PR_NUMBER> --dispatch-next\` para fechar a issue no GitHub e engatar a próxima.`
   ].join('\n');
 
   const payload = {

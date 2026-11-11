@@ -1,0 +1,47 @@
+{
+  "appName": "Dinheirizz",
+  "preset": "react-hono-cloudflare",
+  "rules": {
+    "functions": "arrow-only",
+    "typescript": {
+      "noExplicitAny": true,
+      "preferInterfaces": true,
+      "strictParams": true
+    },
+    "ui": {
+      "preferred": "Tailwind CSS v4 + Radix UI / shadcn (new-york)",
+      "requireDataTestId": true,
+      "noImportant": true,
+      "themes": [
+        "Escuro (Dark Luxury #0d0e12 + Neon Lime #7bc816)",
+        "Claro Clean (Light Clean — Roadmap Ativo)"
+      ]
+    },
+    "security": {
+      "blockInnerHTML": true,
+      "blockHardcodedSecrets": true,
+      "crypto": "Web Crypto API (crypto.subtle) no frontend/Edge Workers; Supabase Auth + RLS + criptografia ponta-a-ponta",
+      "runtimeRestrictions": {
+        "src": "Browser SPA + VitePWA apenas; proibido importar módulos nativos Node (node:fs, path, child_process, crypto)",
+        "functions_and_api": "Cloudflare Pages Functions + Hono 4 (nodejs_compat); validar payloads com Zod"
+      }
+    },
+    "cleanCode": {
+      "blockConsoleLog": true,
+      "blockEmptyCatch": true
+    },
+    "pwa": {
+      "serviceWorkerStrategy": "autoUpdate (VitePWA)"
+    },
+    "architecture": {
+      "sddRequired": true,
+      "adrFolder": "specs/"
+    }
+  },
+  "docsSync": [
+    ".agents/STANDARDS.md",
+    "CLAUDE.md",
+    ".cursorrules",
+    ".github/copilot-instructions.md"
+  ]
+}

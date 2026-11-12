@@ -36,6 +36,7 @@ describe('Receipt OCR Integration in TransactionModal & QuickActions (TDD)', () 
     const triggerBtn = screen.getByTestId('trigger-receipt-ocr-btn')
     expect(triggerBtn).toBeInTheDocument()
     expect(triggerBtn).toHaveTextContent(/Ler Comprovante/i)
+    expect(triggerBtn.textContent).not.toContain('📸')
   })
 
   it('deve abrir a dropzone de OCR ao clicar no botão de acionamento', () => {

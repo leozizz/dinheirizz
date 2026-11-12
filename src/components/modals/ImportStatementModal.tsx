@@ -116,7 +116,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
   const handleConfirm = async () => {
     try {
       await executeImport((count) => {
-        toast.success(`${count} transaç${count === 1 ? 'ão importada' : 'ões importadas'} com sucesso!`)
+        toast.success(count === 1 ? '1 transação importada com sucesso!' : `${count} transações importadas com sucesso!`)
         if (onSuccess) {
           onSuccess(count)
         }
@@ -393,7 +393,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"
                             >
                               <AlertTriangle className="w-3 h-3" />
-                              ⚠️ Possível Duplicata
+                              Possível Duplicata
                             </span>
                             <span className="text-[11px] text-zinc-400 truncate">
                               {tx.duplicateReason}
@@ -465,7 +465,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
 
                         <span
                           data-testid={`amount-${tx.id}`}
-                          className={`text-sm font-semibold whitespace-nowrap min-w-[90px] text-right ${
+                          className={`text-sm font-semibold whitespace-nowrap min-w-[90px] text-right tabular-nums ${
                             tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
                           }`}
                         >

@@ -8,7 +8,8 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
-  KeyRound
+  KeyRound,
+  Check
 } from 'lucide-react'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 
@@ -19,12 +20,12 @@ export interface AiInsightsCardProps {
   onGenerate?: () => void
 }
 
-export function AiInsightsCard({
+export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
   insight,
   isLoading = false,
   isGenerating = false,
   onGenerate
-}: AiInsightsCardProps) {
+}) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
   if (isLoading) {
@@ -206,8 +207,9 @@ export function AiInsightsCard({
               </h4>
               <ul className="space-y-1.5">
                 {insight.highlights.slice(1).map((h, i) => (
-                  <li key={i} className="text-xs text-emerald-400/80 leading-relaxed">
-                    ✓ {h}
+                  <li key={i} className="text-xs text-emerald-400/80 leading-relaxed flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{h}</span>
                   </li>
                 ))}
               </ul>

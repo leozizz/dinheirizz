@@ -34,7 +34,7 @@ const mockForecastDanger: useForecastModule.ForecastResponse = {
   ]
 }
 
-function renderComponent(props = {}) {
+const renderComponent = (props = {}) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
   })
@@ -56,7 +56,7 @@ describe('ForecastCard Component (TDD)', () => {
       data: mockForecastSafe,
       isLoading: false,
       isError: false
-    } as any)
+    } as unknown as ReturnType<typeof useForecastModule.useForecast>)
 
     renderComponent()
 
@@ -71,7 +71,7 @@ describe('ForecastCard Component (TDD)', () => {
       data: mockForecastDanger,
       isLoading: false,
       isError: false
-    } as any)
+    } as unknown as ReturnType<typeof useForecastModule.useForecast>)
 
     renderComponent()
 
@@ -84,7 +84,7 @@ describe('ForecastCard Component (TDD)', () => {
       data: mockForecastSafe,
       isLoading: false,
       isError: false
-    } as any)
+    } as unknown as ReturnType<typeof useForecastModule.useForecast>)
 
     renderComponent()
 
@@ -103,10 +103,22 @@ describe('ForecastCard Component (TDD)', () => {
       data: mockForecastSafe,
       isLoading: false,
       isError: false
-    } as any)
+    } as unknown as ReturnType<typeof useForecastModule.useForecast>)
 
     const { container } = renderComponent()
     const svgCurve = container.querySelector('svg.cashflow-curve')
     expect(svgCurve).toBeInTheDocument()
+  })
+
+  it('deve utilizar tabular-nums nos elementos de valores monetários para evitar instabilidade visual', () => {
+    vi.spyOn(useForecastModule, 'useForecast').mockReturnValue({
+      data: mockForecastSafe,
+      isLoading: false,
+      isError: false
+    } as unknown as ReturnType<typeof useForecastModule.useForecast>)
+
+    const { container } = renderComponent()
+    const tabularElements = container.querySelectorAll('.tabular-nums')
+    expect(tabularElements.length).toBeGreaterThanOrEqual(4)
   })
 })

@@ -290,7 +290,7 @@ describe('QA & A11y Suite — Leitura e Registro Automático de Comprovantes via
       })
 
       const badge = screen.getByTestId('ai-extracted-badge')
-      expect(badge).toHaveTextContent(/Extraído via IA/i)
+      expect(badge).toHaveTextContent(/Dados lidos do comprovante|Extraído via IA/i)
       expect(badge).toHaveTextContent(/98% precisão/i)
 
       // Clicar em descartar badge

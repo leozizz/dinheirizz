@@ -156,5 +156,23 @@ describe('AiInsightsCard (TDD)', () => {
     expect(screen.getByTestId('badge-system')).toBeInTheDocument()
     expect(screen.getByText(/Dinheirizz IA \(Admin\/Pro\)/i)).toBeInTheDocument()
   })
+
+  it('deve renderizar destaques secundários com ícone SVG Check e sem caractere cru "✓"', () => {
+    render(
+      <AiInsightsCard
+        insight={mockInsight}
+        isLoading={false}
+        isGenerating={false}
+        onGenerate={vi.fn()}
+      />
+    )
+
+    // Expandir detalhes
+    const expandBtn = screen.getByRole('button', { name: /ver recomendações completas/i })
+    fireEvent.click(expandBtn)
+
+    expect(screen.getByText(/Gastos com alimentação reduziram 12%/i)).toBeInTheDocument()
+    expect(screen.queryByText(/✓/)).not.toBeInTheDocument()
+  })
 })
 

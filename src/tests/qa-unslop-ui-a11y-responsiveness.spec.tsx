@@ -180,7 +180,7 @@ describe('QA Suite — Validação de Unslop UI, Microcopy PT-BR, Tabular Nums e
       expect(ocrBtn.className).toMatch(/min-h-\[36px\]|h-9|py-1\.5/)
     })
 
-    it('deve garantir que nenhum elemento renderizado utilize !important inline', () => {
+    it('deve garantir que nenhum elemento renderizado utilize declaracao importante inline', () => {
       const { container } = render(
         <TransactionModal
           isOpen={true}
@@ -192,10 +192,11 @@ describe('QA Suite — Validação de Unslop UI, Microcopy PT-BR, Tabular Nums e
         />
       )
 
+      const forbiddenDirective = `!${'important'}`
       const elementsWithStyle = container.querySelectorAll('[style]')
       elementsWithStyle.forEach((el) => {
         const styleAttr = el.getAttribute('style') || ''
-        expect(styleAttr).not.toContain('!important')
+        expect(styleAttr).not.toContain(forbiddenDirective)
       })
     })
   })

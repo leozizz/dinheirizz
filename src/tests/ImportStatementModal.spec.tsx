@@ -101,6 +101,13 @@ describe('ImportStatementModal Component (TDD)', () => {
     // Confirmação com total de itens
     expect(screen.getByTestId('confirm-import-btn')).toBeInTheDocument()
     expect(screen.getByTestId('confirm-import-btn')).toHaveTextContent('Confirmar Importação (3 lançamentos)')
+
+    // Tipografia numérica consistente na tabela de conferência
+    const amountElements = container.querySelectorAll('[data-testid^="amount-"]')
+    expect(amountElements.length).toBe(3)
+    amountElements.forEach((el) => {
+      expect(el).toHaveClass('tabular-nums')
+    })
   })
 
   it('deve sinalizar duplicata com badge e manter desmarcada por padrão', async () => {
@@ -137,7 +144,10 @@ describe('ImportStatementModal Component (TDD)', () => {
     fireEvent.change(fileInput, { target: { files: [file] } })
 
     await waitFor(() => {
-      expect(screen.getByTestId('duplicate-badge')).toBeInTheDocument()
+      const badge = screen.getByTestId('duplicate-badge')
+      expect(badge).toBeInTheDocument()
+      expect(badge.textContent).not.toContain('⚠️')
+      expect(badge).toHaveTextContent(/Possível Duplicata/i)
     })
 
     // Deve vir 1 selecionado de 2

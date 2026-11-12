@@ -19,7 +19,10 @@ export interface ForecastCardProps {
   className?: string
 }
 
-export function ForecastCard({ accountId, className = '' }: ForecastCardProps) {
+export const ForecastCard: React.FC<ForecastCardProps> = ({
+  accountId,
+  className = ''
+}) => {
   const [days, setDays] = useState<30 | 60>(30)
   const { data, isLoading } = useForecast({ days, accountId })
 
@@ -125,7 +128,7 @@ export function ForecastCard({ accountId, className = '' }: ForecastCardProps) {
           </span>
           <div className="flex items-baseline gap-2">
             <span
-              className={`text-2xl font-black tracking-tight sm:text-3xl ${
+              className={`text-2xl font-black tracking-tight sm:text-3xl tabular-nums ${
                 forecast.projectedEndBalance < 0
                   ? 'text-rose-400'
                   : 'text-zinc-50'
@@ -141,17 +144,17 @@ export function ForecastCard({ accountId, className = '' }: ForecastCardProps) {
           {/* Delta em relação ao saldo atual */}
           <div className="mt-1 flex items-center gap-1.5 text-xs">
             {forecast.netChange >= 0 ? (
-              <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-400">
+              <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-400 tabular-nums">
                 <ArrowUpRight className="h-3.5 w-3.5" />
                 +{formatBRL(forecast.netChange)}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-0.5 font-semibold text-rose-400">
+              <span className="inline-flex items-center gap-0.5 font-semibold text-rose-400 tabular-nums">
                 <ArrowDownRight className="h-3.5 w-3.5" />
                 -{formatBRL(Math.abs(forecast.netChange))}
               </span>
             )}
-            <span className="text-stone-400">vs saldo atual ({formatBRL(forecast.startingBalance)})</span>
+            <span className="text-stone-400">vs saldo atual (<span className="tabular-nums">{formatBRL(forecast.startingBalance)}</span>)</span>
           </div>
         </div>
 
@@ -198,7 +201,7 @@ export function ForecastCard({ accountId, className = '' }: ForecastCardProps) {
           </div>
           <div>
             <div className="text-[10px] text-stone-400">Gasto Diário Médio (Burn Rate)</div>
-            <div className="font-semibold text-zinc-200">
+            <div className="font-semibold text-zinc-200 tabular-nums">
               {formatBRL(forecast.dailyBurnRate)}/dia
             </div>
           </div>
@@ -211,7 +214,7 @@ export function ForecastCard({ accountId, className = '' }: ForecastCardProps) {
           <div>
             <div className="text-[10px] text-stone-400">Menor Saldo no Período</div>
             <div
-              className={`font-semibold ${
+              className={`font-semibold tabular-nums ${
                 forecast.lowestPoint.balance < 0 ? 'text-rose-400' : 'text-zinc-200'
               }`}
             >

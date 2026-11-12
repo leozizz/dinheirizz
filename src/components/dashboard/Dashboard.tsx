@@ -444,7 +444,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
               <span className="text-[10px] text-neutral-500 block truncate">
                 {creditAccounts.length > 0
-                  ? `${creditAccounts.length} cartão(ões) vinculado(s)`
+                  ? creditAccounts.length === 1
+                    ? '1 cartão vinculado'
+                    : `${creditAccounts.length} cartões vinculados`
                   : 'Sem faturas em aberto'}
               </span>
             </div>
@@ -463,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <AnimatedNumber value={transferTotal} formatter={formatBRL} />
               </span>
               <span className="text-[10px] text-neutral-500 block truncate">
-                {transferCount} movimentação{transferCount !== 1 ? 'ões' : ''}
+                {transferCount === 1 ? '1 transferência' : `${transferCount} transferências`}
               </span>
             </div>
           </div>

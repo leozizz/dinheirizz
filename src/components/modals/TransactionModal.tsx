@@ -270,8 +270,8 @@ export const TransactionModal = ({
         type: mode
       })
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Erro ao registrar transação.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao registrar transação.')
     } finally {
       setLoading(false)
     }
@@ -327,7 +327,7 @@ export const TransactionModal = ({
                   title="Ler cupom ou comprovante com IA"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>📸 Ler Comprovante (IA)</span>
+                  <span>Ler Comprovante (IA)</span>
                 </button>
 
                 <button
@@ -392,7 +392,7 @@ export const TransactionModal = ({
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-primary shrink-0" />
                     <span className="font-medium">
-                      ✨ Extraído via IA ({Math.round((aiExtractedInfo.confidence ?? 0.9) * 100)}% precisão)
+                      Dados lidos do comprovante ({Math.round((aiExtractedInfo.confidence ?? 0.9) * 100)}% precisão)
                     </span>
                   </div>
                   <button

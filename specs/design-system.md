@@ -7,20 +7,25 @@
 
 ## 1. Paleta de Cores
 
-### 1.1 Cores Semânticas (CSS Custom Properties)
+### 1.1 Cores Semânticas (CSS Custom Properties - Dual-Theme)
 
 ```css
 :root {
   /* === FUNDOS DARK LUXURY === */
   --background: oklch(0.11 0.008 260);        /* #0e0f14 - Fundo ônix profundo de alto contraste */
   --card: oklch(0.16 0.008 260 / 0.65);       /* Fundo de cards com transparência vítrea */
+  --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.14 0.008 260 / 0.94);    /* Overlays, sheets e modais */
+  --popover-foreground: oklch(0.98 0 0);
   --sidebar: oklch(0.13 0.008 260 / 0.85);    /* Sidebar com transparência */
+  --sidebar-foreground: oklch(0.98 0 0);
   --input: oklch(0.20 0.008 260 / 0.55);      /* Campos de entrada */
   
   /* === TEXTO & CONTRASTE WCAG AA === */
   --foreground: oklch(0.98 0 0);              /* #fafafa - Texto principal nítido */
+  --muted: oklch(0.22 0.008 260 / 0.5);
   --muted-foreground: oklch(0.68 0.01 260);   /* Texto secundário com alto contraste */
+  --secondary: oklch(0.22 0.008 260 / 0.65);
   --secondary-foreground: oklch(0.90 0 0);   /* Texto em elementos secundários */
   
   /* === CORES DE AÇÃO & IDENTIDADE === */
@@ -46,18 +51,62 @@
   --chart-4: oklch(0.80 0.15 90);             /* Dourado */
   --chart-5: oklch(0.68 0.22 25);             /* Coral */
 }
+
+.light {
+  /* === FUNDOS LIGHT CLEAN (GELO ARDÓSIA ANTI-GLARE) === */
+  --background: oklch(0.985 0.002 260);       /* Gelo ardósia anti-glare, elimina fadiga visual */
+  --card: oklch(1 0 0 / 0.80);                 /* Vidro fosco claro translúcido */
+  --card-foreground: oklch(0.18 0.015 260);    /* Ônix profundo para contraste > 12:1 */
+  --popover: oklch(1 0 0 / 0.96);              /* Overlays e sheets nítidos */
+  --popover-foreground: oklch(0.18 0.015 260);
+  --sidebar: oklch(0.975 0.004 260 / 0.90);
+  --sidebar-foreground: oklch(0.18 0.015 260);
+  --input: oklch(0.95 0.005 260 / 0.80);       /* Inputs com fundo suave e borda vítrea */
+
+  /* === TEXTO & CONTRASTE WCAG AA === */
+  --foreground: oklch(0.15 0.015 260);         /* Texto principal de alto contraste (14.2:1) */
+  --muted: oklch(0.93 0.006 260 / 0.70);
+  --muted-foreground: oklch(0.42 0.015 260);   /* Texto secundário atendendo WCAG AA (>= 4.8:1) */
+  --secondary: oklch(0.935 0.006 260 / 0.75);
+  --secondary-foreground: oklch(0.20 0.015 260);
+
+  /* === CORES DE AÇÃO & IDENTIDADE === */
+  --primary: oklch(0.55 0.17 142);             /* Esmeralda calibrado para contraste >= 4.6:1 no fundo claro */
+  --primary-foreground: oklch(0.98 0 0);       /* Branco nítido sobre primary */
+  --accent: oklch(0.48 0.14 195);              /* Teal/Ciano profundo para tema claro */
+  --accent-foreground: oklch(0.98 0 0);
+
+  /* === ESTADOS === */
+  --destructive: oklch(0.58 0.22 25);          /* Coral escuro de alto contraste (> 4.5:1) */
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.52 0.17 142);             /* Verde para receitas */
+  --success-foreground: oklch(0.98 0 0);
+
+  /* === BORDAS E DIVISORES === */
+  --border: oklch(0.85 0.008 260 / 0.60);      /* Linhas vítreas translúcidas sutis */
+  --ring: oklch(0.55 0.17 142 / 0.40);         /* Focus ring esmeralda */
+
+  /* === GRÁFICOS === */
+  --chart-1: oklch(0.55 0.17 142);
+  --chart-2: oklch(0.48 0.14 195);
+  --chart-3: oklch(0.50 0.18 280);
+  --chart-4: oklch(0.60 0.15 90);
+  --chart-5: oklch(0.58 0.22 25);
+}
 ```
 
-### 1.2 Cores Funcionais (Hexadecimais Aproximados)
+### 1.2 Cores Funcionais (Dual-Theme: Dark Luxury vs Light Clean)
 
-| Token               | OKLCH                        | Hex Aprox.   | Uso                           |
-|---------------------|------------------------------|--------------|-------------------------------|
-| `--background`      | `oklch(0.11 0.006 260)`      | `#0d0e12`    | Fundo ônix ardósia profundo   |
-| `--foreground`      | `oklch(0.98 0 0)`            | `#fafafa`    | Texto principal               |
-| `--primary`         | `oklch(0.76 0.17 142)`       | `#7bc816`    | CTAs, links, lima fintech     |
-| `--accent`          | `oklch(0.75 0.12 185)`       | `#38bdf8`    | Teal / Ciano sutil            |
-| `--destructive`     | `oklch(0.68 0.22 25)`        | `#fb7185`    | Despesas e alertas            |
-| `--muted-foreground`| `oklch(0.68 0.01 260)`       | `#a1a1aa`    | Texto auxiliar WCAG AA        |
+| Token | Dark Luxury (OKLCH) | Hex Aprox. | Light Clean (OKLCH) | Hex Aprox. | Relação de Contraste WCAG |
+|---|---|---|---|---|---|
+| `--background` | `oklch(0.11 0.006 260)` | `#0d0e12` | `oklch(0.985 0.002 260)` | `#f8fafc` | N/A (Fundo) |
+| `--foreground` | `oklch(0.98 0 0)` | `#fafafa` | `oklch(0.15 0.015 260)` | `#1e293b` | > 14:1 (WCAG AAA) |
+| `--card` | `oklch(0.16 0.008 260 / 0.65)` | `#181920` | `oklch(1 0 0 / 0.80)` | `#ffffff` | N/A (Superfície) |
+| `--card-foreground` | `oklch(0.98 0 0)` | `#fafafa` | `oklch(0.18 0.015 260)` | `#1e293b` | > 12:1 (WCAG AAA) |
+| `--primary` | `oklch(0.76 0.17 142)` | `#7bc816` | `oklch(0.55 0.17 142)` | `#15803d` | >= 4.6:1 (WCAG AA) |
+| `--primary-foreground` | `oklch(0.10 0.008 260)` | `#0d0e12` | `oklch(0.98 0 0)` | `#ffffff` | >= 4.8:1 (WCAG AA) |
+| `--muted-foreground` | `oklch(0.68 0.01 260)` | `#a1a1aa` | `oklch(0.42 0.015 260)` | `#64748b` | >= 4.8:1 (WCAG AA) |
+| `--destructive` | `oklch(0.68 0.22 25)` | `#fb7185` | `oklch(0.58 0.22 25)` | `#e11d48` | >= 4.6:1 (WCAG AA) |
 
 ### 1.3 Cores de Categorias (Transações)
 

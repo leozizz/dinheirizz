@@ -3,6 +3,8 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
 import { queryClient } from './lib/queryClient'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { useTheme } from './hooks/useTheme'
 import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
 import { ActionType } from './components/dashboard/QuickActions'
 import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
@@ -31,7 +33,7 @@ import {
 } from './hooks/useBudgets'
 import { calculateRecurringDueDate } from './lib/businessDays'
 import { formatYMD } from './lib/calendar'
-import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
+import { Wallet, Bell, ShieldCheck, LogIn, LogOut, Sun, Moon } from 'lucide-react'
 
 const initialTransactions: TransactionItem[] = [
   {
@@ -125,6 +127,7 @@ const initialAccounts: AccountItem[] = [
 
 const MainApp = () => {
   const { user, signOut } = useAuth()
+  const { resolvedTheme, toggleTheme } = useTheme()
   const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
   const [demoTransactions, setDemoTransactions] = useState<TransactionItem[]>(initialTransactions)
   const [demoAccounts, setDemoAccounts] = useState<AccountItem[]>(initialAccounts)
@@ -763,9 +766,25 @@ const MainApp = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Alternância Rápida de Tema Dual-Theme */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              data-testid="header-theme-toggle-btn"
+              aria-label="Alternar tema visual"
+              title={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer active:scale-95 transition-all"
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-400" />
+              )}
+            </button>
+
             <button
               aria-label="Notificações"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer"
             >
               <Bell className="w-4 h-4" />
             </button>
@@ -933,8 +952,8 @@ const MainApp = () => {
         isLoading={isLoggingOut}
       />
 
-      {/* Toaster Glassmorphism */}
-      <Toaster position="bottom-right" richColors theme="dark" />
+      {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+      <Toaster position="bottom-right" richColors theme={resolvedTheme} />
     </div>
   )
 }
@@ -943,7 +962,9 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <MainApp />
+        <ThemeProvider>
+          <MainApp />
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

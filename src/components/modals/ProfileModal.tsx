@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
@@ -20,7 +20,11 @@ import {
   Cpu,
   CheckCircle2,
   Users,
-  Send
+  Send,
+  Sun,
+  Moon,
+  Laptop,
+  Palette
 } from 'lucide-react'
 import { useUserProfile, useUpdateProfile } from '../../hooks/useUserProfile'
 import {
@@ -32,6 +36,8 @@ import {
   useSendAdminInvite
 } from '../../hooks/useUserAiSettings'
 import { useAuth } from '../../contexts/AuthContext'
+import { ThemeContext } from '../../contexts/ThemeContext'
+import type { ThemeMode } from '../../types/theme'
 
 export interface ProfileModalProps {
   isOpen: boolean
@@ -40,15 +46,23 @@ export interface ProfileModalProps {
   onOpenDangerZone?: () => void
 }
 
-export function ProfileModal({
+export const ProfileModal = ({
   isOpen,
   onClose,
   onOpenLogoutConfirm,
   onOpenDangerZone
-}: ProfileModalProps) {
+}: ProfileModalProps) => {
   const { user: authUser } = useAuth()
   const { profile, isLoading: isProfileLoading } = useUserProfile()
   const updateProfileMutation = useUpdateProfile()
+
+  const themeContext = useContext(ThemeContext)
+  const currentTheme = themeContext?.theme ?? 'dark'
+  const handleSelectTheme = (mode: ThemeMode) => {
+    if (themeContext) {
+      void themeContext.setTheme(mode)
+    }
+  }
 
   const { data: aiSettings } = useUserAiSettings()
   const updateAiSettingsMutation = useUpdateUserAiSettings()
@@ -421,6 +435,88 @@ export function ProfileModal({
               </button>
             </div>
           </form>
+
+          {/* Seção Aparência & Tema (Dual-Theme Oficial) */}
+          <div className="mt-6 pt-5 border-t border-white/10">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary">
+                <Palette className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  Aparência & Tema
+                  <span className="text-[10px] font-normal text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                    Dual-Theme
+                  </span>
+                </h4>
+                <p className="text-[11px] text-neutral-400">
+                  Escolha entre Dark Luxury, Light Clean ou sincronização com o sistema.
+                </p>
+              </div>
+            </div>
+
+            <div
+              data-testid="theme-selector-group"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+            >
+              {/* Opção Escuro (Dark Luxury) */}
+              <button
+                type="button"
+                data-testid="theme-option-dark"
+                onClick={() => handleSelectTheme('dark')}
+                aria-pressed={currentTheme === 'dark'}
+                className={`min-h-[44px] py-2.5 px-3 rounded-xl border flex items-center justify-between sm:flex-col sm:justify-center gap-1.5 transition-all cursor-pointer ${
+                  currentTheme === 'dark'
+                    ? 'bg-primary/15 border-primary text-white shadow-sm shadow-primary/20 ring-1 ring-primary/40'
+                    : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 sm:flex-col sm:gap-1">
+                  <Moon className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-medium">Escuro</span>
+                </div>
+                <span className="text-[10px] text-neutral-500">Dark Luxury</span>
+              </button>
+
+              {/* Opção Claro (Light Clean) */}
+              <button
+                type="button"
+                data-testid="theme-option-light"
+                onClick={() => handleSelectTheme('light')}
+                aria-pressed={currentTheme === 'light'}
+                className={`min-h-[44px] py-2.5 px-3 rounded-xl border flex items-center justify-between sm:flex-col sm:justify-center gap-1.5 transition-all cursor-pointer ${
+                  currentTheme === 'light'
+                    ? 'bg-primary/15 border-primary text-white shadow-sm shadow-primary/20 ring-1 ring-primary/40'
+                    : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 sm:flex-col sm:gap-1">
+                  <Sun className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-medium">Claro</span>
+                </div>
+                <span className="text-[10px] text-neutral-500">Light Clean</span>
+              </button>
+
+              {/* Opção Automático (Sistema) */}
+              <button
+                type="button"
+                data-testid="theme-option-system"
+                onClick={() => handleSelectTheme('system')}
+                aria-pressed={currentTheme === 'system'}
+                className={`min-h-[44px] py-2.5 px-3 rounded-xl border flex items-center justify-between sm:flex-col sm:justify-center gap-1.5 transition-all cursor-pointer ${
+                  currentTheme === 'system'
+                    ? 'bg-primary/15 border-primary text-white shadow-sm shadow-primary/20 ring-1 ring-primary/40'
+                    : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 sm:flex-col sm:gap-1">
+                  <Laptop className="w-4 h-4 text-teal-400" />
+                  <span className="text-xs font-medium">Sistema</span>
+                </div>
+                <span className="text-[10px] text-neutral-500">Automático</span>
+              </button>
+            </div>
+          </div>
 
           {/* Seção Inteligência Artificial & BYOK */}
           <div className="mt-6 pt-5 border-t border-white/10">

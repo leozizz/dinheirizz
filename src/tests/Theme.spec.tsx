@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { useTheme } from '../hooks/useTheme'
 import { encryptedStorageAdapter } from '../lib/encryptedStorage'
+import { LandingHeader } from '../components/landing/LandingHeader'
 
 // Componente auxiliar para testar o hook useTheme
 const ThemeConsumerTest = () => {
@@ -310,9 +311,6 @@ describe('Dual-Theme System (TDD - ThemeContext & useTheme)', () => {
   })
 
   it('9. LandingHeader deve conter botão de alternância de tema com data-testid e alternar tema', async () => {
-    // Importa LandingHeader dinamicamente ou testa seu comportamento com ThemeProvider
-    const { LandingHeader } = await import('../components/landing/LandingHeader')
-
     render(
       <ThemeProvider>
         <LandingHeader onGoToLogin={vi.fn()} />

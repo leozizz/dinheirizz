@@ -7,16 +7,16 @@ export interface LandingFooterProps {
 
 export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => {
   return (
-    <footer data-testid="landing-footer" className="border-t border-white/5 bg-background/90 pt-16 pb-12 relative">
+    <footer data-testid="landing-footer" className="border-t border-border bg-background/90 pt-16 pb-12 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/5">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-border">
           {/* Brand & Mission */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center">
                 <Wallet className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-lg font-bold text-white font-display">
+              <span className="text-lg font-bold text-foreground font-display">
                 Dinheirizz
               </span>
             </div>
@@ -39,22 +39,22 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => 
           {/* Navigation Columns */}
           <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
             <div className="space-y-3">
-              <span className="text-xs font-semibold text-white uppercase tracking-wider block">
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider block">
                 Navegação
               </span>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li>
-                  <a href="#recursos" className="hover:text-white transition-colors min-h-[44px] flex items-center">
+                  <a href="#recursos" className="hover:text-foreground transition-colors min-h-[44px] flex items-center">
                     Recursos
                   </a>
                 </li>
                 <li>
-                  <a href="#seguranca" className="hover:text-white transition-colors min-h-[44px] flex items-center">
+                  <a href="#seguranca" className="hover:text-foreground transition-colors min-h-[44px] flex items-center">
                     Segurança & RLS
                   </a>
                 </li>
                 <li>
-                  <a href="#tecnologia" className="hover:text-white transition-colors min-h-[44px] flex items-center">
+                  <a href="#tecnologia" className="hover:text-foreground transition-colors min-h-[44px] flex items-center">
                     Arquitetura Edge
                   </a>
                 </li>
@@ -63,7 +63,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => 
                     <button
                       type="button"
                       onClick={onGoToLogin}
-                      className="hover:text-white transition-colors cursor-pointer text-left min-h-[44px] flex items-center"
+                      className="hover:text-foreground transition-colors cursor-pointer text-left min-h-[44px] flex items-center"
                     >
                       Acessar Conta
                     </button>
@@ -73,7 +73,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => 
             </div>
 
             <div className="space-y-3">
-              <span className="text-xs font-semibold text-white uppercase tracking-wider block">
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider block">
                 Tecnologia
               </span>
               <ul className="space-y-2 text-xs text-muted-foreground">
@@ -93,7 +93,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => 
             </div>
 
             <div className="space-y-3 col-span-2 sm:col-span-1">
-              <span className="text-xs font-semibold text-white uppercase tracking-wider block">
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider block">
                 Comunidade
               </span>
               <ul className="space-y-2 text-xs text-muted-foreground">
@@ -102,7 +102,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => 
                     href="https://github.com/leozizz/dinheirizz"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors min-h-[44px]"
+                    className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors min-h-[44px]"
                   >
                     <Github className="w-3.5 h-3.5" />
                     <span>Repositório</span>
@@ -128,7 +128,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ onGoToLogin }) => 
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-neutral-300 font-mono text-[11px]">
+            <span className="px-2.5 py-1 rounded-md bg-muted border border-border text-muted-foreground font-mono text-[11px]">
               v2.0.0 Production Ready
             </span>
           </div>

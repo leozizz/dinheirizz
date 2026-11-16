@@ -139,13 +139,13 @@ export const LoginScreen = () => {
       <div className="fixed -bottom-24 -right-24 w-96 h-96 rounded-full gradient-orb-accent opacity-35 pointer-events-none" />
 
       {/* Main Glassmorphism Card */}
-      <div className="relative z-10 w-full max-w-md glass-card p-6 sm:p-8 md:p-9 border border-white/10 shadow-2xl backdrop-blur-xl animate-fade-in my-auto">
+      <div className="relative z-10 w-full max-w-md glass-card p-6 sm:p-8 md:p-9 border border-border shadow-2xl backdrop-blur-xl animate-fade-in my-auto">
         {/* Header Branding */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 border border-primary/25 mb-3 sm:mb-4 shadow-inner">
             <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-1.5 sm:mb-2 font-display">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground mb-1.5 sm:mb-2 font-display">
             Dinheirizz
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -154,7 +154,7 @@ export const LoginScreen = () => {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex bg-white/5 p-1 rounded-2xl mb-6 border border-white/10">
+        <div className="flex bg-muted/50 p-1 rounded-2xl mb-6 border border-border">
           <button
             type="button"
             data-testid="tab-login"
@@ -164,8 +164,8 @@ export const LoginScreen = () => {
             }}
             className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
               mode === 'login'
-                ? 'bg-white/15 text-white shadow-sm font-semibold'
-                : 'text-muted-foreground hover:text-white'
+                ? 'bg-background text-foreground shadow-sm font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Entrar
@@ -179,8 +179,8 @@ export const LoginScreen = () => {
             }}
             className={`flex-1 min-h-[44px] py-2 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
               mode === 'signup'
-                ? 'bg-white/15 text-white shadow-sm font-semibold'
-                : 'text-muted-foreground hover:text-white'
+                ? 'bg-background text-foreground shadow-sm font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Criar conta
@@ -201,7 +201,7 @@ export const LoginScreen = () => {
             <>
               {/* Nome Completo */}
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+                <label className="block text-xs font-medium text-foreground mb-1.5 ml-1">
                   Nome Completo
                 </label>
                 <div className="relative">
@@ -212,7 +212,7 @@ export const LoginScreen = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Seu nome completo"
-                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-input/40 border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -220,10 +220,10 @@ export const LoginScreen = () => {
               {/* Username / Handle */}
               <div>
                 <div className="flex justify-between items-center mb-1.5 ml-1">
-                  <label className="block text-xs font-medium text-neutral-300">
+                  <label className="block text-xs font-medium text-foreground">
                     Identificador (@username)
                   </label>
-                  <span className="text-[10px] text-neutral-500">Opcional</span>
+                  <span className="text-[10px] text-muted-foreground">Opcional</span>
                 </div>
                 <div className="relative">
                   <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -232,7 +232,7 @@ export const LoginScreen = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
                     placeholder="seu_usuario"
-                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all lowercase"
+                    className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-input/40 border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all lowercase"
                   />
                 </div>
               </div>
@@ -241,7 +241,7 @@ export const LoginScreen = () => {
 
           {/* E-mail */}
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+            <label className="block text-xs font-medium text-foreground mb-1.5 ml-1">
               E-mail
             </label>
             <div className="relative">
@@ -252,14 +252,14 @@ export const LoginScreen = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-input/40 border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
               />
             </div>
           </div>
 
           {/* Senha */}
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+            <label className="block text-xs font-medium text-foreground mb-1.5 ml-1">
               Senha
             </label>
             <div className="relative">
@@ -270,7 +270,7 @@ export const LoginScreen = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-input/40 border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
               />
             </div>
             {mode === 'signup' && (
@@ -284,7 +284,7 @@ export const LoginScreen = () => {
           {/* Confirmação de Senha (Signup) */}
           {mode === 'signup' && (
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+              <label className="block text-xs font-medium text-foreground mb-1.5 ml-1">
                 Confirmar Senha
               </label>
               <div className="relative">
@@ -295,7 +295,7 @@ export const LoginScreen = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repita sua senha"
-                  className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 h-11 sm:h-12 rounded-xl bg-input/40 border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -335,9 +335,9 @@ export const LoginScreen = () => {
         {/* Divider */}
         <div className="relative my-6 text-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10" />
+            <div className="w-full border-t border-border" />
           </div>
-          <span className="relative px-3 bg-neutral-900 text-xs text-neutral-500 rounded-full">
+          <span className="relative px-3 bg-card text-xs text-muted-foreground rounded-full">
             ou continue com
           </span>
         </div>
@@ -349,7 +349,7 @@ export const LoginScreen = () => {
             data-testid="oauth-google-btn"
             onClick={() => handleOAuth('google')}
             aria-label="Entrar com conta Google"
-            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 active:bg-white/15 border border-white/10 text-white text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
+            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-muted/50 hover:bg-muted active:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
           >
             <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
               <path
@@ -377,9 +377,9 @@ export const LoginScreen = () => {
             data-testid="oauth-apple-btn"
             onClick={() => handleOAuth('apple')}
             aria-label="Entrar com conta Apple"
-            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 active:bg-white/15 border border-white/10 text-white text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
+            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-muted/50 hover:bg-muted active:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
           >
-            <svg className="w-3.5 h-3.5 flex-shrink-0 fill-current text-white" viewBox="0 0 170 170">
+            <svg className="w-3.5 h-3.5 flex-shrink-0 fill-current text-foreground" viewBox="0 0 170 170">
               <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.93-12.04-14.54-6.08-9.28-10.87-19.98-14.34-32.09-3.48-12.11-5.22-23.49-5.22-34.14 0-15.02 3.8-27.42 11.41-37.21 7.61-9.79 17.06-14.79 28.34-15 4.35 0 9.28 1.16 14.79 3.48 5.51 2.32 9.4 3.52 11.66 3.6 2.03 0 5.92-1.22 11.66-3.66 5.74-2.44 10.47-3.56 14.21-3.35 10.57.51 19.34 4.35 26.29 11.51 6.95 7.16 11.21 16.03 12.79 26.6-9.51 5.74-14.18 13.93-14.01 24.58.17 8.35 3.35 15.35 9.53 21 6.18 5.65 13.43 9.09 21.75 10.32-2.12 6.55-4.72 13.06-7.8 19.53zm-28.71-105.7c0 7.15-2.61 13.9-7.83 20.25-5.22 6.35-11.64 10.4-19.26 12.15-.52-1.39-.78-2.78-.78-4.17 0-6.95 2.78-13.68 8.34-20.19 5.56-6.51 12.06-10.46 19.53-11.85 0 1.28 0 2.55 0 3.81z" />
             </svg>
             <span className="truncate">Apple</span>

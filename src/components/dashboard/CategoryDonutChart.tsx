@@ -103,25 +103,25 @@ export function CategoryDonutChart({
   let accumulatedOffset = 0
 
   return (
-    <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">
+    <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border">
       {/* Cabeçalho com Título e Toggle Deslizante */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
+          <div className="w-8 h-8 rounded-xl bg-muted border border-border flex items-center justify-center text-primary">
             <PieChart className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-foreground">
               Distribuição por Categoria
             </h3>
-            <span className="text-[11px] text-neutral-400">
+            <span className="text-[11px] text-muted-foreground">
               {activeMode === 'expense' ? 'Composição de despesas do mês' : 'Origem das receitas do mês'}
             </span>
           </div>
         </div>
 
         {/* Toggle Despesas / Receitas */}
-        <div className="flex p-0.5 bg-white/5 border border-white/10 rounded-xl relative self-start sm:self-auto">
+        <div className="flex p-0.5 bg-muted/50 border border-border rounded-xl relative self-start sm:self-auto">
           <button
             type="button"
             data-testid="donut-btn-expenses"
@@ -129,7 +129,7 @@ export function CategoryDonutChart({
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
               activeMode === 'expense'
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm font-semibold'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <TrendingDown className="w-3 h-3" />
@@ -142,7 +142,7 @@ export function CategoryDonutChart({
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
               activeMode === 'income'
                 ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-semibold'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <TrendingUp className="w-3 h-3" />
@@ -164,19 +164,19 @@ export function CategoryDonutChart({
                 stroke="currentColor"
                 strokeWidth={strokeWidth}
                 strokeDasharray="4 6"
-                className="text-white/10"
+                className="text-muted/30"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-              <span className="text-[11px] text-neutral-400 uppercase tracking-wider mb-0.5">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">
                 {activeMode === 'expense' ? 'Total Despesas' : 'Total Receitas'}
               </span>
-              <span data-testid="donut-center-total" className="text-lg font-bold text-white font-display tabular-nums">
+              <span data-testid="donut-center-total" className="text-lg font-bold text-foreground font-display tabular-nums">
                 R$ 0,00
               </span>
             </div>
           </div>
-          <p className="text-xs text-neutral-400">Sem lançamentos no período</p>
+          <p className="text-xs text-muted-foreground">Sem lançamentos no período</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
@@ -190,7 +190,8 @@ export function CategoryDonutChart({
                   cy={center}
                   r={radius}
                   fill="none"
-                  stroke="rgba(255, 255, 255, 0.05)"
+                  stroke="currentColor"
+                  className="text-muted/20"
                   strokeWidth={strokeWidth}
                 />
 
@@ -230,7 +231,7 @@ export function CategoryDonutChart({
 
               {/* Centro do Aro com Total e Informações Contextuais */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
-                <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-neutral-400 truncate max-w-[130px]">
+                <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate max-w-[130px]">
                   {activeHoveredSlice
                     ? activeHoveredSlice.name
                     : activeMode === 'expense'
@@ -239,14 +240,14 @@ export function CategoryDonutChart({
                 </span>
                 <span
                   data-testid="donut-center-total"
-                  className="text-base sm:text-lg font-bold text-white font-display tabular-nums tracking-tight mt-0.5"
+                  className="text-base sm:text-lg font-bold text-foreground font-display tabular-nums tracking-tight mt-0.5"
                 >
                   <AnimatedNumber
                     value={activeHoveredSlice ? activeHoveredSlice.amount : totalAmount}
                     formatter={formatBRL}
                   />
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-neutral-400 font-medium mt-0.5">
+                <span className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5">
                   {activeHoveredSlice
                     ? `${activeHoveredSlice.percentage.toFixed(1)}% do total`
                     : `${slices.length} categoria${slices.length > 1 ? 's' : ''}`}
@@ -267,8 +268,8 @@ export function CategoryDonutChart({
                   onMouseLeave={() => setHoveredCategory(null)}
                   className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
                     isHovered
-                      ? 'bg-white/[0.08] border-white/20 translate-x-1'
-                      : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                      ? 'bg-muted/70 border-border translate-x-1'
+                      : 'bg-muted/30 border-border hover:bg-muted/50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -280,7 +281,7 @@ export function CategoryDonutChart({
                         transform: isHovered ? 'scale(1.2)' : 'scale(1)'
                       }}
                     />
-                    <span className="text-xs text-neutral-200 font-medium truncate">
+                    <span className="text-xs text-foreground font-medium truncate">
                       {slice.name}
                     </span>
                   </div>
@@ -296,7 +297,7 @@ export function CategoryDonutChart({
                     >
                       {slice.percentage.toFixed(1)}%
                     </span>
-                    <span className="text-xs font-semibold text-white tabular-nums">
+                    <span className="text-xs font-semibold text-foreground tabular-nums">
                       {formatBRL(slice.amount)}
                     </span>
                   </div>

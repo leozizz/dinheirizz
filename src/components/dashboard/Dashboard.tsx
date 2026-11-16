@@ -49,9 +49,13 @@ export interface TransactionItem {
   paidAt?: string | null
   status?: 'completed' | 'pending' | 'cancelled'
   isRecurring?: boolean
+  is_recurring?: boolean
   recurrencePeriod?: string | null
+  recurrence_period?: string | null
   recurrenceDay?: number | null
+  recurrence_day?: number | null
   adjustBusinessDay?: boolean
+  adjust_business_day?: boolean
   installmentCurrent?: number | null
   installmentTotal?: number | null
   parentTransactionId?: string | null
@@ -111,7 +115,7 @@ const getDueStatus = (dueDateStr?: string | null) => {
   if (diffDays === 1) {
     return { label: 'Vence amanhã', color: 'bg-blue-500/10 text-blue-300 border-blue-500/20' }
   }
-  return { label: `Vence em ${diffDays}d`, color: 'bg-white/5 text-neutral-300 border-white/10' }
+  return { label: `Vence em ${diffDays}d`, color: 'bg-muted/50 text-muted-foreground border-border' }
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -266,27 +270,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return (
       <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
         {/* Skeleton Saldo Principal */}
-        <div className="glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 animate-pulse">
-          <div className="w-32 h-4 bg-white/10 rounded mb-4" />
-          <div className="w-64 h-12 bg-white/10 rounded-xl mb-6" />
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 pt-4 border-t border-white/10">
-            <div className="h-12 bg-white/5 rounded-xl" />
-            <div className="h-12 bg-white/5 rounded-xl" />
+        <div className="glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border animate-pulse">
+          <div className="w-32 h-4 bg-muted rounded mb-4" />
+          <div className="w-64 h-12 bg-muted rounded-xl mb-6" />
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 pt-4 border-t border-border">
+            <div className="h-12 bg-muted/50 rounded-xl" />
+            <div className="h-12 bg-muted/50 rounded-xl" />
           </div>
         </div>
 
         {/* Skeleton Ações Rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 glass-card rounded-2xl border border-white/5 animate-pulse" />
+            <div key={i} className="h-20 glass-card rounded-2xl border border-border animate-pulse" />
           ))}
         </div>
 
         {/* Skeleton Extrato */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4">
-          <div className="w-40 h-5 bg-white/10 rounded" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4">
+          <div className="w-40 h-5 bg-muted rounded" />
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 bg-white/5 rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-muted/50 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -297,13 +301,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
 
       {/* Saldo Principal Card */}
-      <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl">
+      <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border shadow-2xl">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary">
               <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-neutral-400">
+            <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {displayTitle}
             </span>
           </div>
@@ -316,23 +320,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Valor de Destaque */}
         <div className="mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white font-display break-words">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-display break-words">
             <AnimatedNumber value={displayBalance} formatter={formatBRL} />
           </h2>
 
           {/* Saldo Previsto (com impacto das pendências do mês) */}
           <div className="mt-2.5 flex items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.05] border border-white/10 text-xs">
-              <span className="text-neutral-400 font-medium">Saldo Previsto:</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-muted/50 border border-border text-xs">
+              <span className="text-muted-foreground font-medium">Saldo Previsto:</span>
               <span
                 data-testid="projected-balance-value"
-                className="font-bold text-white tabular-nums font-display"
+                className="font-bold text-foreground tabular-nums font-display"
               >
                 <AnimatedNumber value={projectedBalance} formatter={formatBRL} />
               </span>
             </div>
             {projectedBalance !== displayBalance && (
-              <span className="text-[11px] text-neutral-400 font-medium">
+              <span className="text-[11px] text-muted-foreground font-medium">
                 {projectedBalance >= displayBalance
                   ? `(+${formatBRL(projectedBalance - displayBalance)} com pendências)`
                   : `(-${formatBRL(displayBalance - projectedBalance)} a liquidar)`}
@@ -342,13 +346,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 sm:pt-4 border-t border-white/10">
-          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md min-w-0">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 sm:pt-4 border-t border-border">
+          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary flex-shrink-0">
               <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Receitas do Mês</span>
+              <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Receitas do Mês</span>
               <span className="text-xs sm:text-base font-semibold text-primary block truncate tabular-nums">
                 <AnimatedNumber value={displayIncome} formatter={formatBRL} />
               </span>
@@ -360,12 +364,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
               <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-[11px] sm:text-xs text-neutral-400 block truncate">Despesas do Mês</span>
+              <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Despesas do Mês</span>
               <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
                 <AnimatedNumber value={displayExpense} formatter={formatBRL} />
               </span>
@@ -380,24 +384,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Bloco de Visão Geral (Compromissos, Cartões e Balanços) */}
-      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-3.5">
+      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
+            <div className="w-7 h-7 rounded-xl bg-muted border border-border flex items-center justify-center text-primary">
               <Sparkles className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Visão Geral</h3>
-              <p className="text-[11px] text-neutral-400">Compromissos e movimentações do período</p>
+              <h3 className="text-sm font-semibold text-foreground">Visão Geral</h3>
+              <p className="text-[11px] text-muted-foreground">Compromissos e movimentações do período</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
           {/* A Pagar (Despesas Pendentes) */}
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-neutral-400 font-medium">A Pagar</span>
+              <span className="text-[11px] text-muted-foreground font-medium">A Pagar</span>
               <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
                 <AlertCircle className="w-3 h-3" />
               </span>
@@ -406,16 +410,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="text-sm sm:text-base font-bold text-rose-400 block tabular-nums">
                 <AnimatedNumber value={pendingExpense} formatter={formatBRL} />
               </span>
-              <span className="text-[10px] text-neutral-500 block truncate">
+              <span className="text-[10px] text-muted-foreground block truncate">
                 {pendingExpenseCount} conta{pendingExpenseCount !== 1 ? 's' : ''} a vencer
               </span>
             </div>
           </div>
 
           {/* A Receber (Receitas Pendentes) */}
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-neutral-400 font-medium">A Receber</span>
+              <span className="text-[11px] text-muted-foreground font-medium">A Receber</span>
               <span className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                 <ArrowDownLeft className="w-3 h-3" />
               </span>
@@ -424,25 +428,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="text-sm sm:text-base font-bold text-primary block tabular-nums">
                 <AnimatedNumber value={pendingIncome} formatter={formatBRL} />
               </span>
-              <span className="text-[10px] text-neutral-500 block truncate">
+              <span className="text-[10px] text-muted-foreground block truncate">
                 {pendingIncomeCount} entrada{pendingIncomeCount !== 1 ? 's' : ''} prevista{pendingIncomeCount !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
 
           {/* Cartão de Crédito */}
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-neutral-400 font-medium">Cartão de Crédito</span>
+              <span className="text-[11px] text-muted-foreground font-medium">Cartão de Crédito</span>
               <span className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
                 <CreditCard className="w-3 h-3" />
               </span>
             </div>
             <div>
-              <span className="text-sm sm:text-base font-bold text-neutral-200 block tabular-nums">
+              <span className="text-sm sm:text-base font-bold text-foreground block tabular-nums">
                 <AnimatedNumber value={creditCardTotal} formatter={formatBRL} />
               </span>
-              <span className="text-[10px] text-neutral-500 block truncate">
+              <span className="text-[10px] text-muted-foreground block truncate">
                 {creditAccounts.length > 0
                   ? creditAccounts.length === 1
                     ? '1 cartão vinculado'
@@ -453,18 +457,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Balanço de Transferências */}
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-neutral-400 font-medium">Transferências</span>
+              <span className="text-[11px] text-muted-foreground font-medium">Transferências</span>
               <span className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                 <ArrowLeftRight className="w-3 h-3" />
               </span>
             </div>
             <div>
-              <span className="text-sm sm:text-base font-bold text-blue-300 block tabular-nums">
+              <span className="text-sm sm:text-base font-bold text-blue-400 block tabular-nums">
                 <AnimatedNumber value={transferTotal} formatter={formatBRL} />
               </span>
-              <span className="text-[10px] text-neutral-500 block truncate">
+              <span className="text-[10px] text-muted-foreground block truncate">
                 {transferCount === 1 ? '1 transferência' : `${transferCount} transferências`}
               </span>
             </div>
@@ -522,7 +526,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Seletor de Modo de Visualização: Feed vs Calendário */}
       <div className="flex items-center justify-between gap-3 px-1">
         <div className="flex items-center gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Movimentações
           </h3>
           {onImportStatement && (
@@ -530,22 +534,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               type="button"
               data-testid="dashboard-import-btn"
               onClick={onImportStatement}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
             >
               <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
               <span>Importar Extrato</span>
             </button>
           )}
         </div>
-        <div className="flex p-0.5 bg-white/5 border border-white/10 rounded-xl">
+        <div className="flex p-0.5 bg-muted/50 border border-border rounded-xl">
           <button
             type="button"
             data-testid="view-feed-btn"
             onClick={() => handleViewModeChange('feed')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               viewMode === 'feed'
-                ? 'bg-white/15 text-white shadow-sm font-bold'
-                : 'text-neutral-400 hover:text-white'
+                ? 'bg-background text-foreground shadow-sm font-bold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <List className="w-3.5 h-3.5" />
@@ -558,7 +562,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               viewMode === 'calendar'
                 ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-bold'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -575,14 +579,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         />
       ) : (
         /* Extrato Recente */
-        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10">
+        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-neutral-400" />
-            <h3 className="text-sm font-semibold text-white">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">
               Últimas Movimentações
             </h3>
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-muted-foreground">
               {totalCount && totalCount > filteredTransactions.length
                 ? `${filteredTransactions.length} de ${totalCount} registros`
                 : `${filteredTransactions.length} registros`}
@@ -590,15 +594,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Abas de Filtro por Status */}
-          <div className="flex p-0.5 bg-white/5 border border-white/10 rounded-xl self-start sm:self-auto">
+          <div className="flex p-0.5 bg-muted/50 border border-border rounded-xl self-start sm:self-auto">
             <button
               type="button"
               data-testid="filter-all-btn"
               onClick={() => handleStatusChange('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 activeStatusFilter === 'all'
-                  ? 'bg-white/15 text-white shadow-sm font-semibold'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-background text-foreground shadow-sm font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Todas
@@ -610,7 +614,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 activeStatusFilter === 'completed'
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm font-semibold'
-                  : 'text-neutral-400 hover:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Concluídas
@@ -622,7 +626,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                 activeStatusFilter === 'pending'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm font-semibold'
-                  : 'text-neutral-400 hover:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Pendentes
@@ -634,7 +638,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeStatusFilter === 'future'
                   ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-semibold'
-                  : 'text-neutral-400 hover:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <span>Futuras</span>
@@ -648,11 +652,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {filteredTransactions.length === 0 ? (
-          <div className="py-12 text-center text-neutral-500 text-sm">
+          <div className="py-12 text-center text-muted-foreground text-sm">
             Nenhuma transação recente encontrada.
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-border">
             {filteredTransactions.map((t) => {
               const isIncome = t.amount > 0
               const isPending = !t.paid || t.status === 'pending'
@@ -661,7 +665,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               return (
                 <div
                   key={t.id}
-                  className="py-3 sm:py-3.5 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-xl transition-colors gap-3"
+                  className="py-3 sm:py-3.5 flex items-center justify-between hover:bg-muted/40 px-2 rounded-xl transition-colors gap-3"
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                     <div
@@ -678,11 +682,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-medium text-white truncate">
+                      <p className="text-xs sm:text-sm font-medium text-foreground truncate">
                         {t.description || 'Transação sem descrição'}
                       </p>
                       <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
-                        <span className="text-[11px] sm:text-xs text-neutral-400 whitespace-nowrap">
+                        <span className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">
                           {formatTransactionDate(t.occurred_at)}
                         </span>
                         {t.category && (
@@ -756,13 +760,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {[1, 2].map((i) => (
                   <div key={i} className="py-3 px-2 flex items-center justify-between animate-pulse">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-muted/60" />
                       <div className="space-y-1.5">
-                        <div className="w-32 h-3.5 bg-white/10 rounded" />
-                        <div className="w-20 h-2.5 bg-white/5 rounded" />
+                        <div className="w-32 h-3.5 bg-muted rounded" />
+                        <div className="w-20 h-2.5 bg-muted/60 rounded" />
                       </div>
                     </div>
-                    <div className="w-16 h-4 bg-white/10 rounded" />
+                    <div className="w-16 h-4 bg-muted rounded" />
                   </div>
                 ))}
               </div>
@@ -772,18 +776,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Rodapé da Lista: Botão Carregar Mais ou Aviso de Fim */}
         {filteredTransactions.length > 0 && (
-          <div className="mt-5 pt-4 border-t border-white/10 flex flex-col items-center justify-center gap-2">
+          <div className="mt-5 pt-4 border-t border-border flex flex-col items-center justify-center gap-2">
             {hasMore ? (
               <button
                 type="button"
                 data-testid="load-more-btn"
                 onClick={onLoadMore}
                 disabled={isLoadingMore}
-                className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+                className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-muted/50 hover:bg-muted border border-border text-foreground font-medium text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
               >
                 {isLoadingMore ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                     <span>Carregando movimentações...</span>
                   </>
                 ) : (
@@ -791,7 +795,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 )}
               </button>
             ) : (
-              <p className="text-xs text-neutral-500 font-medium">
+              <p className="text-xs text-muted-foreground font-medium">
                 Você visualizou todas as {totalCount ?? filteredTransactions.length} movimentações
               </p>
             )}

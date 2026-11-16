@@ -17,7 +17,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ onGoToLogin }) => 
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/80 border-b border-white/5 transition-all">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/80 border-b border-border transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
         {/* Brand / Logo */}
         <div className="flex items-center gap-3">
@@ -38,19 +38,19 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ onGoToLogin }) => 
         <nav aria-label="Navegação institucional" className="hidden md:flex items-center gap-8">
           <a
             href="#recursos"
-            className="text-xs font-medium text-muted-foreground hover:text-white transition-colors min-h-[44px] flex items-center"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors min-h-[44px] flex items-center"
           >
             Recursos
           </a>
           <a
             href="#seguranca"
-            className="text-xs font-medium text-muted-foreground hover:text-white transition-colors min-h-[44px] flex items-center"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors min-h-[44px] flex items-center"
           >
             Segurança & Infra
           </a>
           <a
             href="#tecnologia"
-            className="text-xs font-medium text-muted-foreground hover:text-white transition-colors min-h-[44px] flex items-center"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors min-h-[44px] flex items-center"
           >
             Tecnologia
           </a>
@@ -65,7 +65,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ onGoToLogin }) => 
             onClick={handleToggleTheme}
             aria-label="Alternar tema visual"
             title={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-            className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer active:scale-95 transition-all"
+            className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
           >
             {resolvedTheme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" />

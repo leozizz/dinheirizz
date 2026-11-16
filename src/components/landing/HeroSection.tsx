@@ -20,7 +20,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] font-display">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15] font-display">
               Controle financeiro inteligente, fluido e refinado.
             </h1>
 
@@ -46,7 +46,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
                   type="button"
                   data-testid="welcome-demo-btn"
                   onClick={onExploreDemo}
-                  className="min-h-[44px] h-11 px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 hover:text-white font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98]"
+                  className="min-h-[44px] h-11 px-5 rounded-2xl bg-muted/50 hover:bg-muted border border-border text-foreground font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98]"
                 >
                   <Eye className="w-4 h-4 text-primary" />
                   <span>Explorar modo demonstração</span>
@@ -59,7 +59,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent('dinheirizz:install-pwa'))
                 }}
-                className="min-h-[44px] h-11 px-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-muted-foreground hover:text-white font-medium text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="min-h-[44px] h-11 px-4 rounded-2xl bg-muted/30 hover:bg-muted/60 border border-border text-muted-foreground hover:text-foreground font-medium text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-accent" />
                 <span>Instalar App (PWA)</span>
@@ -90,9 +90,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-accent/15 to-transparent rounded-3xl blur-2xl opacity-60 pointer-events-none" />
 
               {/* Glass Mockup Container */}
-              <div className="relative glass-card border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-2xl space-y-4">
+              <div className="relative glass-card border border-border rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-2xl space-y-4">
                 {/* Header of Mockup */}
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <div className="flex items-center justify-between border-b border-border pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-3 h-3 rounded-full bg-destructive/80" />
                     <div className="w-3 h-3 rounded-full bg-amber-400/80" />
@@ -104,12 +104,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
                 </div>
 
                 {/* Balance Card in Mockup */}
-                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/5 space-y-1.5">
+                <div className="p-4 rounded-2xl bg-card border border-border space-y-1.5">
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
                     Saldo Consolidado
                   </span>
                   <div className="flex items-baseline justify-between">
-                    <span className="text-2xl font-bold text-white font-mono">
+                    <span className="text-2xl font-bold text-foreground font-mono">
                       R$ 24.850,00
                     </span>
                     <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
@@ -120,11 +120,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
 
                 {/* Quick Stats Grid */}
                 <div className="grid grid-cols-2 gap-2.5">
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                  <div className="p-3 rounded-xl bg-card border border-border">
                     <span className="text-[10px] text-muted-foreground block">Receitas Previstas</span>
                     <span className="text-sm font-semibold text-primary font-mono block">R$ 12.400,00</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                  <div className="p-3 rounded-xl bg-card border border-border">
                     <span className="text-[10px] text-muted-foreground block">Despesas Fixas</span>
                     <span className="text-sm font-semibold text-destructive font-mono block">R$ 4.250,00</span>
                   </div>
@@ -136,7 +136,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
                     <Sparkles className="w-4 h-4 text-primary" />
                   </div>
                   <div className="space-y-0.5 text-left">
-                    <span className="text-xs font-semibold text-white block">
+                    <span className="text-xs font-semibold text-foreground block">
                       Insight Assistido por IA
                     </span>
                     <p className="text-[11px] text-muted-foreground leading-snug">

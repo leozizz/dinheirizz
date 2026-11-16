@@ -59,7 +59,7 @@ describe('QA Suite — Validação de Dual-Theme, A11y & Responsividade (Issue #
 
   describe('Critério 1: Controles de UI e Atributos data-testid Obrigatórios', () => {
     it('deve garantir que o toggle da Landing Page possua data-testid="landing-theme-toggle-btn", aria-label e touch target adequado', () => {
-      renderWithProviders(<LandingHeader onOpenLogin={vi.fn()} onOpenDemo={vi.fn()} />)
+      renderWithProviders(<LandingHeader onGoToLogin={vi.fn()} />)
 
       const landingToggle = screen.getByTestId('landing-theme-toggle-btn')
       expect(landingToggle).toBeInTheDocument()
@@ -152,7 +152,7 @@ describe('QA Suite — Validação de Dual-Theme, A11y & Responsividade (Issue #
       fireEvent.click(optionLight)
 
       await waitFor(async () => {
-        const stored = await encryptedStorageAdapter.getItem<string>('dinheirizz:theme_mode')
+        const stored = await encryptedStorageAdapter.getItem('dinheirizz:theme_mode')
         expect(stored).toBe('light')
       })
 

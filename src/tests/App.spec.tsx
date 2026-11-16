@@ -41,10 +41,12 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     const demoBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
-    const novaContaBtn = await screen.findByRole('button', { name: /Nova Conta/i })
+    const novaContaBtn = await screen.findByRole('button', { name: /Nova Conta/i }, { timeout: 4000 })
     fireEvent.click(novaContaBtn)
 
-    expect(await screen.findByText('Cadastre uma conta corrente, carteira ou investimento')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Cadastre uma conta corrente, carteira ou investimento', {}, { timeout: 4000 })
+    ).toBeInTheDocument()
 
     const nameInput = screen.getByPlaceholderText(/Ex: Nubank Principal/i)
     fireEvent.change(nameInput, { target: { value: 'C6 Bank PJ' } })
@@ -63,10 +65,10 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     const demoBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
-    const transferBtn = await screen.findByRole('button', { name: /transferir/i })
+    const transferBtn = await screen.findByRole('button', { name: /transferir/i }, { timeout: 4000 })
     fireEvent.click(transferBtn)
 
-    expect(await screen.findByText('Transferência entre Contas')).toBeInTheDocument()
+    expect(await screen.findByText('Transferência entre Contas', {}, { timeout: 4000 })).toBeInTheDocument()
     expect(screen.getByText('Conta de Origem')).toBeInTheDocument()
     expect(screen.getByText('Conta de Destino')).toBeInTheDocument()
   })

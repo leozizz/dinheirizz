@@ -24,12 +24,12 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4 animate-pulse">
-        <div className="h-6 w-48 bg-white/10 rounded-xl" />
-        <div className="h-4 w-full bg-white/5 rounded-full" />
+      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4 animate-pulse">
+        <div className="h-6 w-48 bg-muted rounded-xl" />
+        <div className="h-4 w-full bg-muted/50 rounded-full" />
         <div className="space-y-3 pt-2">
-          <div className="h-12 bg-white/5 rounded-xl" />
-          <div className="h-12 bg-white/5 rounded-xl" />
+          <div className="h-12 bg-muted/50 rounded-xl" />
+          <div className="h-12 bg-muted/50 rounded-xl" />
         </div>
       </div>
     )
@@ -38,15 +38,15 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
   // Estado vazio: nenhum orçamento configurado
   if (budgets.length === 0) {
     return (
-      <div data-testid="widget-budget-progress-empty" className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4 text-center">
+      <div data-testid="widget-budget-progress-empty" className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4 text-center">
         <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
           <PieChart className="w-6 h-6" />
         </div>
         <div className="max-w-md mx-auto space-y-1">
-          <h3 className="text-sm sm:text-base font-bold text-white font-display">
+          <h3 className="text-sm sm:text-base font-bold text-foreground font-display">
             Nenhum orçamento definido
           </h3>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-muted-foreground">
             Estipule limites de gastos mensais por categoria para manter o controle ativo do seu patrimônio com alertas automáticos.
           </p>
         </div>
@@ -72,7 +72,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
   }
 
   return (
-    <div data-testid="widget-budget-progress" className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4.5">
+    <div data-testid="widget-budget-progress" className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4.5">
       {/* Cabeçalho do Card */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -80,8 +80,8 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
             <PieChart className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Orçamento Mensal</h3>
-            <p className="text-[11px] text-neutral-400">
+            <h3 className="text-sm font-semibold text-foreground">Orçamento Mensal</h3>
+            <p className="text-[11px] text-muted-foreground">
               {formatBRL(totalSpent)} gastos de {formatBRL(totalBudgetLimit)} ({overallPercentageUsed}% consumido)
             </p>
           </div>
@@ -91,7 +91,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
           type="button"
           data-testid="open-budget-modal-btn"
           onClick={onOpenBudgetModal}
-          className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-muted/50 border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
         >
           <Sliders className="w-3.5 h-3.5 text-primary" />
           <span>Ajustar Limites</span>
@@ -100,19 +100,19 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
 
       {/* Barra de Progresso Consolidada Geral */}
       <div className="space-y-1.5">
-        <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+        <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden p-0.5 border border-border">
           <div
             className={`h-full rounded-full transition-all duration-500 ${overallBarColor}`}
             style={{ width: `${Math.min(100, overallPercentageUsed)}%` }}
           />
         </div>
-        <div className="flex items-center justify-between text-[11px] text-neutral-400">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
           <span>
             {totalRemaining > 0
               ? `${formatBRL(totalRemaining)} restantes`
               : 'Limite geral atingido'}
           </span>
-          <span className="font-semibold tabular-nums text-neutral-300">
+          <span className="font-semibold tabular-nums text-foreground">
             {overallPercentageUsed}%
           </span>
         </div>
@@ -141,7 +141,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
             <div
               key={b.id}
               data-testid={`budget-envelope-${b.categoryId}`}
-              className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-2 hover:border-white/10 transition-colors"
+              className="p-3 rounded-2xl bg-card border border-border space-y-2 hover:border-primary/30 transition-colors"
             >
               {/* Topo do Envelope */}
               <div className="flex items-center justify-between gap-2">
@@ -150,7 +150,7 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                     style={{ backgroundColor: catColor }}
                   />
-                  <span className="text-xs font-semibold text-white truncate">
+                  <span className="text-xs font-semibold text-foreground truncate">
                     {b.categoryName}
                   </span>
                 </div>
@@ -159,14 +159,14 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
                   <span className={`px-2 py-0.5 rounded-full text-[10px] border ${badgeClass}`}>
                     {badgeText}
                   </span>
-                  <span className="text-xs font-bold text-neutral-200 tabular-nums">
-                    {formatBRL(b.spentAmount)} / <span className="text-neutral-400 font-normal">{formatBRL(b.amountLimit)}</span>
+                  <span className="text-xs font-bold text-foreground tabular-nums">
+                    {formatBRL(b.spentAmount)} / <span className="text-muted-foreground font-normal">{formatBRL(b.amountLimit)}</span>
                   </span>
                 </div>
               </div>
 
               {/* Barra de Progresso da Categoria */}
-              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${barBg}`}
                   style={{ width: `${Math.min(100, b.percentageUsed)}%` }}

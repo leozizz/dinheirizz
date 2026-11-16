@@ -21,7 +21,7 @@ export interface DangerZoneModalProps {
 
 type DangerActionType = 'transactions' | 'pix-keys' | 'accounts' | 'reset-all'
 
-export function DangerZoneModal({
+export const DangerZoneModal = ({
   isOpen,
   onClose,
   onSuccessNotification,
@@ -29,7 +29,7 @@ export function DangerZoneModal({
   onDeletePixKeys,
   onDeleteAccounts,
   onResetAllData
-}: DangerZoneModalProps) {
+}: DangerZoneModalProps) => {
   const [activeAction, setActiveAction] = useState<DangerActionType | null>(null)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
 
@@ -154,7 +154,7 @@ export function DangerZoneModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative w-full max-w-xl bg-neutral-900/95 border border-rose-500/25 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-rose-950/30 text-white my-auto pb-8 sm:pb-9"
+            className="relative w-full max-w-xl bg-card border border-rose-500/25 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-rose-950/20 text-foreground my-auto pb-8 sm:pb-9"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-4 mb-6">
@@ -163,10 +163,10 @@ export function DangerZoneModal({
                   <ShieldAlert className="w-5 h-5 text-rose-400" />
                 </div>
                 <div>
-                  <h3 id="danger-zone-modal-title" className="text-base sm:text-lg font-bold text-white leading-tight">
+                  <h3 id="danger-zone-modal-title" className="text-base sm:text-lg font-bold text-foreground leading-tight">
                     Zona de Perigo (Gerenciamento de Dados)
                   </h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Ações de exclusão irreversível com proteção de dupla confirmação.
                   </p>
                 </div>
@@ -176,7 +176,7 @@ export function DangerZoneModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -193,14 +193,14 @@ export function DangerZoneModal({
             {/* List of Danger Actions */}
             <div className="space-y-3.5">
               {/* Card 1: Transações */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-rose-500/30 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-muted/20 border border-border hover:border-rose-500/30 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 mt-0.5 sm:mt-0">
                     <Receipt className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-white">Excluir Histórico de Transações</h4>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 leading-snug mt-0.5">
+                    <h4 className="text-xs sm:text-sm font-semibold text-foreground">Excluir Histórico de Transações</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
                       Apaga todas as despesas e receitas. Mantém as contas e zera seus saldos.
                     </p>
                   </div>
@@ -215,14 +215,14 @@ export function DangerZoneModal({
               </div>
 
               {/* Card 2: Chaves Pix */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-rose-500/30 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-muted/20 border border-border hover:border-rose-500/30 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0 mt-0.5 sm:mt-0">
                     <QrCode className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-white">Excluir Chaves Pix</h4>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 leading-snug mt-0.5">
+                    <h4 className="text-xs sm:text-sm font-semibold text-foreground">Excluir Chaves Pix</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
                       Remove todas as chaves Pix cadastradas na sua carteira de recebimentos.
                     </p>
                   </div>
@@ -237,19 +237,19 @@ export function DangerZoneModal({
               </div>
 
               {/* Card 3: Contas */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-rose-500/30 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-muted/20 border border-border hover:border-rose-500/30 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5 sm:mt-0">
                     <WalletCards className="w-4 h-4" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs sm:text-sm font-semibold text-white">Excluir Contas Financeiras</h4>
+                      <h4 className="text-xs sm:text-sm font-semibold text-foreground">Excluir Contas Financeiras</h4>
                       <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.2 rounded border border-rose-500/30 font-medium">
                         Cascata
                       </span>
                     </div>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 leading-snug mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
                       Remove todas as contas e, em cascata, todo o histórico de extrato associado.
                     </p>
                   </div>
@@ -271,7 +271,7 @@ export function DangerZoneModal({
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-semibold text-rose-200">Reset Geral de Dados</h4>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 leading-snug mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
                       Limpa todas as contas, transações e chaves Pix. Restaura a conta ao estado original de fábrica.
                     </p>
                   </div>
@@ -287,7 +287,7 @@ export function DangerZoneModal({
             </div>
 
             {/* Safety Notice */}
-            <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-2 text-neutral-400 text-xs">
+            <div className="mt-6 pt-4 border-t border-border flex items-center gap-2 text-muted-foreground text-xs">
               <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Nenhuma exclusão pode ser desfeita após a confirmação.</span>
             </div>

@@ -30,7 +30,7 @@
 ## 5. Arquitetura, SDD e Resiliência
 - ⚡ **Service Worker / PWA**: Estratégia mandatória **AUTOUPDATE (VITEPWA)** para navegação HTML.
 - 📋 **Spec-Driven Development (SDD)**: Nenhuma alteração de código sem spec/plano correspondente aprovado.
-- 🏛️ **ADRs (Architecture Decision Records)**: Consulte e registre decisões arquiteturais em `specs/`.
+- 🏛️ **ADRs (Architecture Decision Records)**: Consulte e registre decisões arquiteturais em `docs/adr/`.
 
 ## 6. Fluxo de Trabalho e Code Review
 - Toda entrega deve atender estritamente aos requisitos da tarefa/issue e aos padrões deste documento.

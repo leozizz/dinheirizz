@@ -121,10 +121,10 @@ export const EmailVerificationModal = ({
       data-testid="email-verification-modal"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-md p-6 sm:p-8 bg-zinc-950/90 border border-zinc-800 rounded-3xl shadow-2xl backdrop-blur-xl text-zinc-100 overflow-hidden">
+      <div className="relative w-full max-w-md p-6 sm:p-8 glass-card border border-border rounded-3xl shadow-2xl backdrop-blur-xl text-foreground overflow-hidden">
         {/* Glow de fundo */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-lime-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Botão de Fechar */}
         <button
@@ -132,23 +132,23 @@ export const EmailVerificationModal = ({
           onClick={onClose}
           data-testid="close-verification-modal-btn"
           aria-label="Fechar modal de verificação"
-          className="absolute top-5 right-5 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-white rounded-full bg-zinc-900/50 hover:bg-zinc-800 transition-colors"
+          className="absolute top-5 right-5 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header com Ícone */}
         <div className="flex flex-col items-center text-center space-y-3 mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-lime-400/20 to-emerald-500/20 border border-lime-400/30 flex items-center justify-center text-lime-400 shadow-inner">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-inner">
             <Mail className="w-7 h-7" />
           </div>
-          <h2 id="modal-title" className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+          <h2 id="modal-title" className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-display">
             Verifique seu E-mail
           </h2>
-          <p className="text-sm text-zinc-400 max-w-xs">
+          <p className="text-sm text-muted-foreground max-w-xs">
             Enviamos um código de segurança de 6 dígitos para o endereço:
           </p>
-          <span className="inline-block px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-lime-400 font-mono text-xs font-semibold">
+          <span className="inline-block px-3 py-1 rounded-full bg-muted border border-border text-primary font-mono text-xs font-semibold">
             {email}
           </span>
         </div>
@@ -158,9 +158,9 @@ export const EmailVerificationModal = ({
           <div
             role="alert"
             data-testid="verify-otp-error-alert"
-            className="mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3 text-red-400 text-xs sm:text-sm animate-in fade-in"
+            className="mb-5 p-3.5 rounded-xl bg-destructive/15 border border-destructive/30 flex items-start gap-3 text-rose-300 text-xs sm:text-sm animate-in fade-in"
           >
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-400" />
             <p className="leading-tight">{errorMessage}</p>
           </div>
         )}
@@ -169,9 +169,9 @@ export const EmailVerificationModal = ({
           <div
             role="alert"
             data-testid="verify-otp-success-alert"
-            className="mb-5 p-3.5 rounded-xl bg-lime-500/10 border border-lime-500/20 flex items-start gap-3 text-lime-400 text-xs sm:text-sm animate-in fade-in"
+            className="mb-5 p-3.5 rounded-xl bg-primary/15 border border-primary/30 flex items-start gap-3 text-primary text-xs sm:text-sm animate-in fade-in"
           >
-            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-primary" />
             <p className="leading-tight">{successMessage}</p>
           </div>
         )}
@@ -179,7 +179,7 @@ export const EmailVerificationModal = ({
         {/* Formulário OTP */}
         <form onSubmit={handleVerify} className="space-y-6">
           <div className="flex flex-col items-center space-y-2">
-            <label htmlFor="otp-input" className="text-xs font-medium text-zinc-400">
+            <label htmlFor="otp-input" className="text-xs font-medium text-muted-foreground">
               Digite o código de 6 dígitos
             </label>
             <input
@@ -193,10 +193,10 @@ export const EmailVerificationModal = ({
               placeholder="000000"
               autoFocus
               data-testid="otp-input-field"
-              className="w-full max-w-[240px] tracking-[0.5em] text-center text-2xl sm:text-3xl font-mono py-3 px-4 rounded-xl bg-zinc-900/90 border border-zinc-700 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all shadow-inner"
+              className="w-full max-w-[240px] tracking-[0.5em] text-center text-2xl sm:text-3xl font-mono py-3 px-4 rounded-xl bg-input/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-inner"
             />
-            <p className="text-[11px] text-zinc-500 flex items-center gap-1.5 pt-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" /> Válido por 15 minutos
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Válido por 15 minutos
             </p>
           </div>
 
@@ -205,7 +205,7 @@ export const EmailVerificationModal = ({
             type="submit"
             disabled={token.length !== 6 || loading}
             data-testid="verify-otp-submit-btn"
-            className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-lime-400 hover:bg-lime-300 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-lime-400/20 disabled:shadow-none cursor-pointer disabled:cursor-not-allowed"
+            className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:shadow-none cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -219,21 +219,21 @@ export const EmailVerificationModal = ({
         </form>
 
         {/* Área de Reenvio com Rate Limit Cooldown */}
-        <div className="mt-6 pt-5 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between text-xs gap-3">
-          <span className="text-zinc-400">Não recebeu o código?</span>
+        <div className="mt-6 pt-5 border-t border-border flex flex-col sm:flex-row items-center justify-between text-xs gap-3">
+          <span className="text-muted-foreground">Não recebeu o código?</span>
           <button
             type="button"
             onClick={handleResend}
             disabled={cooldown > 0 || resending}
             data-testid="resend-otp-btn"
-            className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg font-medium text-lime-400 hover:text-lime-300 hover:bg-lime-400/10 disabled:text-zinc-600 disabled:hover:bg-transparent transition-colors flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg font-medium text-primary hover:text-primary/90 hover:bg-primary/10 disabled:text-muted-foreground disabled:hover:bg-transparent transition-colors flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
             <span>Reenviar código</span>
             {cooldown > 0 && (
               <span
                 data-testid="resend-cooldown-timer"
-                className="ml-1 text-zinc-500 font-mono"
+                className="ml-1 text-muted-foreground font-mono"
               >
                 ({cooldown}s)
               </span>

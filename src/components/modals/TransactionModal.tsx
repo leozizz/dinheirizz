@@ -305,10 +305,10 @@ export const TransactionModal = ({
                   <CurrentIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white font-display">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground font-display">
                     {titles[mode]}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-neutral-400">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">
                     Preencha os detalhes da movimentação
                   </p>
                 </div>
@@ -322,7 +322,7 @@ export const TransactionModal = ({
                   className={`min-h-[44px] px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
                     isOcrOpen
                       ? 'bg-primary/20 text-primary border-primary/40'
-                      : 'bg-white/5 hover:bg-white/10 text-white/80 border-white/10'
+                      : 'bg-muted/50 hover:bg-muted text-foreground border-border'
                   }`}
                   title="Ler cupom ou comprovante com IA"
                 >
@@ -334,7 +334,7 @@ export const TransactionModal = ({
                   type="button"
                   data-testid="close-transaction-modal-btn"
                   onClick={onClose}
-                  className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                  className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -355,7 +355,6 @@ export const TransactionModal = ({
               </div>
             )}
 
-            {/* Error Message */}
             {error && (
               <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-2.5 text-red-300 text-xs animate-fade-in">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
@@ -366,7 +365,7 @@ export const TransactionModal = ({
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
               {/* Valor em destaque */}
-              <div className="bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/5 text-center">
+              <div className="bg-muted/30 p-4 sm:p-5 rounded-2xl border border-border text-center">
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Valor da Movimentação
                 </label>
@@ -378,7 +377,7 @@ export const TransactionModal = ({
                     value={amountStr}
                     onChange={(e) => setAmountStr(e.target.value)}
                     placeholder="0,00"
-                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display font-tabular"
+                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-foreground bg-transparent text-center focus:outline-none placeholder-muted-foreground font-display font-tabular"
                   />
                 </div>
               </div>
@@ -398,7 +397,7 @@ export const TransactionModal = ({
                   <button
                     type="button"
                     onClick={() => setAiExtractedInfo(null)}
-                    className="text-white/60 hover:text-white text-xs underline cursor-pointer"
+                    className="text-muted-foreground hover:text-foreground text-xs underline cursor-pointer"
                   >
                     Descartar
                   </button>
@@ -407,7 +406,7 @@ export const TransactionModal = ({
 
               {/* Descrição */}
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1">
+                <label className="block text-xs font-medium text-foreground mb-1.5 ml-1">
                   Descrição
                 </label>
                 <input
@@ -415,7 +414,7 @@ export const TransactionModal = ({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descrição da movimentação"
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-input/40 border border-border text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -424,7 +423,7 @@ export const TransactionModal = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta de Origem
                       </label>
@@ -439,7 +438,7 @@ export const TransactionModal = ({
                             if (nextOther) setToAccountId(nextOther.id)
                           }
                         }}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
+                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                       >
                         {accounts.map((acc) => (
                           <option key={acc.id} value={acc.id}>
@@ -456,7 +455,7 @@ export const TransactionModal = ({
                         data-testid="swap-accounts-btn"
                         title="Inverter contas de origem e destino"
                         aria-label="Inverter contas de origem e destino"
-                        className="w-9 h-9 rounded-full glass-card-interactive border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white hover:border-primary/40 transition-all cursor-pointer active:scale-95 shadow-md"
+                        className="w-9 h-9 rounded-full glass-card-interactive border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all cursor-pointer active:scale-95 shadow-md"
                       >
                         <ArrowLeftRight className="w-4 h-4 hidden sm:block text-primary" />
                         <ArrowLeftRight className="w-4 h-4 sm:hidden text-primary rotate-90" />
@@ -464,7 +463,7 @@ export const TransactionModal = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta de Destino
                       </label>
@@ -472,7 +471,7 @@ export const TransactionModal = ({
                         data-testid="to-account-select"
                         value={toAccountId}
                         onChange={(e) => setToAccountId(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
+                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                       >
                         {accounts.map((acc) => (
                           <option key={acc.id} value={acc.id} disabled={acc.id === fromAccountId}>
@@ -486,14 +485,14 @@ export const TransactionModal = ({
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                       Categoria
                     </label>
                     <select
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
+                      className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                     >
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -504,14 +503,14 @@ export const TransactionModal = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                       <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                       Conta
                     </label>
                     <select
                       value={accountId}
                       onChange={(e) => setAccountId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
+                      className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                     >
                       {accounts.map((acc) => (
                         <option key={acc.id} value={acc.id}>
@@ -526,10 +525,10 @@ export const TransactionModal = ({
               {/* Status da Transação (Paga vs Pendente) */}
               {mode !== 'transfer' && (
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-neutral-300 ml-1">
+                  <label className="block text-xs font-medium text-foreground ml-1">
                     Situação da Movimentação
                   </label>
-                  <div className="flex p-1 bg-white/5 border border-white/10 rounded-xl gap-1">
+                  <div className="flex p-1 bg-muted/50 border border-border rounded-xl gap-1">
                     <button
                       type="button"
                       data-testid="status-completed-btn"
@@ -537,7 +536,7 @@ export const TransactionModal = ({
                       className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         status === 'completed'
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                          : 'text-neutral-400 hover:text-white'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -550,7 +549,7 @@ export const TransactionModal = ({
                       className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         status === 'pending'
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
-                          : 'text-neutral-400 hover:text-white'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <Clock className="w-3.5 h-3.5" />
@@ -563,7 +562,7 @@ export const TransactionModal = ({
               {/* Data da Operação e Vencimento */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                  <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                     Data da Operação
                   </label>
@@ -571,7 +570,7 @@ export const TransactionModal = ({
                     type="date"
                     value={occurredAt}
                     onChange={(e) => setOccurredAt(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                   />
                 </div>
 
@@ -586,7 +585,7 @@ export const TransactionModal = ({
                       data-testid="due-date-input"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-transparent transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-transparent transition-all"
                     />
                   </div>
                 )}
@@ -594,7 +593,7 @@ export const TransactionModal = ({
 
               {/* Opções Avançadas: Parcelamento e Recorrência */}
               {mode !== 'transfer' && (
-                <div className="pt-2 border-t border-white/10 space-y-3">
+                <div className="pt-2 border-t border-border space-y-3">
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -607,7 +606,7 @@ export const TransactionModal = ({
                       className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                         isInstallment
                           ? 'bg-primary/20 text-primary border-primary/40 shadow-sm'
-                          : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                          : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
                       }`}
                     >
                       <Layers className="w-3.5 h-3.5" />
@@ -625,7 +624,7 @@ export const TransactionModal = ({
                       className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                         isRecurring
                           ? 'bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-sm'
-                          : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                          : 'bg-muted/50 text-muted-foreground border-border hover:text-foreground'
                       }`}
                     >
                       <Repeat className="w-3.5 h-3.5" />
@@ -634,16 +633,16 @@ export const TransactionModal = ({
                   </div>
 
                   {isInstallment && (
-                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5 animate-fade-in">
+                    <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5 animate-fade-in">
                       <div className="flex items-center justify-between gap-3">
-                        <label className="text-xs font-medium text-neutral-300">
+                        <label className="text-xs font-medium text-foreground">
                           Número de Parcelas
                         </label>
                         <select
                           data-testid="installment-select"
                           value={installmentTotal}
                           onChange={(e) => setInstallmentTotal(Number(e.target.value))}
-                          className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                          className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none"
                         >
                           {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36, 48, 60, 72].map((n) => (
                             <option key={n} value={n}>
@@ -654,8 +653,8 @@ export const TransactionModal = ({
                       </div>
 
                       {numAmount > 0 && (
-                        <div className="text-xs text-primary font-medium flex items-center justify-between pt-1.5 border-t border-white/5">
-                          <span className="text-neutral-400">Prévia da Parcela:</span>
+                        <div className="text-xs text-primary font-medium flex items-center justify-between pt-1.5 border-t border-border">
+                          <span className="text-muted-foreground">Prévia da Parcela:</span>
                           <span className="font-semibold tabular-nums">
                             {installmentTotal}x de {formatBRL(numAmount / installmentTotal)}
                           </span>
@@ -665,16 +664,16 @@ export const TransactionModal = ({
                   )}
 
                   {isRecurring && (
-                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 animate-fade-in">
+                    <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 animate-fade-in">
                       <div className="flex items-center justify-between gap-3">
-                        <label className="text-xs font-medium text-neutral-300">
+                        <label className="text-xs font-medium text-foreground">
                           Frequência de Repetição
                         </label>
                         <select
                           data-testid="recurrence-period-select"
                           value={recurrencePeriod}
                           onChange={(e) => setRecurrencePeriod(e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                          className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none"
                         >
                           <option value="monthly">Mensal</option>
                           <option value="weekly">Semanal</option>
@@ -684,17 +683,17 @@ export const TransactionModal = ({
 
                       {recurrencePeriod === 'monthly' && (
                         <>
-                          <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
-                            <label className="text-xs font-medium text-neutral-300">
+                          <div className="flex items-center justify-between gap-3 pt-2 border-t border-border">
+                            <label className="text-xs font-medium text-foreground">
                               Vence todo dia
                             </label>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-neutral-400">Dia</span>
+                              <span className="text-xs text-muted-foreground">Dia</span>
                               <select
                                 data-testid="recurrence-day-select"
                                 value={recurrenceDay}
                                 onChange={(e) => setRecurrenceDay(Number(e.target.value))}
-                                className="px-3 py-1.5 rounded-lg bg-neutral-900 border border-white/10 text-white text-xs focus:ring-1 focus:ring-primary focus:outline-none font-medium"
+                                className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none font-medium"
                               >
                                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                                   <option key={day} value={day}>
@@ -706,9 +705,9 @@ export const TransactionModal = ({
                           </div>
 
                           <div className="flex items-center justify-between gap-3 pt-1">
-                            <div className="text-xs text-neutral-300">
+                            <div className="text-xs text-foreground">
                               <span className="font-medium">Vencimento dinâmico em dia útil</span>
-                              <p className="text-[10px] text-neutral-400">
+                              <p className="text-[10px] text-muted-foreground">
                                 Prorroga se o dia cair em fim de semana ou feriado
                               </p>
                             </div>
@@ -717,16 +716,16 @@ export const TransactionModal = ({
                               data-testid="adjust-business-day-toggle"
                               onClick={() => setAdjustBusinessDay(!adjustBusinessDay)}
                               className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                                adjustBusinessDay ? 'bg-primary justify-end' : 'bg-white/10 justify-start'
+                                adjustBusinessDay ? 'bg-primary justify-end' : 'bg-muted justify-start'
                               }`}
                             >
-                              <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                              <div className="w-4 h-4 rounded-full bg-foreground shadow-md" />
                             </button>
                           </div>
 
                           <div className="text-xs p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-center justify-between">
-                            <span className="text-neutral-400">Primeiro vencimento:</span>
-                            <span className="font-semibold text-white">
+                            <span className="text-muted-foreground">Primeiro vencimento:</span>
+                            <span className="font-semibold text-foreground">
                               {(() => {
                                 const parts = parseDateParts(occurredAt)
                                 const computed = calculateRecurringDueDate(

@@ -1,21 +1,23 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
+import { ThemeContext } from '../../contexts/ThemeContext'
 
-const Toaster = ({ ...props }: ToasterProps) => {
+export const Toaster = ({ theme, ...props }: ToasterProps) => {
+  const themeContext = useContext(ThemeContext)
+  const activeTheme = theme ?? themeContext?.resolvedTheme ?? 'dark'
+
   return (
     <Sonner
-      theme="dark"
+      theme={activeTheme as ToasterProps['theme']}
       className="toaster group"
       style={
         {
           '--normal-bg': 'var(--popover)',
           '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
+          '--normal-border': 'var(--border)'
         } as React.CSSProperties
       }
       {...props}
     />
   )
 }
-
-export { Toaster }

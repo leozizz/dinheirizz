@@ -3,6 +3,8 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
 import { queryClient } from './lib/queryClient'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { useTheme } from './hooks/useTheme'
 import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
 import { ActionType } from './components/dashboard/QuickActions'
 import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
@@ -31,7 +33,7 @@ import {
 } from './hooks/useBudgets'
 import { calculateRecurringDueDate } from './lib/businessDays'
 import { formatYMD } from './lib/calendar'
-import { Wallet, Bell, ShieldCheck, LogIn, LogOut } from 'lucide-react'
+import { Wallet, Bell, ShieldCheck, LogIn, LogOut, Sun, Moon } from 'lucide-react'
 
 const initialTransactions: TransactionItem[] = [
   {
@@ -125,6 +127,7 @@ const initialAccounts: AccountItem[] = [
 
 const MainApp = () => {
   const { user, signOut } = useAuth()
+  const { resolvedTheme, toggleTheme } = useTheme()
   const [unauthView, setUnauthView] = useState<'welcome' | 'login' | 'demo'>('welcome')
   const [demoTransactions, setDemoTransactions] = useState<TransactionItem[]>(initialTransactions)
   const [demoAccounts, setDemoAccounts] = useState<AccountItem[]>(initialAccounts)
@@ -403,8 +406,9 @@ const MainApp = () => {
           toast.success(successMsg)
         }
         setIsTxModalOpen(false)
-      } catch (err: any) {
-        toast.error(err?.message || 'Erro ao registrar movimentação')
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Erro ao registrar movimentação'
+        toast.error(errorMsg)
       }
     } else {
       // Modo Demonstração (em memória)
@@ -591,8 +595,9 @@ const MainApp = () => {
         }
         await payTxMutation.mutateAsync({ transactionId: txId })
         toast.success('Transação baixada com sucesso!')
-      } catch (err: any) {
-        toast.error(err?.message || 'Erro ao dar baixa na transação')
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Erro ao dar baixa na transação'
+        toast.error(errorMsg)
       }
     } else {
       if (txId.startsWith('rec-proj-')) {
@@ -722,7 +727,7 @@ const MainApp = () => {
         <div className="relative">
           <button
             onClick={() => setUnauthView('welcome')}
-            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-card/80 hover:bg-card text-foreground text-xs font-semibold backdrop-blur-md border border-border cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
           >
             ← Voltar
           </button>
@@ -747,25 +752,41 @@ const MainApp = () => {
 
       {/* Top Bar with Floating Capsule and Safe Area Support */}
       <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-3.5 sm:px-6 transition-all">
-        <div className="max-w-4xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-white/10 rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/60 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-white/10 flex-shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-white font-display">
+              <h1 className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display">
                 Dinheirizz <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/30">2.0 PWA</span>
               </h1>
-              <p className="text-[11px] text-neutral-400 hidden sm:flex items-center gap-1">
+              <p className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Cloudflare Pages & BFF
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Alternância Rápida de Tema Dual-Theme */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              data-testid="header-theme-toggle-btn"
+              aria-label="Alternar tema visual"
+              title={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-400" />
+              )}
+            </button>
+
             <button
               aria-label="Notificações"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer"
             >
               <Bell className="w-4 h-4" />
             </button>
@@ -778,7 +799,7 @@ const MainApp = () => {
                   data-testid="user-profile-avatar-btn"
                   title={user.fullName ? `${user.fullName} (@${user.username || 'perfil'})` : (user.email || 'Meu Perfil')}
                   aria-label="Abrir configurações de perfil"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs sm:text-sm text-white border border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs sm:text-sm text-primary-foreground border border-border shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
                   {userInitials}
                 </button>
@@ -788,7 +809,7 @@ const MainApp = () => {
                   data-testid="header-logout-btn"
                   title="Sair da conta"
                   aria-label="Sair da conta"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-rose-400 border border-white/10 transition-colors cursor-pointer active:scale-95"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-rose-400 border border-border transition-colors cursor-pointer active:scale-95"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -808,11 +829,11 @@ const MainApp = () => {
 
       {/* Demo Banner for Unauthenticated Users */}
       {!user && (
-        <div className="bg-gradient-to-r from-blue-600/20 via-teal-500/20 to-purple-600/20 border-b border-white/10 px-3 py-2 text-center text-xs text-neutral-300 flex items-center justify-center gap-1.5 flex-wrap">
+        <div className="bg-gradient-to-r from-blue-600/20 via-teal-500/20 to-purple-600/20 border-b border-border px-3 py-2 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
           <span>Modo de demonstração.</span>
           <button
             onClick={() => setUnauthView('login')}
-            className="text-teal-300 font-semibold underline hover:text-white transition-colors cursor-pointer"
+            className="text-teal-400 font-semibold underline hover:text-foreground transition-colors cursor-pointer"
           >
             Fazer login ou cadastrar
           </button>
@@ -933,8 +954,8 @@ const MainApp = () => {
         isLoading={isLoggingOut}
       />
 
-      {/* Toaster Glassmorphism */}
-      <Toaster position="bottom-right" richColors theme="dark" />
+      {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+      <Toaster position="bottom-right" richColors theme={resolvedTheme} />
     </div>
   )
 }
@@ -943,7 +964,9 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <MainApp />
+        <ThemeProvider>
+          <MainApp />
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

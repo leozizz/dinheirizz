@@ -22,13 +22,13 @@ export const AiKeyPromptModal = ({
       data-testid="ai-key-prompt-modal"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-slate-900 border border-white/10 p-6 text-white shadow-2xl space-y-5">
+      <div className="relative w-full max-w-md rounded-2xl bg-card border border-border p-6 text-foreground shadow-2xl space-y-5">
         <button
           type="button"
           data-testid="close-ai-key-modal-btn"
           onClick={onClose}
           aria-label="Fechar modal"
-          className="min-h-[44px] min-w-[44px] absolute top-4 right-4 text-white/50 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+          className="min-h-[44px] min-w-[44px] absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
         >
           <X className="w-5 h-5" />
         </button>
@@ -38,20 +38,20 @@ export const AiKeyPromptModal = ({
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h3 id="ai-key-modal-title" className="text-lg font-semibold text-white">
+            <h3 id="ai-key-modal-title" className="text-lg font-semibold text-foreground">
               Chave de IA Necessária
             </h3>
-            <p className="text-xs text-white/60">
+            <p className="text-xs text-muted-foreground">
               Leitura automática de comprovantes com Gemini Multimodal
             </p>
           </div>
         </div>
 
-        <div className="text-sm text-white/80 space-y-3 leading-relaxed">
+        <div className="text-sm text-foreground/80 space-y-3 leading-relaxed">
           <p>
             A extração instantânea de despesas a partir de fotos e PDFs utiliza visão computacional de ponta.
           </p>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2 text-xs">
+          <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-2 text-xs">
             <div className="flex items-start gap-2">
               <KeyRound className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <span>
@@ -85,7 +85,7 @@ export const AiKeyPromptModal = ({
             type="button"
             data-testid="close-ai-prompt-btn"
             onClick={onClose}
-            className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-medium transition-all cursor-pointer"
+            className="min-h-[44px] px-4 py-2.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border text-sm font-medium transition-all cursor-pointer"
           >
             Agora Não
           </button>

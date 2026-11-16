@@ -40,22 +40,22 @@ export function AccountsBar({
           data-active={selectedAccountId === null}
           className={`flex-shrink-0 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border transition-all duration-200 text-left min-h-[44px] cursor-pointer ${
             selectedAccountId === null
-              ? 'bg-primary/15 border-primary/40 text-white shadow-lg shadow-primary/10'
-              : 'glass-card border-white/10 text-neutral-300 hover:border-white/20 hover:bg-white/[0.04]'
+              ? 'bg-primary/15 border-primary/40 text-foreground shadow-lg shadow-primary/10'
+              : 'glass-card border-border text-muted-foreground hover:border-primary/30 hover:bg-muted/40'
           }`}
         >
           <div
             className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs flex-shrink-0 ${
               selectedAccountId === null
                 ? 'bg-primary/25 text-primary'
-                : 'bg-white/10 text-neutral-400'
+                : 'bg-muted text-muted-foreground'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0 pr-1">
             <span className="block text-xs font-medium truncate">Todas as contas</span>
-            <span className="block text-[11px] text-neutral-400 font-normal">
+            <span className="block text-[11px] text-muted-foreground font-normal">
               Visão geral
             </span>
           </div>
@@ -76,12 +76,12 @@ export function AccountsBar({
               data-active={isSelected}
               className={`flex-shrink-0 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border transition-all duration-200 text-left min-h-[44px] cursor-pointer ${
                 isSelected
-                  ? 'bg-primary/15 border-primary/40 text-white shadow-lg shadow-primary/10'
-                  : 'glass-card border-white/10 text-neutral-300 hover:border-white/20 hover:bg-white/[0.04]'
+                  ? 'bg-primary/15 border-primary/40 text-foreground shadow-lg shadow-primary/10'
+                  : 'glass-card border-border text-muted-foreground hover:border-primary/30 hover:bg-muted/40'
               }`}
             >
               <div
-                className="w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-bold flex-shrink-0 border border-white/10"
+                className="w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-bold flex-shrink-0 border border-border"
                 style={{
                   backgroundColor: badgeBg,
                   color: badgeColor
@@ -95,7 +95,7 @@ export function AccountsBar({
                 </span>
                 <span
                   className={`block text-[11px] font-semibold tabular-nums ${
-                    acc.balance >= 0 ? 'text-white' : 'text-rose-400'
+                    acc.balance >= 0 ? 'text-foreground' : 'text-rose-400'
                   }`}
                 >
                   {formatBRL(acc.balance)}

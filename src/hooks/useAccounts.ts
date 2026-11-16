@@ -19,16 +19,25 @@ export interface CreateAccountInput {
   color?: string
 }
 
+interface RawAccountItem {
+  id: string
+  name: string
+  type?: 'checking' | 'savings' | 'investment' | 'cash' | 'credit'
+  balance?: string | number
+  createdAt?: string
+  created_at?: string
+}
+
 export const ACCOUNTS_QUERY_KEY = ['accounts'] as const
 
-function getApiOrigin(): string {
+const getApiOrigin = (): string => {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin
   }
   return 'http://localhost:3000'
 }
 
-export function useAccounts() {
+export const useAccounts = () => {
   const { session } = useAuth()
   const token = session?.access_token
 
@@ -48,9 +57,9 @@ export function useAccounts() {
       }
 
       const json = await res.json()
-      const rawList = Array.isArray(json.data) ? json.data : []
+      const rawList: RawAccountItem[] = Array.isArray(json.data) ? json.data : []
 
-      return rawList.map((item: any): AccountItem => ({
+      return rawList.map((item: RawAccountItem): AccountItem => ({
         id: item.id,
         name: item.name,
         type: item.type || 'checking',
@@ -73,7 +82,7 @@ export function useAccounts() {
   }
 }
 
-export function useCreateAccount() {
+export const useCreateAccount = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token
@@ -107,7 +116,7 @@ export function useCreateAccount() {
   })
 }
 
-export function useDeleteAccount() {
+export const useDeleteAccount = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token

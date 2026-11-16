@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -18,74 +18,109 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
 
-export const accounts = pgTable('accounts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  name: text('name').notNull(),
-  type: text('type').default('checking').notNull(),
-  balance: numeric('balance', { precision: 12, scale: 2 }).default('0.00').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-})
+export const accounts = pgTable(
+  'accounts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    type: text('type').default('checking').notNull(),
+    balance: numeric('balance', { precision: 12, scale: 2 }).default('0.00').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('accounts_user_id_idx').on(table.userId)
+  ]
+)
 
-export const categories = pgTable('categories', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  name: text('name').notNull(),
-  type: text('type').notNull(), // 'expense' | 'income'
-  icon: text('icon'),
-  color: text('color'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-})
+export const categories = pgTable(
+  'categories',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    type: text('type').notNull(), // 'expense' | 'income'
+    icon: text('icon'),
+    color: text('color'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('categories_user_id_idx').on(table.userId)
+  ]
+)
 
-export const transactions = pgTable('transactions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
-  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
-  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
-  description: text('description'),
-  occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
-  dueDate: timestamp('due_date', { withTimezone: true }),
-  paidAt: timestamp('paid_at', { withTimezone: true }),
-  paid: boolean('paid').default(true).notNull(),
-  status: text('status').default('completed').notNull(), // 'completed' | 'pending' | 'cancelled'
-  isRecurring: boolean('is_recurring').default(false).notNull(),
-  recurrencePeriod: text('recurrence_period'), // 'daily' | 'weekly' | 'monthly' | 'yearly' | null
-  recurrenceDay: integer('recurrence_day'),
-  adjustBusinessDay: boolean('adjust_business_day').default(false).notNull(),
-  installmentCurrent: integer('installment_current'),
-  installmentTotal: integer('installment_total'),
-  parentTransactionId: uuid('parent_transaction_id'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-})
+export const transactions = pgTable(
+  'transactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
+    categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    description: text('description'),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
+    dueDate: timestamp('due_date', { withTimezone: true }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    paid: boolean('paid').default(true).notNull(),
+    status: text('status').default('completed').notNull(), // 'completed' | 'pending' | 'cancelled'
+    isRecurring: boolean('is_recurring').default(false).notNull(),
+    recurrencePeriod: text('recurrence_period'), // 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+    recurrenceDay: integer('recurrence_day'),
+    adjustBusinessDay: boolean('adjust_business_day').default(false).notNull(),
+    installmentCurrent: integer('installment_current'),
+    installmentTotal: integer('installment_total'),
+    parentTransactionId: uuid('parent_transaction_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('transactions_user_id_idx').on(table.userId),
+    index('transactions_account_id_idx').on(table.accountId),
+    index('transactions_category_id_idx').on(table.categoryId),
+    index('transactions_user_occurred_idx').on(table.userId, table.occurredAt),
+    index('transactions_user_due_date_idx').on(table.userId, table.dueDate),
+    index('transactions_user_status_idx').on(table.userId, table.status)
+  ]
+)
 
-export const pixKeys = pgTable('pix_keys', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  keyType: text('key_type').notNull(), // 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
-  keyValue: text('key_value').notNull(),
-  bankName: text('bank_name').notNull(),
-  description: text('description'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-})
+export const pixKeys = pgTable(
+  'pix_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    keyType: text('key_type').notNull(), // 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
+    keyValue: text('key_value').notNull(),
+    bankName: text('bank_name').notNull(),
+    description: text('description'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('pix_keys_user_id_idx').on(table.userId)
+  ]
+)
 
-export const insights = pgTable('insights', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  period: text('period').notNull(), // 'YYYY-MM'
-  summary: text('summary').notNull(),
-  financialHealthScore: numeric('financial_health_score', { precision: 5, scale: 2 }).notNull(),
-  highlights: text('highlights').array().default(sql`ARRAY[]::text[]`),
-  alerts: text('alerts').array().default(sql`ARRAY[]::text[]`),
-  recommendations: text('recommendations').array().default(sql`ARRAY[]::text[]`),
-  metricsSnapshot: text('metrics_snapshot'),
-  isFallback: boolean('is_fallback').default(false).notNull(),
-  source: text('source').default('fallback').notNull(), // 'byok' | 'system' | 'fallback'
-  provider: text('provider').default('gemini'),
-  modelName: text('model_name'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
-})
+export const insights = pgTable(
+  'insights',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    period: text('period').notNull(), // 'YYYY-MM'
+    summary: text('summary').notNull(),
+    financialHealthScore: numeric('financial_health_score', { precision: 5, scale: 2 }).notNull(),
+    highlights: text('highlights').array().default(sql`ARRAY[]::text[]`),
+    alerts: text('alerts').array().default(sql`ARRAY[]::text[]`),
+    recommendations: text('recommendations').array().default(sql`ARRAY[]::text[]`),
+    metricsSnapshot: text('metrics_snapshot'),
+    isFallback: boolean('is_fallback').default(false).notNull(),
+    source: text('source').default('fallback').notNull(), // 'byok' | 'system' | 'fallback'
+    provider: text('provider').default('gemini'),
+    modelName: text('model_name'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('insights_user_period_idx').on(table.userId, table.period)
+  ]
+)
 
 export const userAiSettings = pgTable('user_ai_settings', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -99,25 +134,39 @@ export const userAiSettings = pgTable('user_ai_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
 
-export const budgets = pgTable('budgets', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
-  amountLimit: numeric('amount_limit', { precision: 12, scale: 2 }).notNull(),
-  period: text('period').default('monthly').notNull(), // 'YYYY-MM' ou 'monthly'
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
-})
+export const budgets = pgTable(
+  'budgets',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
+    amountLimit: numeric('amount_limit', { precision: 12, scale: 2 }).notNull(),
+    period: text('period').default('monthly').notNull(), // 'YYYY-MM' ou 'monthly'
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('budgets_user_id_idx').on(table.userId),
+    uniqueIndex('budgets_user_category_period_idx').on(table.userId, table.categoryId, table.period)
+  ]
+)
 
-export const verificationTokens = pgTable('verification_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').notNull(),
-  token: text('token').notNull(),
-  type: text('type').notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  usedAt: timestamp('used_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-})
+export const verificationTokens = pgTable(
+  'verification_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    token: text('token').notNull(),
+    type: text('type').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('verification_tokens_email_idx').on(table.email),
+    index('verification_tokens_token_idx').on(table.token)
+  ]
+)
 
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert

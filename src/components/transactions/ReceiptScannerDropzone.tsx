@@ -67,7 +67,7 @@ export const ReceiptScannerDropzone = ({
       className={`relative overflow-hidden rounded-2xl border transition-all duration-200 p-4 sm:p-5 text-center ${
         isDragOver
           ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
-          : 'border-dashed border-white/20 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.05]'
+          : 'border-dashed border-border bg-muted/20 hover:border-border/80 hover:bg-muted/40'
       }`}
     >
       <input
@@ -94,10 +94,10 @@ export const ReceiptScannerDropzone = ({
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm font-medium text-white">
+            <p className="text-sm font-medium text-foreground">
               Analisando comprovante com IA Multimodal...
             </p>
-            <p className="text-xs text-white/60">
+            <p className="text-xs text-muted-foreground">
               Identificando valor, data, recebedor e categoria
             </p>
           </div>
@@ -109,7 +109,7 @@ export const ReceiptScannerDropzone = ({
               type="button"
               data-testid="receipt-ocr-upload-btn"
               onClick={triggerFileInput}
-              className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary-foreground border border-primary/30 flex items-center justify-center gap-2 font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-slate-900 cursor-pointer"
+              className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 flex items-center justify-center gap-2 font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card cursor-pointer"
             >
               <Camera className="w-4 h-4" />
               <span>Tirar Foto ou Anexar</span>
@@ -119,7 +119,7 @@ export const ReceiptScannerDropzone = ({
               type="button"
               data-testid="receipt-ocr-drag-btn"
               onClick={triggerFileInput}
-              className="min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 flex items-center justify-center gap-1.5 text-sm transition-all cursor-pointer"
+              className="min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted text-foreground border border-border flex items-center justify-center gap-1.5 text-sm transition-all cursor-pointer"
               title="Upload de arquivo"
             >
               <Upload className="w-4 h-4" />
@@ -127,7 +127,7 @@ export const ReceiptScannerDropzone = ({
             </button>
           </div>
 
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-muted-foreground">
             Arraste um cupom, recibo Pix ou fatura em PDF (até 10MB)
           </p>
 
@@ -156,7 +156,7 @@ export const ReceiptScannerDropzone = ({
                   type="button"
                   data-testid="receipt-reset-btn"
                   onClick={onReset}
-                  className="min-h-[44px] min-w-[44px] p-1 text-white/60 hover:text-white transition-colors cursor-pointer"
+                  className="min-h-[44px] min-w-[44px] p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   title="Tentar novamente"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />

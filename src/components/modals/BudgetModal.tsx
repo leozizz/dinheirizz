@@ -133,18 +133,18 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative w-full max-w-lg overflow-hidden glass-card-glow rounded-3xl border border-white/10 shadow-2xl p-6 sm:p-7 space-y-6 max-h-[90vh] flex flex-col bg-neutral-900/95">
+      <div className="relative w-full max-w-lg overflow-hidden glass-card-glow rounded-3xl border border-border shadow-2xl p-6 sm:p-7 space-y-6 max-h-[90vh] flex flex-col bg-card text-foreground">
         {/* Cabeçalho do Modal */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary">
               <PieChart className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="budget-modal-title" className="text-lg font-bold text-white font-display">
+              <h2 id="budget-modal-title" className="text-lg font-bold text-foreground font-display">
                 Orçamentos Mensais
               </h2>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-muted-foreground">
                 Defina o teto de gastos para cada categoria
               </p>
             </div>
@@ -154,7 +154,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
             data-testid="btn-close-budget-modal"
             onClick={onClose}
             aria-label="Fechar modal"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-muted/50 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -163,8 +163,8 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
         {/* Lista de Categorias de Despesa */}
         <div className="overflow-y-auto space-y-3 flex-1 pr-1 custom-scrollbar">
           {expenseCategories.length === 0 ? (
-            <div className="text-center py-8 text-neutral-400 space-y-2">
-              <AlertCircle className="w-8 h-8 mx-auto text-neutral-500" />
+            <div className="text-center py-8 text-muted-foreground space-y-2">
+              <AlertCircle className="w-8 h-8 mx-auto text-muted-foreground" />
               <p className="text-sm">Nenhuma categoria de despesa encontrada.</p>
             </div>
           ) : (
@@ -178,7 +178,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
               return (
                 <div
                   key={cat.id}
-                  className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between gap-3 hover:border-white/15 transition-all"
+                  className="p-3.5 rounded-2xl bg-muted/20 border border-border flex items-center justify-between gap-3 hover:border-primary/30 transition-all"
                 >
                   {/* Identificação da Categoria */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -189,11 +189,11 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                       <span style={{ color: catColor }}>●</span>
                     </div>
                     <div className="min-w-0">
-                      <span className="text-sm font-semibold text-white block truncate">
+                      <span className="text-sm font-semibold text-foreground block truncate">
                         {cat.name}
                       </span>
                       {currentBudget && (
-                        <span className="text-[11px] text-neutral-400 block truncate">
+                        <span className="text-[11px] text-muted-foreground block truncate">
                           Gasto atual: R$ {currentBudget.spentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </span>
                       )}
@@ -203,7 +203,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                   {/* Campo de Entrada e Ações */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="relative flex items-center">
-                      <span className="absolute left-2.5 text-xs text-neutral-500 font-medium">
+                      <span className="absolute left-2.5 text-xs text-muted-foreground font-medium">
                         R$
                       </span>
                       <input
@@ -214,7 +214,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                         placeholder="0,00"
                         value={val}
                         onChange={(e) => handleInputChange(cat.id, e.target.value)}
-                        className="w-24 sm:w-28 pl-8 pr-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-semibold tabular-nums focus:outline-none focus:border-primary/50 text-right"
+                        className="w-24 sm:w-28 pl-8 pr-2.5 py-1.5 rounded-xl bg-input/40 border border-border text-foreground text-xs font-semibold tabular-nums focus:outline-none focus:border-primary/50 text-right"
                       />
                     </div>
 
@@ -255,13 +255,13 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
         </div>
 
         {/* Rodapé Informativo */}
-        <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-neutral-400">
+        <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <span>Limites renovados mensalmente</span>
           <button
             type="button"
             data-testid="btn-finish-budget-modal"
             onClick={onClose}
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-white/10 text-white font-medium hover:bg-white/15 transition-colors cursor-pointer"
+            className="px-4 py-2 min-h-[44px] rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
           >
             Concluir
           </button>

@@ -35,7 +35,7 @@
     },
     "architecture": {
       "sddRequired": true,
-      "adrFolder": "specs/"
+      "adrFolder": "docs/adr/"
     }
   },
   "docsSync": [

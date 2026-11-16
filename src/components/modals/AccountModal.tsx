@@ -26,12 +26,12 @@ const PRESET_COLORS = [
   { label: 'Dourado / Neutro', value: '#d97706' }
 ]
 
-export function AccountModal({
+export const AccountModal: React.FC<AccountModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
   isLoading = false
-}: AccountModalProps) {
+}) => {
   const [name, setName] = useState('')
   const [type, setType] = useState<'checking' | 'savings' | 'investment' | 'credit'>('checking')
   const [bank, setBank] = useState('')
@@ -91,8 +91,9 @@ export function AccountModal({
         color
       })
       onClose()
-    } catch (err: any) {
-      setError(err?.message || 'Falha ao salvar conta')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao salvar conta'
+      setError(msg)
     } finally {
       setSubmitting(false)
     }
@@ -115,7 +116,7 @@ export function AccountModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#14121f]/95 max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
+            className="relative z-10 w-full max-w-lg glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-border shadow-2xl bg-card text-foreground max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-5 sm:mb-6">
@@ -124,10 +125,10 @@ export function AccountModal({
                   <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white font-display">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground font-display">
                     Nova Conta
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-neutral-400">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">
                     Cadastre uma conta corrente, carteira ou investimento
                   </p>
                 </div>
@@ -137,7 +138,7 @@ export function AccountModal({
                 type="button"
                 aria-label="Fechar modal"
                 onClick={onClose}
-                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer active:scale-95"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -153,7 +154,7 @@ export function AccountModal({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Nome da Conta */}
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   Nome da Conta / Instituição
                 </label>
                 <input
@@ -162,31 +163,31 @@ export function AccountModal({
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Ex: Nubank Principal, Itaú Reserva"
-                  className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                  className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Tipo de Conta */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
                     Tipo de Conta
                   </label>
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
+                    onChange={(e) => setType(e.target.value as 'checking' | 'savings' | 'investment' | 'credit')}
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                   >
-                    <option value="checking" className="bg-neutral-900">Conta Corrente</option>
-                    <option value="savings" className="bg-neutral-900">Poupança / Reserva</option>
-                    <option value="investment" className="bg-neutral-900">Investimentos</option>
-                    <option value="credit" className="bg-neutral-900">Cartão / Crédito</option>
+                    <option value="checking">Conta Corrente</option>
+                    <option value="savings">Poupança / Reserva</option>
+                    <option value="investment">Investimentos</option>
+                    <option value="credit">Cartão / Crédito</option>
                   </select>
                 </div>
 
                 {/* Nome do Banco */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
                     Instituição (opcional)
                   </label>
                   <input
@@ -194,22 +195,22 @@ export function AccountModal({
                     value={bank}
                     onChange={(e) => handleBankChange(e.target.value)}
                     placeholder="Ex: Nubank, Inter, Itaú"
-                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                   />
                   {detectedBank.slug !== 'generic' && (
-                    <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-neutral-300">
+                    <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                       <span
                         className="w-2 h-2 rounded-full inline-block flex-shrink-0"
                         style={{ backgroundColor: detectedBank.primaryColor }}
                       />
-                      <span>Instituição identificada: <strong>{detectedBank.name}</strong></span>
+                      <span>Instituição identificada: <strong className="text-foreground">{detectedBank.name}</strong></span>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Saldo Inicial */}
-              <div className="bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/5 text-center">
+              <div className="bg-muted/30 p-4 sm:p-5 rounded-2xl border border-border text-center">
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Saldo Inicial (R$)
                 </label>
@@ -220,14 +221,14 @@ export function AccountModal({
                     value={balanceStr}
                     onChange={(e) => setBalanceStr(e.target.value)}
                     placeholder="0,00"
-                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-white bg-transparent text-center focus:outline-none placeholder-neutral-600 font-display font-tabular"
+                    className="w-40 sm:w-48 text-2xl sm:text-3xl font-bold text-foreground bg-transparent text-center focus:outline-none placeholder-muted-foreground font-display font-tabular"
                   />
                 </div>
               </div>
 
               {/* Cor de Identificação */}
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-2">
+                <label className="block text-xs font-medium text-foreground mb-2">
                   Cor de Identificação
                 </label>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -239,7 +240,7 @@ export function AccountModal({
                       style={{ backgroundColor: c.value }}
                       title={c.label}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        color === c.value ? 'ring-2 ring-white scale-110 shadow-lg' : 'opacity-70 hover:opacity-100'
+                        color === c.value ? 'ring-2 ring-primary scale-110 shadow-lg' : 'opacity-70 hover:opacity-100'
                       }`}
                     >
                       {color === c.value && <Check className="w-4 h-4 text-white" />}
@@ -253,7 +254,7 @@ export function AccountModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/10 text-neutral-300 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-border text-foreground text-xs sm:text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

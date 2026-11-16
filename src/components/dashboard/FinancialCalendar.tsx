@@ -33,12 +33,12 @@ const WEEKDAYS = [
   { short: 'Sáb', tiny: 'S' }
 ]
 
-export function FinancialCalendar({
+export const FinancialCalendar = ({
   transactions,
   currentBalance,
   onPayTransaction,
   initialDate
-}: FinancialCalendarProps) {
+}: FinancialCalendarProps) => {
   const [currentDate, setCurrentDate] = useState<Date>(() => initialDate || new Date())
   const [selectedDay, setSelectedDay] = useState<CalendarDaySummary | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -75,18 +75,18 @@ export function FinancialCalendar({
   const formattedMonthYear = formatCalendarMonthYear(currentDate)
 
   return (
-    <div className="glass-card p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 select-none">
+    <div className="glass-card p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border select-none">
       {/* Calendar Header with Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-border">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
             <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white font-display">
+            <h3 className="text-base sm:text-lg font-bold text-foreground font-display">
               {formattedMonthYear}
             </h3>
-            <p className="text-xs text-neutral-400">Visão de vencimentos e saldo diário</p>
+            <p className="text-xs text-muted-foreground">Visão de vencimentos e saldo diário</p>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export function FinancialCalendar({
             type="button"
             data-testid="calendar-today-btn"
             onClick={handleToday}
-            className="px-3 py-1.5 min-h-[36px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-all cursor-pointer active:scale-95"
+            className="px-3 py-1.5 min-h-[36px] rounded-xl bg-muted/50 hover:bg-muted border border-border text-xs font-semibold text-foreground transition-all cursor-pointer active:scale-95"
           >
             Hoje
           </button>
@@ -105,7 +105,7 @@ export function FinancialCalendar({
             data-testid="calendar-prev-month-btn"
             onClick={handlePrevMonth}
             aria-label="Mês anterior"
-            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
+            className="w-9 h-9 rounded-xl bg-muted/50 hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-95"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -114,7 +114,7 @@ export function FinancialCalendar({
             data-testid="calendar-next-month-btn"
             onClick={handleNextMonth}
             aria-label="Próximo mês"
-            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
+            className="w-9 h-9 rounded-xl bg-muted/50 hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-95"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -126,9 +126,7 @@ export function FinancialCalendar({
         {WEEKDAYS.map((w, idx) => (
           <div
             key={w.short}
-            className={`py-1 text-xs font-semibold ${
-              idx === 0 || idx === 6 ? 'text-neutral-400' : 'text-neutral-300'
-            }`}
+            className="py-1 text-xs font-semibold text-muted-foreground"
           >
             <span className="hidden sm:inline">{w.short}</span>
             <span className="sm:hidden">{w.tiny}</span>
@@ -153,8 +151,8 @@ export function FinancialCalendar({
               onClick={() => handleSelectDay(day)}
               className={`min-h-[58px] sm:min-h-[78px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group ${
                 day.isCurrentMonth
-                  ? 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
-                  : 'bg-white/[0.01] opacity-35 hover:opacity-60 border-transparent'
+                  ? 'bg-muted/20 hover:bg-muted/50 border-border/60'
+                  : 'bg-transparent opacity-40 hover:opacity-70 border-transparent'
               } ${
                 day.isToday
                   ? 'ring-2 ring-primary/60 border-primary/40 bg-primary/[0.06]'
@@ -168,8 +166,8 @@ export function FinancialCalendar({
                     day.isToday
                       ? 'w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary text-black flex items-center justify-center font-extrabold text-[11px] sm:text-xs'
                       : day.isCurrentMonth
-                      ? 'text-white'
-                      : 'text-neutral-400'
+                      ? 'text-foreground'
+                      : 'text-muted-foreground'
                   }`}
                 >
                   {day.dayNumber}
@@ -223,18 +221,18 @@ export function FinancialCalendar({
                           ? 'text-emerald-400'
                           : day.netDayChange < 0
                           ? 'text-rose-400'
-                          : 'text-neutral-400'
+                          : 'text-muted-foreground'
                       }`}
                     >
                       {day.netDayChange > 0 ? '+' : ''}
                       {formatBRL(day.netDayChange)}
                     </span>
-                    <span className="hidden sm:block text-[9px] text-neutral-400 tabular-nums truncate">
+                    <span className="hidden sm:block text-[9px] text-muted-foreground tabular-nums truncate">
                       Sal: {formatBRL(day.projectedBalance)}
                     </span>
                   </div>
                 ) : (
-                  <span className="hidden sm:block text-[9px] text-neutral-500 tabular-nums truncate">
+                  <span className="hidden sm:block text-[9px] text-muted-foreground tabular-nums truncate">
                     {formatBRL(day.projectedBalance)}
                   </span>
                 )}

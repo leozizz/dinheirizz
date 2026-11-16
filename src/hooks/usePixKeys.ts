@@ -10,16 +10,27 @@ export interface CreatePixKeyInput {
   label?: string
 }
 
+interface RawPixKeyItem {
+  id: string
+  keyType?: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
+  key_type?: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
+  keyValue?: string
+  key_value?: string
+  bankName?: string
+  bank_name?: string
+  description?: string | null
+}
+
 export const PIX_KEYS_QUERY_KEY = ['pix-keys'] as const
 
-function getApiOrigin(): string {
+const getApiOrigin = (): string => {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin
   }
   return 'http://localhost:3000'
 }
 
-export function usePixKeys() {
+export const usePixKeys = () => {
   const { session } = useAuth()
   const token = session?.access_token
 
@@ -39,13 +50,13 @@ export function usePixKeys() {
       }
 
       const json = await res.json()
-      const rawList = Array.isArray(json.data) ? json.data : []
+      const rawList: RawPixKeyItem[] = Array.isArray(json.data) ? json.data : []
 
-      return rawList.map((item: any): PixKeyItem => ({
+      return rawList.map((item: RawPixKeyItem): PixKeyItem => ({
         id: item.id,
-        key_type: item.keyType || item.key_type,
-        key_value: item.keyValue || item.key_value,
-        bank_name: item.bankName || item.bank_name,
+        key_type: item.keyType || item.key_type || 'random',
+        key_value: item.keyValue || item.key_value || '',
+        bank_name: item.bankName || item.bank_name || '',
         description: item.description ?? null
       }))
     }
@@ -60,7 +71,7 @@ export function usePixKeys() {
   }
 }
 
-export function useCreatePixKey() {
+export const useCreatePixKey = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token
@@ -94,7 +105,7 @@ export function useCreatePixKey() {
   })
 }
 
-export function useDeletePixKey() {
+export const useDeletePixKey = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token

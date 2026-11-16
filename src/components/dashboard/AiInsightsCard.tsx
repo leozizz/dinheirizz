@@ -88,7 +88,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-white tracking-wide">
+              <h3 className="text-sm font-semibold text-foreground tracking-wide">
                 Consultor Dinheirizz
               </h3>
               {isDeterministicFallback && (
@@ -145,13 +145,13 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
                 {score}
               </span>
             </div>
-            <span className="text-[11px] text-white/40 font-medium">/100</span>
+            <span className="text-[11px] text-muted-foreground font-medium">/100</span>
           </div>
         </div>
       </div>
 
       {/* Resumo do Consultor */}
-      <p className="text-sm text-white/80 leading-relaxed font-normal mb-4">
+      <p className="text-sm text-foreground/85 leading-relaxed font-normal mb-4">
         {insight.summary}
       </p>
 
@@ -160,7 +160,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
         {insight.highlights?.slice(0, 1).map((highlight, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-2.5 text-xs text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl"
+            className="flex items-start gap-2.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl"
           >
             <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <span className="leading-snug">{highlight}</span>
@@ -170,7 +170,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
         {insight.alerts?.slice(0, 1).map((alert, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-2.5 text-xs text-amber-300/90 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl"
+            className="flex items-start gap-2.5 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl"
           >
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <span className="leading-snug">{alert}</span>
@@ -180,10 +180,10 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
 
       {/* Seção Expansível com Recomendações e Mais Destaques */}
       {isExpanded && (
-        <div className="pt-3 border-t border-white/10 space-y-3 mb-4 animate-fade-in">
+        <div className="pt-3 border-t border-border space-y-3 mb-4 animate-fade-in">
           {insight.recommendations && insight.recommendations.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-white/70 mb-2 flex items-center gap-1.5">
+              <h4 className="text-xs font-semibold text-foreground/80 mb-2 flex items-center gap-1.5">
                 <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
                 Recomendações Práticas
               </h4>
@@ -191,7 +191,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
                 {insight.recommendations.map((rec, i) => (
                   <li
                     key={i}
-                    className="text-xs text-white/70 bg-white/5 p-2 rounded-lg border border-white/5 leading-relaxed"
+                    className="text-xs text-foreground/80 bg-muted/50 p-2 rounded-lg border border-border leading-relaxed"
                   >
                     • {rec}
                   </li>
@@ -202,12 +202,12 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
 
           {insight.highlights && insight.highlights.length > 1 && (
             <div>
-              <h4 className="text-xs font-semibold text-white/70 mb-2">
+              <h4 className="text-xs font-semibold text-foreground/80 mb-2">
                 Outros Destaques
               </h4>
               <ul className="space-y-1.5">
                 {insight.highlights.slice(1).map((h, i) => (
-                  <li key={i} className="text-xs text-emerald-400/80 leading-relaxed flex items-center gap-1.5">
+                  <li key={i} className="text-xs text-emerald-400/90 leading-relaxed flex items-center gap-1.5">
                     <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>{h}</span>
                   </li>
@@ -223,7 +223,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-xs text-white/60 hover:text-white flex items-center gap-1 transition-colors py-1 cursor-pointer"
+          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors py-1 cursor-pointer"
         >
           {isExpanded ? (
             <>
@@ -241,7 +241,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
             type="button"
             onClick={onGenerate}
             disabled={isGenerating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-medium text-white transition-all border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-medium text-foreground transition-all border border-border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <RotateCw
               className={`w-3.5 h-3.5 text-indigo-400 ${

@@ -43,6 +43,38 @@ export interface PaginatedTransactionsResponse {
   hasMore: boolean
 }
 
+interface RawTransactionItem {
+  id: string
+  amount: string | number
+  description?: string | null
+  paid?: boolean
+  status?: 'completed' | 'pending' | 'cancelled'
+  dueDate?: string | null
+  due_date?: string | null
+  paidAt?: string | null
+  paid_at?: string | null
+  isRecurring?: boolean
+  is_recurring?: boolean
+  recurrencePeriod?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+  recurrence_period?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+  recurrenceDay?: number | null
+  recurrence_day?: number | null
+  adjustBusinessDay?: boolean
+  adjust_business_day?: boolean
+  installmentCurrent?: number | null
+  installment_current?: number | null
+  installmentTotal?: number | null
+  installment_total?: number | null
+  parentTransactionId?: string | null
+  parent_transaction_id?: string | null
+  occurredAt?: string
+  occurred_at?: string
+  category?: string | { name: string; color?: string | null; icon?: string | null } | null
+  type?: 'income' | 'expense' | 'transfer'
+  accountId?: string | null
+  account_id?: string | null
+}
+
 export const TRANSACTIONS_QUERY_KEY = ['transactions'] as const
 
 export const getTransactionsQueryKey = (options?: UseTransactionsOptions) =>
@@ -62,14 +94,14 @@ export const getTransactionsQueryKey = (options?: UseTransactionsOptions) =>
     }
   ] as const
 
-function getApiOrigin(): string {
+const getApiOrigin = (): string => {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin
   }
   return 'http://localhost:3000'
 }
 
-export function useTransactions(options?: UseTransactionsOptions) {
+export const useTransactions = (options?: UseTransactionsOptions) => {
   const { session } = useAuth()
   const token = session?.access_token
 
@@ -104,9 +136,9 @@ export function useTransactions(options?: UseTransactionsOptions) {
       }
 
       const json = await res.json()
-      const rawList = Array.isArray(json.data) ? json.data : []
+      const rawList: RawTransactionItem[] = Array.isArray(json.data) ? json.data : []
 
-      const mapped = rawList.map((item: any): TransactionItem => {
+      const mapped = rawList.map((item: RawTransactionItem): TransactionItem => {
         const amountNum = Number(item.amount) || 0
         const isPaid = item.paid ?? (item.status === 'completed')
         const statusVal = item.status || (isPaid ? 'completed' : 'pending')
@@ -126,7 +158,10 @@ export function useTransactions(options?: UseTransactionsOptions) {
           installmentTotal: item.installmentTotal ?? item.installment_total ?? null,
           parentTransactionId: item.parentTransactionId || item.parent_transaction_id || null,
           occurred_at: item.occurredAt || item.occurred_at || new Date().toISOString(),
-          category: item.category ?? null,
+          category:
+            typeof item.category === 'string'
+              ? { name: item.category, color: null, icon: null }
+              : (item.category ?? null),
           type: item.type || (amountNum >= 0 ? 'income' : 'expense'),
           accountId: item.accountId || item.account_id || null
         }
@@ -210,7 +245,7 @@ export function useTransactions(options?: UseTransactionsOptions) {
   }
 }
 
-export function useCreateTransaction() {
+export const useCreateTransaction = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token
@@ -223,12 +258,6 @@ export function useCreateTransaction() {
       }
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
-      }
-
-      // Ajusta o sinal do valor conforme o tipo selecionado
-      let normalizedAmount = Math.abs(input.amount)
-      if (input.type === 'expense') {
-        normalizedAmount = -normalizedAmount
       }
 
       const payload = {
@@ -275,7 +304,7 @@ export interface PayTransactionInput {
   paidAt?: string
 }
 
-export function usePayTransaction() {
+export const usePayTransaction = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token
@@ -311,7 +340,7 @@ export function usePayTransaction() {
   })
 }
 
-export function useDeleteTransaction() {
+export const useDeleteTransaction = () => {
   const queryClient = useQueryClient()
   const { session } = useAuth()
   const token = session?.access_token

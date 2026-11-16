@@ -13,7 +13,7 @@ export interface DangerConfirmModalProps {
   cascadeWarning?: string
 }
 
-export function DangerConfirmModal({
+export const DangerConfirmModal = ({
   isOpen,
   onClose,
   title,
@@ -22,7 +22,7 @@ export function DangerConfirmModal({
   onConfirm,
   confirmButtonText = 'Entendo os riscos, apagar dados',
   cascadeWarning
-}: DangerConfirmModalProps) {
+}: DangerConfirmModalProps) => {
   const [typedPhrase, setTypedPhrase] = useState('')
   const [isPending, setIsPending] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -80,7 +80,7 @@ export function DangerConfirmModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative w-full max-w-lg bg-neutral-900/95 border border-rose-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-rose-950/40 text-white my-auto pb-8 sm:pb-9"
+          className="relative w-full max-w-lg bg-card border border-rose-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-rose-950/20 text-foreground my-auto pb-8 sm:pb-9"
         >
           {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-4">
@@ -93,7 +93,7 @@ export function DangerConfirmModal({
                   <ShieldAlert className="w-3.5 h-3.5" />
                   Ação Destrutiva Irreversível
                 </span>
-                <h3 id="danger-confirm-title" className="text-base sm:text-lg font-bold text-white leading-tight">
+                <h3 id="danger-confirm-title" className="text-base sm:text-lg font-bold text-foreground leading-tight">
                   {title}
                 </h3>
               </div>
@@ -104,14 +104,14 @@ export function DangerConfirmModal({
               onClick={onClose}
               disabled={isPending}
               aria-label="Fechar"
-              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
+              className="p-1.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Description & Cascade Alert */}
-          <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed mb-4">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-4">
             {description}
           </p>
 
@@ -127,7 +127,7 @@ export function DangerConfirmModal({
             <div>
               <label
                 htmlFor="danger-confirm-phrase-input"
-                className="block text-xs font-medium text-neutral-300 mb-2"
+                className="block text-xs font-medium text-foreground mb-2"
               >
                 Para confirmar a exclusão, digite exatamente:{' '}
                 <span
@@ -149,7 +149,7 @@ export function DangerConfirmModal({
                 onChange={(e) => setTypedPhrase(e.target.value)}
                 placeholder={expectedPhrase}
                 disabled={isPending}
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-black/40 border border-neutral-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/50 text-white placeholder-neutral-600 text-xs sm:text-sm font-mono transition-all disabled:opacity-50"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-input/40 border border-border focus:border-rose-500 focus:ring-1 focus:ring-rose-500/50 text-foreground placeholder:text-muted-foreground text-xs sm:text-sm font-mono transition-all disabled:opacity-50"
               />
             </div>
 
@@ -165,7 +165,7 @@ export function DangerConfirmModal({
                 type="button"
                 onClick={onClose}
                 disabled={isPending}
-                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white font-medium text-xs sm:text-sm transition-all border border-white/10 cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-muted/50 hover:bg-muted text-foreground font-medium text-xs sm:text-sm transition-all border border-border cursor-pointer disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -173,7 +173,7 @@ export function DangerConfirmModal({
               <button
                 type="submit"
                 disabled={!isMatch || isPending}
-                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:bg-neutral-800 disabled:border-neutral-700 text-white disabled:text-neutral-500 font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-rose-950/50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 disabled:active:scale-100"
+                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:bg-muted disabled:border-border text-white disabled:text-muted-foreground font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-rose-950/50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 disabled:active:scale-100"
               >
                 {isPending ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -81,7 +81,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-semibold text-primary">
             <span>Experiência Dinheirizz 2.0</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white font-display">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground font-display">
             Recursos projetados para clareza e controle absoluto.
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground">
@@ -99,7 +99,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
             className={`min-h-[44px] h-11 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'dashboard'
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border border-white/5'
+                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
             }`}
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -114,7 +114,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
             className={`min-h-[44px] h-11 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'pix'
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border border-white/5'
+                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
             }`}
           >
             <QrCode className="w-4 h-4" />
@@ -129,7 +129,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
             className={`min-h-[44px] h-11 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'ai'
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border border-white/5'
+                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
             }`}
           >
             <BrainCircuit className="w-4 h-4" />
@@ -144,7 +144,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
             className={`min-h-[44px] h-11 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'transactions'
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border border-white/5'
+                : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border'
             }`}
           >
             <Receipt className="w-4 h-4" />
@@ -153,7 +153,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
         </div>
 
         {/* Feature Display Card */}
-        <div className="glass-card border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl animate-fade-in">
+        <div className="glass-card border border-border rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl animate-fade-in">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left: Info & Highlights */}
             <div className="lg:col-span-7 space-y-6">
@@ -162,7 +162,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
               </div>
 
               <div>
-                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2 font-display">
+                <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 font-display">
                   {currentFeature.title}
                 </h3>
                 <p className="text-sm font-medium text-primary">
@@ -177,7 +177,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
               {/* Highlights List */}
               <ul className="space-y-3 pt-2">
                 {currentFeature.highlights.map((item, index) => (
-                  <li key={index} className="flex items-start gap-3 text-xs sm:text-sm text-neutral-200">
+                  <li key={index} className="flex items-start gap-3 text-xs sm:text-sm text-foreground">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </li>
@@ -189,7 +189,7 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
                   <button
                     type="button"
                     onClick={onExploreDemo}
-                    className="min-h-[44px] h-11 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-xs sm:text-sm inline-flex items-center gap-2 transition-all cursor-pointer active:scale-[0.98]"
+                    className="min-h-[44px] h-11 px-5 rounded-xl bg-muted/50 hover:bg-muted border border-border text-foreground font-medium text-xs sm:text-sm inline-flex items-center gap-2 transition-all cursor-pointer active:scale-[0.98]"
                   >
                     <span>Testar este recurso no modo demo</span>
                     <ArrowRight className="w-4 h-4 text-primary" />
@@ -200,19 +200,19 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
 
             {/* Right: Visual Accent Showcase */}
             <div className="lg:col-span-5">
-              <div className="rounded-2xl p-6 bg-gradient-to-br from-white/[0.05] to-white/[0.01] border border-white/10 relative overflow-hidden space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="rounded-2xl p-6 bg-card border border-border relative overflow-hidden space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
                   <span className="text-xs font-mono text-muted-foreground uppercase">Demonstração Interativa</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">ATIVO</span>
                 </div>
 
                 {activeTab === 'dashboard' && (
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Previsão 30 Dias</span>
                       <span className="text-sm font-bold text-emerald-400 font-mono">+ R$ 6.320,00</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Taxa de Poupança</span>
                       <span className="text-sm font-bold text-primary font-mono">28,5%</span>
                     </div>
@@ -221,11 +221,11 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
 
                 {activeTab === 'pix' && (
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Chave Protegida</span>
-                      <span className="text-xs font-mono text-white">478.***.***-00</span>
+                      <span className="text-xs font-mono text-foreground">478.***.***-00</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Algoritmo</span>
                       <span className="text-xs font-mono text-accent">AES-256-GCM</span>
                     </div>
@@ -234,11 +234,11 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
 
                 {activeTab === 'ai' && (
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Diagnóstico</span>
                       <span className="text-xs font-semibold text-emerald-400">Saudável (Score 92)</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Potencial de Economia</span>
                       <span className="text-xs font-bold text-primary font-mono">R$ 410,00 / mês</span>
                     </div>
@@ -247,21 +247,21 @@ export const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ onExploreDem
 
                 {activeTab === 'transactions' && (
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-1">
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Alimentação (Envelope)</span>
-                        <span className="text-white font-mono">68% consumido</span>
+                        <span className="text-foreground font-mono">68% consumido</span>
                       </div>
-                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-primary rounded-full w-[68%]" />
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-1">
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Lazer & Streaming</span>
                         <span className="text-accent font-mono">42% consumido</span>
                       </div>
-                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-accent rounded-full w-[42%]" />
                       </div>
                     </div>

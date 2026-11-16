@@ -14,7 +14,8 @@ import {
   Layers,
   Repeat,
   Camera,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 import { parseCurrencyToNumber, formatBRL } from '../../lib/formatters'
 import { calculateRecurringDueDate } from '../../lib/businessDays'
@@ -74,11 +75,14 @@ const getTodayLocalDate = (): string => {
   return `${y}-${m}-${d}`
 }
 
+const EMPTY_CATEGORIES: CategoryOption[] = []
+const EMPTY_ACCOUNTS: AccountOption[] = []
+
 export const TransactionModal = ({
   isOpen,
   mode,
-  categories = [],
-  accounts = [],
+  categories = EMPTY_CATEGORIES,
+  accounts = EMPTY_ACCOUNTS,
   defaultAccountId,
   initialOpenOcr = false,
   onClose,

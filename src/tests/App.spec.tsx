@@ -4,30 +4,30 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import App from '../App'
 
 describe('App Component (Dinheirizz 2.0 Frontend)', () => {
-  it('deve renderizar a tela de Boas-Vindas inicialmente quando deslogado', () => {
+  it('deve renderizar a tela de Boas-Vindas inicialmente quando deslogado', async () => {
     render(<App />)
-    expect(screen.getByText(/dinheirizz 2\.0 pwa/i)).toBeInTheDocument()
+    expect(await screen.findByText(/dinheirizz 2\.0 pwa/i)).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /controle financeiro inteligente/i })).toBeInTheDocument()
     expect(screen.getByTestId('welcome-login-btn')).toBeInTheDocument()
     expect(screen.getByTestId('welcome-demo-btn')).toBeInTheDocument()
   })
 
-  it('deve navegar para a tela de Login ao clicar em Acessar minha conta', () => {
+  it('deve navegar para a tela de Login ao clicar em Acessar minha conta', async () => {
     render(<App />)
-    const loginBtn = screen.getByTestId('welcome-login-btn')
+    const loginBtn = await screen.findByTestId('welcome-login-btn')
     fireEvent.click(loginBtn)
 
-    expect(screen.getByPlaceholderText('seu@email.com')).toBeInTheDocument()
+    expect(await screen.findByPlaceholderText('seu@email.com')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
   })
 
-  it('deve abrir o Dashboard em modo demonstração ao clicar em Explorar modo demonstração', () => {
+  it('deve abrir o Dashboard em modo demonstração ao clicar em Explorar modo demonstração', async () => {
     render(<App />)
-    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    const demoBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
-    expect(screen.getByText(/modo de demonstração/i)).toBeInTheDocument()
+    expect(await screen.findByText(/modo de demonstração/i)).toBeInTheDocument()
     expect(screen.getByText(/saldo total/i)).toBeInTheDocument()
     expect(screen.getAllByText(/R\$ 14\.850,20/i).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByTestId('quick-action-income')).toBeInTheDocument()
@@ -38,13 +38,13 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
 
   it('deve abrir modal de Nova Conta e permitir cadastrar nova conta no modo demo', async () => {
     render(<App />)
-    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    const demoBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
-    const novaContaBtn = screen.getByRole('button', { name: /Nova Conta/i })
+    const novaContaBtn = await screen.findByRole('button', { name: /Nova Conta/i })
     fireEvent.click(novaContaBtn)
 
-    expect(screen.getByText('Cadastre uma conta corrente, carteira ou investimento')).toBeInTheDocument()
+    expect(await screen.findByText('Cadastre uma conta corrente, carteira ou investimento')).toBeInTheDocument()
 
     const nameInput = screen.getByPlaceholderText(/Ex: Nubank Principal/i)
     fireEvent.change(nameInput, { target: { value: 'C6 Bank PJ' } })
@@ -60,29 +60,30 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
 
   it('deve abrir modal de Transferência com contas de origem e destino no modo demo', async () => {
     render(<App />)
-    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    const demoBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
-    const transferBtn = screen.getByRole('button', { name: /transferir/i })
+    const transferBtn = await screen.findByRole('button', { name: /transferir/i })
     fireEvent.click(transferBtn)
 
-    expect(screen.getByText('Transferência entre Contas')).toBeInTheDocument()
+    expect(await screen.findByText('Transferência entre Contas')).toBeInTheDocument()
     expect(screen.getByText('Conta de Origem')).toBeInTheDocument()
     expect(screen.getByText('Conta de Destino')).toBeInTheDocument()
   })
 
   it('deve atualizar o saldo total ao registrar uma despesa ou receita no modo demo', async () => {
     render(<App />)
-    const demoBtn = screen.getByTestId('welcome-demo-btn')
+    const demoBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(demoBtn)
 
+    expect(await screen.findByText(/modo de demonstração/i)).toBeInTheDocument()
     expect(screen.getAllByText(/R\$ 14\.850,20/i).length).toBeGreaterThanOrEqual(1)
 
     // Abre modal de despesa
     const despesaBtn = screen.getByTestId('quick-action-expense')
     fireEvent.click(despesaBtn)
 
-    const amountInput = screen.getByPlaceholderText('0,00')
+    const amountInput = await screen.findByPlaceholderText('0,00')
     fireEvent.change(amountInput, { target: { value: '850,20' } })
 
     const submitBtn = screen.getByTestId('transaction-submit-btn')
@@ -92,4 +93,3 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     expect((await screen.findAllByText(/R\$ 14\.000,00/i)).length).toBeGreaterThanOrEqual(1)
   })
 })
-

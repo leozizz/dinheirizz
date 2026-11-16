@@ -28,13 +28,13 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
 
   if (isLoading && !data) {
     return (
-      <div className={`glass-card rounded-2xl border border-white/5 bg-zinc-900/60 p-5 backdrop-blur-xl ${className}`}>
+      <div className={`glass-card rounded-2xl border border-border bg-card p-5 backdrop-blur-xl ${className}`}>
         <div className="flex items-center justify-between pb-4">
-          <div className="h-5 w-44 animate-pulse rounded bg-white/5" />
-          <div className="h-8 w-28 animate-pulse rounded-lg bg-white/5" />
+          <div className="h-5 w-44 animate-pulse rounded bg-muted" />
+          <div className="h-8 w-28 animate-pulse rounded-lg bg-muted" />
         </div>
-        <div className="my-4 h-10 w-48 animate-pulse rounded bg-white/5" />
-        <div className="h-44 w-full animate-pulse rounded-xl bg-white/5" />
+        <div className="my-4 h-10 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-44 w-full animate-pulse rounded-xl bg-muted" />
       </div>
     )
   }
@@ -56,7 +56,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
 
   return (
     <div
-      className={`glass-card relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/75 p-5 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:border-white/20 ${className}`}
+      className={`glass-card relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:border-border/80 ${className}`}
     >
       {/* Glow sutil de fundo condicional */}
       <div
@@ -70,7 +70,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
       />
 
       {/* Cabeçalho com título, ícone e alternador de horizonte */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <div className="flex items-center gap-2.5">
           <div
             className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
@@ -84,24 +84,24 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
             <TrendingUp className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold tracking-wide text-zinc-100">
+            <h2 className="text-sm font-semibold tracking-wide text-foreground">
               Previsão de Saldo & Fluxo de Caixa
             </h2>
-            <p className="text-[11px] text-stone-400">
+            <p className="text-[11px] text-muted-foreground">
               Projeção diária com base em boletos e histórico
             </p>
           </div>
         </div>
 
         {/* Alternador 30 Dias / 60 Dias */}
-        <div className="flex items-center rounded-lg border border-white/10 bg-zinc-800/80 p-0.5 shadow-inner">
+        <div className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 shadow-inner">
           <button
             type="button"
             onClick={() => setDays(30)}
             className={`min-h-[36px] rounded-md px-3 py-1 text-xs font-semibold transition-all ${
               days === 30
                 ? 'bg-emerald-500/20 text-emerald-400 shadow-sm'
-                : 'text-stone-400 hover:text-stone-200'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             30 Dias
@@ -112,7 +112,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
             className={`min-h-[36px] rounded-md px-3 py-1 text-xs font-semibold transition-all ${
               days === 60
                 ? 'bg-emerald-500/20 text-emerald-400 shadow-sm'
-                : 'text-stone-400 hover:text-stone-200'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             60 Dias
@@ -123,7 +123,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
       {/* Linha de Destaque: Saldo Previsto, Variação e Badge de Saúde */}
       <div className="relative z-10 my-4 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Saldo Previsto em {days} Dias
           </span>
           <div className="flex items-baseline gap-2">
@@ -131,7 +131,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
               className={`text-2xl font-black tracking-tight sm:text-3xl tabular-nums ${
                 forecast.projectedEndBalance < 0
                   ? 'text-rose-400'
-                  : 'text-zinc-50'
+                  : 'text-foreground'
               }`}
             >
               <AnimatedNumber
@@ -154,7 +154,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
                 -{formatBRL(Math.abs(forecast.netChange))}
               </span>
             )}
-            <span className="text-stone-400">vs saldo atual (<span className="tabular-nums">{formatBRL(forecast.startingBalance)}</span>)</span>
+            <span className="text-muted-foreground">vs saldo atual (<span className="tabular-nums">{formatBRL(forecast.startingBalance)}</span>)</span>
           </div>
         </div>
 
@@ -194,33 +194,33 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
       </div>
 
       {/* Métricas Auxiliares & Insights Determinísticos */}
-      <div className="relative z-10 mt-4 grid grid-cols-1 gap-2 border-t border-white/5 pt-3 sm:grid-cols-2">
-        <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-xs">
+      <div className="relative z-10 mt-4 grid grid-cols-1 gap-2 border-t border-border pt-3 sm:grid-cols-2">
+        <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/30 p-2.5 text-xs">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400">
             <Flame className="h-3.5 w-3.5" />
           </div>
           <div>
-            <div className="text-[10px] text-stone-400">Gasto Diário Médio (Burn Rate)</div>
-            <div className="font-semibold text-zinc-200 tabular-nums">
+            <div className="text-[10px] text-muted-foreground">Gasto Diário Médio (Burn Rate)</div>
+            <div className="font-semibold text-foreground tabular-nums">
               {formatBRL(forecast.dailyBurnRate)}/dia
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-xs">
+        <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/30 p-2.5 text-xs">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400">
             <Calendar className="h-3.5 w-3.5" />
           </div>
           <div>
-            <div className="text-[10px] text-stone-400">Menor Saldo no Período</div>
+            <div className="text-[10px] text-muted-foreground">Menor Saldo no Período</div>
             <div
               className={`font-semibold tabular-nums ${
-                forecast.lowestPoint.balance < 0 ? 'text-rose-400' : 'text-zinc-200'
+                forecast.lowestPoint.balance < 0 ? 'text-rose-400' : 'text-foreground'
               }`}
             >
               {formatBRL(forecast.lowestPoint.balance)}
               {forecast.lowestPoint.date && (
-                <span className="ml-1 text-[10px] font-normal text-stone-400">
+                <span className="ml-1 text-[10px] font-normal text-muted-foreground">
                   (em {forecast.lowestPoint.date.split('-').reverse().slice(0, 2).join('/')})
                 </span>
               )}
@@ -237,7 +237,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
               ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
               : isWarning
                 ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
-                : 'border-white/5 bg-zinc-800/40 text-stone-300'
+                : 'border-border bg-muted/40 text-foreground'
           }`}
         >
           {isDanger ? (

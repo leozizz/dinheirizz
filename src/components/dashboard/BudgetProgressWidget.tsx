@@ -24,12 +24,12 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4 animate-pulse">
-        <div className="h-6 w-48 bg-white/10 rounded-xl" />
-        <div className="h-4 w-full bg-white/5 rounded-full" />
+      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4 animate-pulse">
+        <div className="h-6 w-48 bg-muted rounded-xl" />
+        <div className="h-4 w-full bg-muted/50 rounded-full" />
         <div className="space-y-3 pt-2">
-          <div className="h-12 bg-white/5 rounded-xl" />
-          <div className="h-12 bg-white/5 rounded-xl" />
+          <div className="h-12 bg-muted/50 rounded-xl" />
+          <div className="h-12 bg-muted/50 rounded-xl" />
         </div>
       </div>
     )
@@ -38,15 +38,15 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
   // Estado vazio: nenhum orçamento configurado
   if (budgets.length === 0) {
     return (
-      <div data-testid="widget-budget-progress-empty" className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-4 text-center">
+      <div data-testid="widget-budget-progress-empty" className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4 text-center">
         <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
           <PieChart className="w-6 h-6" />
         </div>
         <div className="max-w-md mx-auto space-y-1">
-          <h3 className="text-sm sm:text-base font-bold text-white font-display">
+          <h3 className="text-sm sm:text-base font-bold text-foreground font-display">
             Nenhum orçamento definido
           </h3>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-muted-foreground">
             Estipule limites de gastos mensais por categoria para manter o controle ativo do seu patrimônio com alertas automáticos.
           </p>
         </div>

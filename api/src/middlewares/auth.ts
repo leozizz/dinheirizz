@@ -39,13 +39,25 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
     )
   }
 
-  // Chave secreta de validação do JWT (JWT_SECRET ou SUPABASE_JWT_SECRET ou fallback local)
-  const secret =
+  // Chave secreta de validação do JWT (JWT_SECRET ou SUPABASE_JWT_SECRET)
+  const isProduction = process.env.NODE_ENV === 'production'
+  const envSecret =
     (c.env as { JWT_SECRET?: string; SUPABASE_JWT_SECRET?: string } | undefined)?.JWT_SECRET ||
     (c.env as { JWT_SECRET?: string; SUPABASE_JWT_SECRET?: string } | undefined)?.SUPABASE_JWT_SECRET ||
     process.env.JWT_SECRET ||
-    process.env.SUPABASE_JWT_SECRET ||
-    'dinheirizz-jwt-secret-dev-2026'
+    process.env.SUPABASE_JWT_SECRET
+
+  if (isProduction && !envSecret) {
+    return c.json(
+      {
+        error: 'Erro de configuração no servidor',
+        message: 'Variável JWT_SECRET ou SUPABASE_JWT_SECRET não configurada no ambiente de produção'
+      },
+      500
+    )
+  }
+
+  const secret = envSecret || 'dinheirizz-jwt-secret-dev-2026'
 
   try {
     const payload = await verify(token, secret, 'HS256')

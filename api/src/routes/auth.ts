@@ -45,13 +45,17 @@ const generateOtpCode = (): string => {
 
 const getJwtSecret = (c: Context<AuthEnv>): string => {
   const env = c.env as Record<string, string | undefined> | undefined
-  return (
+  const secret =
     env?.JWT_SECRET ||
     env?.SUPABASE_JWT_SECRET ||
     process.env.JWT_SECRET ||
-    process.env.SUPABASE_JWT_SECRET ||
-    'dinheirizz-jwt-secret-dev-2026'
-  )
+    process.env.SUPABASE_JWT_SECRET
+
+  if (process.env.NODE_ENV === 'production' && !secret) {
+    throw new Error('Variável JWT_SECRET ou SUPABASE_JWT_SECRET ausente em produção')
+  }
+
+  return secret || 'dinheirizz-jwt-secret-dev-2026'
 }
 
 const getSupabaseConfig = (c: Context<AuthEnv>): { url: string; anonKey: string } => {
@@ -627,6 +631,191 @@ authRouter.post('/login', async (c) => {
 // POST /api/v1/auth/logout
 authRouter.post('/logout', async (c) => {
   return c.json({ success: true, message: 'Sessão encerrada com sucesso.' })
+})
+
+// GET /api/v1/auth/oauth/:provider
+authRouter.get('/oauth/:provider', async (c) => {
+  const provider = c.req.param('provider')
+  if (provider !== 'google' && provider !== 'apple') {
+    return c.json({ error: 'Provedor OAuth não suportado. Provedores aceitos: google, apple.' }, 400)
+  }
+
+  const { url: supabaseUrl } = getSupabaseConfig(c)
+  const redirectTo = c.req.query('redirectTo') || 'http://localhost:3000'
+
+  if (!supabaseUrl) {
+    // Modo mock/offline para testes
+    const mockCallbackUrl = `${redirectTo}#access_token=mock-oauth-token-${provider}&provider=${provider}`
+    return c.json({ url: mockCallbackUrl })
+  }
+
+  const queryParams = new URLSearchParams()
+  queryParams.set('provider', provider)
+  queryParams.set('redirect_to', redirectTo)
+  if (provider === 'google') {
+    queryParams.set('access_type', 'offline')
+    queryParams.set('prompt', 'select_account')
+  }
+
+  const authUrl = `${supabaseUrl}/auth/v1/authorize?${queryParams.toString()}`
+  return c.json({ url: authUrl })
+})
+
+// POST /api/v1/auth/oauth/session
+authRouter.post('/oauth/session', async (c) => {
+  const rawBody = await c.req.json().catch(() => ({}))
+  const { access_token, provider = 'oauth' } = rawBody as { access_token?: string; provider?: string }
+
+  if (!access_token) {
+    return c.json({ error: 'Token de acesso OAuth não fornecido.' }, 400)
+  }
+
+  const db = getDb()
+  const secret = getJwtSecret(c)
+  const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
+
+  // 1. Caso mock / offline para testes unitários
+  if (!db || access_token.startsWith('mock-')) {
+    const mockId = 'oauth-user-' + (provider || 'google')
+    const mockEmail = `${provider.toLowerCase()}@dinheirizz.com`
+    const mockFullName = `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`
+
+    const token = await sign(
+      {
+        sub: mockId,
+        id: mockId,
+        email: mockEmail,
+        role: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
+      },
+      secret,
+      'HS256'
+    )
+
+    return c.json({
+      token,
+      user: {
+        id: mockId,
+        email: mockEmail,
+        fullName: mockFullName,
+        username: null,
+        provider,
+        providers: [provider]
+      }
+    })
+  }
+
+  try {
+    // 2. Validação server-side do access_token no Supabase Auth
+    let supaUserId: UUIDString | null = null
+    let email: string = ''
+    let fullName: string | null = null
+    let avatarUrl: string | null = null
+
+    if (supabaseUrl && anonKey) {
+      const supaUserRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${access_token}`
+        }
+      })
+
+      if (!supaUserRes.ok) {
+        return c.json({ error: 'Token OAuth inválido ou expirado junto ao provedor.' }, 401)
+      }
+
+      const supaUserData = (await supaUserRes.json()) as {
+        id: UUIDString
+        email: string
+        user_metadata?: { full_name?: string; name?: string; picture?: string; avatar_url?: string }
+      }
+
+      supaUserId = supaUserData.id
+      email = (supaUserData.email || '').toLowerCase().trim()
+      const meta = supaUserData.user_metadata || {}
+      fullName = meta.full_name || meta.name || null
+      avatarUrl = meta.avatar_url || meta.picture || null
+    }
+
+    if (!supaUserId || !email) {
+      return c.json({ error: 'Não foi possível recuperar dados de usuário do provedor OAuth.' }, 400)
+    }
+
+    // 3. Sincronização atômica em public.users
+    const now = new Date()
+    const records = await db
+      .select()
+      .from(users)
+      .where(or(eq(users.id, supaUserId), eq(users.email, email)))
+      .limit(1)
+
+    let userRecord = records[0]
+
+    if (!userRecord) {
+      const inserted = await db
+        .insert(users)
+        .values({
+          id: supaUserId,
+          email,
+          fullName: fullName || null,
+          avatarUrl: avatarUrl || null,
+          provider,
+          providers: [provider],
+          emailVerified: true,
+          createdAt: now,
+          updatedAt: now
+        })
+        .returning()
+      userRecord = inserted[0]
+    } else {
+      const currentProviders = Array.isArray(userRecord.providers) ? userRecord.providers : ['email']
+      const updatedProviders = currentProviders.includes(provider)
+        ? currentProviders
+        : [...currentProviders, provider]
+
+      const updated = await db
+        .update(users)
+        .set({
+          fullName: fullName || userRecord.fullName,
+          avatarUrl: avatarUrl || userRecord.avatarUrl,
+          providers: updatedProviders,
+          emailVerified: true,
+          updatedAt: now
+        })
+        .where(eq(users.id, userRecord.id))
+        .returning()
+      userRecord = updated[0] || userRecord
+    }
+
+    // 4. Emissão de token JWT assinado pela aplicação
+    const token = await sign(
+      {
+        sub: userRecord.id,
+        id: userRecord.id,
+        email: userRecord.email,
+        role: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
+      },
+      secret,
+      'HS256'
+    )
+
+    return c.json({
+      token,
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        fullName: userRecord.fullName ?? null,
+        username: userRecord.username ?? null,
+        avatarUrl: userRecord.avatarUrl ?? null,
+        provider,
+        providers: userRecord.providers
+      }
+    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro interno ao autenticar via OAuth'
+    return c.json({ error: 'Erro interno ao processar sessão OAuth', message }, 500)
+  }
 })
 
 // GET /api/v1/auth/me (Protegido por authMiddleware)

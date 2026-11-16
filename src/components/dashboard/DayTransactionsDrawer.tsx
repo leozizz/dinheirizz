@@ -20,12 +20,12 @@ export interface DayTransactionsDrawerProps {
   onPayTransaction?: (transactionId: string) => void | Promise<void>
 }
 
-export function DayTransactionsDrawer({
+export const DayTransactionsDrawer = ({
   isOpen,
   onClose,
   daySummary,
   onPayTransaction
-}: DayTransactionsDrawerProps) {
+}: DayTransactionsDrawerProps) => {
   useEffect(() => {
     if (!isOpen) return
 
@@ -58,19 +58,19 @@ export function DayTransactionsDrawer({
       }}
     >
       <div
-        className="w-full sm:max-w-lg bg-[#0e0f14]/95 border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl backdrop-blur-2xl flex flex-col max-h-[88vh] overflow-hidden"
+        className="w-full sm:max-w-lg bg-card border border-border rounded-t-3xl sm:rounded-3xl shadow-2xl backdrop-blur-2xl flex flex-col max-h-[88vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile handle drag bar */}
         <div className="flex sm:hidden justify-center pt-3 pb-1">
-          <div className="w-12 h-1.5 rounded-full bg-white/20" />
+          <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30" />
         </div>
 
         {/* Drawer Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base sm:text-lg font-bold text-white font-display">
+              <h3 className="text-base sm:text-lg font-bold text-foreground font-display">
                 {capitalizedDate}
               </h3>
               {daySummary.isHoliday && (
@@ -82,7 +82,7 @@ export function DayTransactionsDrawer({
                 </span>
               )}
             </div>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {daySummary.transactions.length === 1
                 ? '1 movimentação nesta data'
                 : `${daySummary.transactions.length} movimentações nesta data`}
@@ -93,7 +93,7 @@ export function DayTransactionsDrawer({
             type="button"
             data-testid="close-day-drawer-btn"
             onClick={onClose}
-            className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white transition-colors cursor-pointer active:scale-95"
+            className="w-11 h-11 rounded-full bg-muted/50 hover:bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer active:scale-95"
             aria-label="Fechar detalhes do dia"
           >
             <X className="w-5 h-5" />
@@ -101,7 +101,7 @@ export function DayTransactionsDrawer({
         </div>
 
         {/* Financial Mini-Summary Cards */}
-        <div className="grid grid-cols-3 gap-2 px-5 py-3.5 bg-white/[0.02] border-b border-white/5 text-center">
+        <div className="grid grid-cols-3 gap-2 px-5 py-3.5 bg-muted/30 border-b border-border text-center">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
             <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-emerald-400 mb-1">
               <TrendingUp className="w-3 h-3" />
@@ -122,14 +122,14 @@ export function DayTransactionsDrawer({
             </span>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-neutral-300 mb-1">
+          <div className="p-2.5 rounded-xl bg-muted/40 border border-border">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground mb-1">
               <Wallet className="w-3 h-3 text-primary" />
               <span>Saldo Previsto</span>
             </div>
             <span
               className={`text-xs sm:text-sm font-bold tabular-nums ${
-                daySummary.projectedBalance < 0 ? 'text-rose-400' : 'text-white'
+                daySummary.projectedBalance < 0 ? 'text-rose-400' : 'text-foreground'
               }`}
             >
               {formatBRL(daySummary.projectedBalance)}
@@ -140,7 +140,7 @@ export function DayTransactionsDrawer({
         {/* Transactions List */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {daySummary.transactions.length === 0 ? (
-            <div className="py-12 text-center text-neutral-400 text-sm">
+            <div className="py-12 text-center text-muted-foreground text-sm">
               Nenhuma movimentação registrada nesta data.
             </div>
           ) : (
@@ -151,7 +151,7 @@ export function DayTransactionsDrawer({
               return (
                 <div
                   key={t.id}
-                  className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 flex items-center justify-between gap-3 transition-colors"
+                  className="p-3.5 rounded-2xl bg-card hover:bg-muted/40 border border-border flex items-center justify-between gap-3 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div
@@ -169,7 +169,7 @@ export function DayTransactionsDrawer({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-white truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {t.description || 'Transação sem descrição'}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -216,7 +216,7 @@ export function DayTransactionsDrawer({
                       {isIncome ? '+' : ''}
                       {formatBRL(t.amount)}
                     </span>
-                    <span className="text-[11px] text-neutral-400 mt-0.5">
+                    <span className="text-[11px] text-muted-foreground mt-0.5">
                       {isPending ? 'Pendente' : 'Concluído'}
                     </span>
 

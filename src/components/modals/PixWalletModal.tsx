@@ -23,13 +23,13 @@ interface PixWalletModalProps {
   onDeletePixKey?: (id: string) => Promise<void> | void
 }
 
-export function PixWalletModal({
+export const PixWalletModal = ({
   isOpen,
   pixKeys = [],
   onClose,
   onCreatePixKey,
   onDeletePixKey
-}: PixWalletModalProps) {
+}: PixWalletModalProps) => {
   const [activeTab, setActiveTab] = useState<'my_keys' | 'new_key'>('my_keys')
   const [selectedKeyId, setSelectedKeyId] = useState<string>('')
   const [copied, setCopied] = useState(false)
@@ -91,8 +91,9 @@ export function PixWalletModal({
       })
       setActiveTab('my_keys')
       setNewKeyValue('')
-    } catch (err: any) {
-      setFormError(err?.message || 'Falha ao cadastrar chave')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao cadastrar chave'
+      setFormError(msg)
     } finally {
       setSubmitting(false)
     }
@@ -141,7 +142,7 @@ export function PixWalletModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-full max-w-md glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl bg-[#13111c]/95 max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
+            className="relative z-10 w-full max-w-md glass-card p-5 sm:p-8 rounded-t-3xl sm:rounded-3xl border border-border shadow-2xl bg-card text-foreground max-h-[88dvh] overflow-y-auto pb-8 sm:pb-9 my-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4 sm:mb-5">
@@ -150,7 +151,7 @@ export function PixWalletModal({
                   <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white font-display">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground font-display">
                     Carteira Pix
                   </h3>
                   <p className="text-[11px] sm:text-xs text-muted-foreground">
@@ -163,21 +164,21 @@ export function PixWalletModal({
                 type="button"
                 data-testid="close-pix-modal-btn"
                 onClick={onClose}
-                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                className="w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer active:scale-95"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Navegação por Abas */}
-            <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl mb-4">
+            <div className="flex items-center gap-2 p-1 bg-muted/40 border border-border rounded-2xl mb-4">
               <button
                 type="button"
                 onClick={() => setActiveTab('my_keys')}
-                className={`flex-1 min-h-[40px] py-2 rounded-xl text-xs font-medium transition-colors ${
+                className={`flex-1 min-h-[40px] py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
                   activeTab === 'my_keys'
                     ? 'bg-primary/20 text-primary border border-primary/30 font-semibold shadow-sm'
-                    : 'text-muted-foreground hover:text-white'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Minhas Chaves
@@ -185,10 +186,10 @@ export function PixWalletModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('new_key')}
-                className={`flex-1 min-h-[40px] py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                className={`flex-1 min-h-[40px] py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'new_key'
                     ? 'bg-primary/20 text-primary border border-primary/30 font-semibold shadow-sm'
-                    : 'text-muted-foreground hover:text-white'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -204,7 +205,7 @@ export function PixWalletModal({
                     <button
                       type="button"
                       onClick={() => setActiveTab('new_key')}
-                      className="px-4 py-2.5 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-semibold hover:bg-primary/30 transition-colors"
+                      className="px-4 py-2.5 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-semibold hover:bg-primary/30 transition-colors cursor-pointer"
                     >
                       Cadastrar Primeira Chave
                     </button>
@@ -223,7 +224,7 @@ export function PixWalletModal({
                           type="button"
                           data-testid={`delete-pix-key-${selectedKey.id}`}
                           onClick={() => handleDeleteKey(selectedKey.id)}
-                          className="inline-flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300"
+                          className="inline-flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
                           <span>Excluir Chave</span>
@@ -237,7 +238,7 @@ export function PixWalletModal({
                         setSelectedKeyId(e.target.value)
                         setCopied(false)
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-neutral-900"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                     >
                       {pixKeys.map((key) => (
                         <option key={key.id} value={key.id}>
@@ -248,7 +249,7 @@ export function PixWalletModal({
                   </div>
 
                   {/* QR Code Container */}
-                  <div className="flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner">
+                  <div className="flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl bg-muted/20 border border-border shadow-inner">
                     <div className="p-3.5 sm:p-4 rounded-2xl bg-white shadow-xl mb-3">
                       <svg
                         className="w-32 h-32 sm:w-36 sm:h-36"
@@ -306,12 +307,12 @@ export function PixWalletModal({
                   </div>
 
                   {/* Exibição da Chave e Botão Copiar */}
-                  <div className="p-3 sm:p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2.5 sm:gap-3">
+                  <div className="p-3 sm:p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between gap-2.5 sm:gap-3">
                     <div className="overflow-hidden min-w-0 flex-1">
                       <span className="text-[10px] uppercase font-semibold tracking-wider text-primary block mb-0.5">
                         {selectedKey && formatKeyType(selectedKey.key_type)}
                       </span>
-                      <p data-testid="active-pix-key-value" className="text-xs sm:text-sm font-medium text-white truncate font-mono">
+                      <p data-testid="active-pix-key-value" className="text-xs sm:text-sm font-medium text-foreground truncate font-mono">
                         {selectedKey?.key_value}
                       </p>
                     </div>
@@ -322,7 +323,7 @@ export function PixWalletModal({
                       className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0 min-h-[40px] active:scale-95 ${
                         copied
                           ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                          : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+                          : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
                       }`}
                     >
                       {copied ? (
@@ -345,7 +346,7 @@ export function PixWalletModal({
               <form onSubmit={handleCreateKey} className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <KeyRound className="w-4 h-4 text-primary" />
-                  <h4 className="text-sm font-semibold text-white">Cadastrar Nova Chave</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Cadastrar Nova Chave</h4>
                 </div>
 
                 {formError && (
@@ -355,13 +356,13 @@ export function PixWalletModal({
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
                     Tipo de Chave
                   </label>
                   <select
                     value={newKeyType}
-                    onChange={(e) => setNewKeyType(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent [&>option]:bg-neutral-900"
+                    onChange={(e) => setNewKeyType(e.target.value as 'cpf' | 'cnpj' | 'email' | 'phone' | 'random')}
+                    className="w-full px-3.5 py-2.5 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent [&>option]:bg-card [&>option]:text-foreground"
                   >
                     <option value="cpf">CPF</option>
                     <option value="cnpj">CNPJ</option>
@@ -372,7 +373,7 @@ export function PixWalletModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
                     Valor da Chave
                   </label>
                   <input
@@ -380,13 +381,13 @@ export function PixWalletModal({
                     value={newKeyValue}
                     onChange={(e) => setNewKeyValue(e.target.value)}
                     placeholder="Digite sua chave Pix (ex: email, CPF...)"
-                    className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder-neutral-500 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder:text-muted-foreground font-mono"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
                       Instituição (opcional)
                     </label>
                     <input
@@ -394,11 +395,11 @@ export function PixWalletModal({
                       value={newBankName}
                       onChange={(e) => setNewBankName(e.target.value)}
                       placeholder="Ex: Nubank, Inter"
-                      className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder-neutral-500"
+                      className="w-full px-3.5 py-2.5 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder:text-muted-foreground"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
                       Identificação (opcional)
                     </label>
                     <input
@@ -406,7 +407,7 @@ export function PixWalletModal({
                       value={newLabel}
                       onChange={(e) => setNewLabel(e.target.value)}
                       placeholder="Ex: Principal"
-                      className="w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder-neutral-500"
+                      className="w-full px-3.5 py-2.5 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent placeholder:text-muted-foreground"
                     />
                   </div>
                 </div>
@@ -415,7 +416,7 @@ export function PixWalletModal({
                   <button
                     type="button"
                     onClick={() => setActiveTab('my_keys')}
-                    className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-white/10 text-neutral-300 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+                    className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-border text-foreground text-xs sm:text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
                   >
                     Voltar
                   </button>

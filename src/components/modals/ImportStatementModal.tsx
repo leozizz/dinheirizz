@@ -135,23 +135,23 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
       aria-modal="true"
       aria-labelledby="import-modal-title"
     >
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden text-zinc-100 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/80 bg-zinc-900/90">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/90">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <UploadCloud className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id="import-modal-title" className="text-lg font-semibold tracking-tight text-white">
+                <h2 id="import-modal-title" className="text-lg font-semibold tracking-tight text-foreground">
                   Importar Extrato Bancário
                 </h2>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
                   OFX • CSV • PDF
                 </span>
               </div>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 Conciliação inteligente e auto-categorização automática de lançamentos
               </p>
             </div>
@@ -160,7 +160,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
             type="button"
             data-testid="close-import-modal-btn"
             onClick={handleClose}
-            className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
@@ -170,8 +170,8 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Account Selector */}
-          <div className="bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 text-sm text-zinc-300">
+          <div className="bg-muted/30 p-4 rounded-xl border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
               <Building2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <label htmlFor="import-account-select" className="font-medium">
                 Conta de Destino:
@@ -182,7 +182,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
               data-testid="import-account-select"
               value={selectedAccountId}
               onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="w-full sm:w-72 h-11 min-h-[44px] px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="w-full sm:w-72 h-11 min-h-[44px] px-3 bg-input/40 border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 [&>option]:bg-card [&>option]:text-foreground"
             >
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>
@@ -217,8 +217,8 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
               onDragLeave={handleDragLeave}
               className={`relative flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 text-center ${
                 isDragOver
-                  ? 'border-emerald-500 bg-emerald-500/10'
-                  : 'border-zinc-700/80 hover:border-zinc-500 bg-zinc-950/40 hover:bg-zinc-950/70'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border/80 hover:border-muted-foreground/50 bg-muted/20 hover:bg-muted/40'
               }`}
             >
               <input
@@ -234,21 +234,21 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
               {isProcessingFile ? (
                 <div className="flex flex-col items-center gap-3">
                   <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin" />
-                  <p className="text-sm font-medium text-zinc-200">Processando extrato bancário...</p>
-                  <p className="text-xs text-zinc-400">Extraindo transações e verificando duplicatas</p>
+                  <p className="text-sm font-medium text-foreground">Processando extrato bancário...</p>
+                  <p className="text-xs text-muted-foreground">Extraindo transações e verificando duplicatas</p>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-800/80 text-zinc-300 border border-zinc-700 mb-4 group-hover:scale-105 transition-transform">
+                  <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-muted text-foreground border border-border mb-4 group-hover:scale-105 transition-transform">
                     <FileSpreadsheet className="w-8 h-8 text-emerald-400" />
                   </div>
-                  <h3 className="text-base font-medium text-white mb-1">
+                  <h3 className="text-base font-medium text-foreground mb-1">
                     Arraste seu extrato bancário aqui ou clique para buscar
                   </h3>
-                  <p className="text-xs text-zinc-400 max-w-md mb-4">
+                  <p className="text-xs text-muted-foreground max-w-md mb-4">
                     Suporte universal a arquivos OFX, CSV e extratos digitais em PDF de bancos brasileiros (Nubank, Itaú, Inter, Bradesco, etc.)
                   </p>
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 text-xs text-zinc-300 font-medium border border-zinc-700">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-xs text-muted-foreground font-medium border border-border">
                     Limite de tamanho: até 10MB
                   </div>
                 </>
@@ -259,31 +259,31 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
             <div className="space-y-4">
               {/* Summary Header Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 bg-zinc-950/70 rounded-xl border border-zinc-800/80">
-                  <span className="text-xs text-zinc-400">Total Selecionado</span>
-                  <div className="text-lg font-bold text-white mt-0.5">
-                    {selectedCount} <span className="text-xs font-normal text-zinc-400">/ {stagingTransactions.length}</span>
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <span className="text-xs text-muted-foreground">Total Selecionado</span>
+                  <div className="text-lg font-bold text-foreground mt-0.5">
+                    {selectedCount} <span className="text-xs font-normal text-muted-foreground">/ {stagingTransactions.length}</span>
                   </div>
                 </div>
 
-                <div className="p-3 bg-zinc-950/70 rounded-xl border border-zinc-800/80">
-                  <span className="text-xs text-zinc-400">Receitas (+)</span>
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <span className="text-xs text-muted-foreground">Receitas (+)</span>
                   <div className="text-lg font-bold text-emerald-400 mt-0.5">
                     {formatBRL(selectedIncomeTotal)}
                   </div>
                 </div>
 
-                <div className="p-3 bg-zinc-950/70 rounded-xl border border-zinc-800/80">
-                  <span className="text-xs text-zinc-400">Despesas (-)</span>
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <span className="text-xs text-muted-foreground">Despesas (-)</span>
                   <div className="text-lg font-bold text-rose-400 mt-0.5">
                     {formatBRL(selectedExpenseTotal)}
                   </div>
                 </div>
 
-                <div className="p-3 bg-zinc-950/70 rounded-xl border border-zinc-800/80">
-                  <span className="text-xs text-zinc-400">Possíveis Duplicatas</span>
+                <div className="p-3 bg-muted/30 rounded-xl border border-border">
+                  <span className="text-xs text-muted-foreground">Possíveis Duplicatas</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-lg font-bold ${duplicateCount > 0 ? 'text-amber-400' : 'text-zinc-400'}`}>
+                    <span className={`text-lg font-bold ${duplicateCount > 0 ? 'text-amber-400' : 'text-muted-foreground'}`}>
                       {duplicateCount}
                     </span>
                     {duplicateCount > 0 && (
@@ -302,7 +302,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                     type="button"
                     data-testid="select-all-btn"
                     onClick={selectAll}
-                    className="h-10 min-h-[44px] px-3 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors flex items-center gap-1.5"
+                    className="h-10 min-h-[44px] px-3 rounded-lg bg-muted/60 hover:bg-muted text-xs font-medium text-foreground border border-border transition-colors flex items-center gap-1.5"
                   >
                     <CheckSquare className="w-3.5 h-3.5" />
                     Marcar Todas
@@ -324,7 +324,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                     type="button"
                     data-testid="invert-selection-btn"
                     onClick={invertSelection}
-                    className="h-10 min-h-[44px] px-3 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors"
+                    className="h-10 min-h-[44px] px-3 rounded-lg bg-muted/60 hover:bg-muted text-xs font-medium text-foreground border border-border transition-colors"
                   >
                     Inverter
                   </button>
@@ -334,20 +334,20 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                   type="button"
                   data-testid="change-file-btn"
                   onClick={reset}
-                  className="h-10 min-h-[44px] px-3 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                  className="h-10 min-h-[44px] px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   Trocar Arquivo ({parsedResult?.fileName})
                 </button>
               </div>
 
               {/* Transactions List (Responsive: Cards on Mobile, Table on Desktop) */}
-              <div className="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950/40">
-                <div className="max-h-[380px] overflow-y-auto divide-y divide-zinc-800/60">
+              <div className="border border-border rounded-xl overflow-hidden bg-card">
+                <div className="max-h-[380px] overflow-y-auto divide-y divide-border/60">
                   {stagingTransactions.map((tx) => (
                     <div
                       key={tx.id}
                       className={`p-3.5 transition-colors flex flex-col md:flex-row md:items-center gap-3 ${
-                        tx.selected ? 'bg-zinc-900/40' : 'opacity-60 bg-zinc-950/60'
+                        tx.selected ? 'bg-muted/20' : 'opacity-60 bg-muted/5'
                       }`}
                     >
                       {/* Checkbox and Basic info */}
@@ -356,13 +356,13 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                           type="button"
                           data-testid={`select-transaction-${tx.id}`}
                           onClick={() => toggleSelectTransaction(tx.id)}
-                          className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg text-zinc-400 hover:text-white"
+                          className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg text-muted-foreground hover:text-foreground"
                           aria-label={`Selecionar ${tx.description}`}
                         >
                           {tx.selected ? (
                             <CheckSquare className="w-5 h-5 text-emerald-400" />
                           ) : (
-                            <Square className="w-5 h-5 text-zinc-500" />
+                            <Square className="w-5 h-5 text-muted-foreground" />
                           )}
                         </button>
 
@@ -371,7 +371,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                           data-testid={`input-date-${tx.id}`}
                           value={tx.date}
                           onChange={(e) => updateCandidateDate(tx.id, e.target.value)}
-                          className="h-10 min-h-[44px] px-2 bg-zinc-900 border border-zinc-800 rounded text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="h-10 min-h-[44px] px-2 bg-input/40 border border-border rounded text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                       </div>
 
@@ -383,7 +383,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                             data-testid={`input-description-${tx.id}`}
                             value={tx.description}
                             onChange={(e) => updateCandidateDescription(tx.id, e.target.value)}
-                            className="w-full h-10 min-h-[44px] px-2.5 bg-zinc-900 border border-zinc-800 rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            className="w-full h-10 min-h-[44px] px-2.5 bg-input/40 border border-border rounded text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         {tx.isDuplicate && (
@@ -395,7 +395,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                               <AlertTriangle className="w-3 h-3" />
                               Possível Duplicata
                             </span>
-                            <span className="text-[11px] text-zinc-400 truncate">
+                            <span className="text-[11px] text-muted-foreground truncate">
                               {tx.duplicateReason}
                             </span>
                           </div>
@@ -411,7 +411,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                             const found = categories.find((c) => c.id === e.target.value)
                             updateCandidateCategory(tx.id, e.target.value, found?.name)
                           }}
-                          className="h-10 min-h-[44px] px-2.5 bg-zinc-900 border border-zinc-800 rounded text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 max-w-[150px]"
+                          className="h-10 min-h-[44px] px-2.5 bg-input/40 border border-border rounded text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[150px] [&>option]:bg-card [&>option]:text-foreground"
                         >
                           <option value="">Sem Categoria</option>
                           {categories.map((cat) => (
@@ -430,7 +430,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                                 ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                                 : tx.categorySource === 'ai'
                                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                                : 'bg-muted text-muted-foreground border-border'
                             }`}
                           >
                             {tx.categorySource}
@@ -481,11 +481,11 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-zinc-900/90">
+        <div className="flex items-center justify-between px-5 py-4 border-t border-border bg-card/90">
           <button
             type="button"
             onClick={handleClose}
-            className="h-11 min-h-[44px] px-4 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            className="h-11 min-h-[44px] px-4 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             Cancelar
           </button>
@@ -496,7 +496,7 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
               data-testid="confirm-import-btn"
               disabled={selectedCount === 0 || isImporting}
               onClick={handleConfirm}
-              className="flex items-center gap-2 h-11 min-h-[44px] px-5 rounded-xl text-sm font-semibold bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/20"
+              className="flex items-center gap-2 h-11 min-h-[44px] px-5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
             >
               {isImporting ? (
                 <>

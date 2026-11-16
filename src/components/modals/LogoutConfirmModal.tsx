@@ -9,12 +9,12 @@ export interface LogoutConfirmModalProps {
   isLoading?: boolean
 }
 
-export function LogoutConfirmModal({
+export const LogoutConfirmModal = ({
   isOpen,
   onClose,
   onConfirm,
   isLoading = false
-}: LogoutConfirmModalProps) {
+}: LogoutConfirmModalProps) => {
   if (!isOpen) return null
 
   return (
@@ -40,14 +40,14 @@ export function LogoutConfirmModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-sm rounded-3xl glass-card border border-white/10 p-6 sm:p-7 shadow-2xl text-white overflow-hidden z-10"
+          className="relative w-full max-w-sm rounded-3xl glass-card border border-border p-6 sm:p-7 shadow-2xl text-foreground overflow-hidden z-10"
         >
           {/* Close button */}
           <button
             onClick={onClose}
             disabled={isLoading}
             aria-label="Fechar"
-            className="absolute top-4 right-4 w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-neutral-400 hover:text-white border border-white/10 transition-colors cursor-pointer disabled:opacity-50"
+            className="absolute top-4 right-4 w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
@@ -58,11 +58,11 @@ export function LogoutConfirmModal({
               <LogOut className="w-6 h-6 stroke-[2.2]" />
             </div>
 
-            <h2 id="logout-modal-title" className="text-lg sm:text-xl font-bold font-display tracking-tight text-white mb-2">
+            <h2 id="logout-modal-title" className="text-lg sm:text-xl font-bold font-display tracking-tight text-foreground mb-2">
               Deseja sair da sua conta?
             </h2>
 
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-xs mb-6">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xs mb-6">
               Sua sessão será encerrada com segurança neste dispositivo. Você precisará se autenticar novamente para acessar suas finanças.
             </p>
           </div>
@@ -74,7 +74,7 @@ export function LogoutConfirmModal({
               onClick={onClose}
               disabled={isLoading}
               data-testid="cancel-logout-btn"
-              className="w-full min-h-[44px] py-2.5 px-4 rounded-xl glass-card-interactive border border-white/10 text-neutral-300 hover:text-white font-medium text-xs sm:text-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              className="w-full min-h-[44px] py-2.5 px-4 rounded-xl glass-card-interactive border border-border text-foreground hover:bg-muted font-medium text-xs sm:text-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             >
               Cancelar
             </button>

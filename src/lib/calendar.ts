@@ -69,10 +69,10 @@ export function formatYMD(date: Date): string {
  * Caso a transação seja recorrente e possua adjustBusinessDay: true,
  * aplica a regra de dia útil bancário (prorrogando fins de semana e feriados nacionais).
  */
-export function getEffectiveTransactionDate(tx: TransactionItem): string {
-  const isRec = Boolean(tx.isRecurring ?? (tx as any).is_recurring)
-  const adjustBD = Boolean(tx.adjustBusinessDay ?? (tx as any).adjust_business_day)
-  const recDay = tx.recurrenceDay ?? (tx as any).recurrence_day
+export const getEffectiveTransactionDate = (tx: TransactionItem): string => {
+  const isRec = Boolean(tx.isRecurring ?? tx.is_recurring)
+  const adjustBD = Boolean(tx.adjustBusinessDay ?? tx.adjust_business_day)
+  const recDay = tx.recurrenceDay ?? tx.recurrence_day
 
   const dateStr = tx.dueDate || tx.occurred_at
   if (!dateStr) return ''
@@ -91,7 +91,7 @@ export function getEffectiveTransactionDate(tx: TransactionItem): string {
 /**
  * Formata mês e ano por extenso em português (ex: "Outubro de 2026").
  */
-export function formatCalendarMonthYear(date: Date): string {
+export const formatCalendarMonthYear = (date: Date): string => {
   const raw = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
@@ -99,19 +99,19 @@ export function formatCalendarMonthYear(date: Date): string {
 /**
  * Extrai as regras de recorrência únicas a partir da lista de transações.
  */
-function extractRecurringSeries(transactions: TransactionItem[]): RecurringSeries[] {
+const extractRecurringSeries = (transactions: TransactionItem[]): RecurringSeries[] => {
   const seriesMap = new Map<string, RecurringSeries>()
 
   for (const t of transactions) {
-    const isRecurring = Boolean(t.isRecurring ?? (t as any).is_recurring)
+    const isRecurring = Boolean(t.isRecurring ?? t.is_recurring)
     if (!isRecurring) continue
 
     const seriesId = t.parentTransactionId || t.id
     if (!seriesMap.has(seriesId)) {
       const baseDateStr = t.dueDate || t.occurred_at || ''
       const parts = parseDateParts(baseDateStr)
-      const recurrenceDay = t.recurrenceDay ?? (t as any).recurrence_day ?? parts.day
-      const adjustBusinessDay = Boolean(t.adjustBusinessDay ?? (t as any).adjust_business_day)
+      const recurrenceDay = t.recurrenceDay ?? t.recurrence_day ?? parts.day
+      const adjustBusinessDay = Boolean(t.adjustBusinessDay ?? t.adjust_business_day)
 
       seriesMap.set(seriesId, {
         seriesId,

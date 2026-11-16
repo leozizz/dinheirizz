@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { hashPasswordClient } from '../lib/crypto'
 import { encryptedStorageAdapter } from '../lib/encryptedStorage'
-import { supabase } from '../lib/supabase'
 
 export interface AuthUser {
   id: string
@@ -89,66 +88,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        // 1. Verifica se há sessão ativa via Supabase Auth (ex: retorno de redirecionamento Google OAuth)
-        const { data: supabaseSessionData } = await supabase.auth
-          .getSession()
-          .catch(() => ({ data: { session: null } }))
-        const supabaseSession = supabaseSessionData?.session
+        const origin = getApiOrigin()
 
-        if (supabaseSession?.access_token && supabaseSession.user) {
-          const meta = (supabaseSession.user.user_metadata as Record<string, string | undefined>) || {}
-          const fullName = meta.full_name || meta.name || (meta.first_name ? `${meta.first_name} ${meta.last_name || ''}`.trim() : null)
-          const avatarUrl = meta.avatar_url || meta.picture || null
-          const provider = (supabaseSession.user.app_metadata?.provider as string) || 'apple'
+        // 1. Verifica se há retorno de autenticação OAuth na URL (#access_token ou ?code)
+        if (typeof window !== 'undefined') {
+          const hash = window.location.hash || ''
+          const search = window.location.search || ''
+          const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
+          const searchParams = new URLSearchParams(search)
 
-          const origin = getApiOrigin()
-          const syncRes = await fetch(`${origin}/api/v1/users/sync`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${supabaseSession.access_token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              fullName: fullName ?? undefined,
-              avatarUrl: avatarUrl ?? undefined,
-              provider: provider
-            })
-          }).catch(() => null)
+          const oauthToken = hashParams.get('access_token') || searchParams.get('access_token')
+          const oauthProvider = hashParams.get('provider') || searchParams.get('provider') || 'oauth'
 
-          if (syncRes && syncRes.ok) {
-            const syncData = await syncRes.json().catch(() => null)
-            if (syncData?.user) {
-              const syncedUser: AuthUser = {
-                id: syncData.user.id,
-                email: syncData.user.email,
-                fullName: syncData.user.fullName ?? null,
-                username: syncData.user.username ?? null,
-                avatarUrl: syncData.user.avatarUrl ?? null,
-                provider: syncData.user.provider || provider,
-                providers: syncData.user.providers || [provider],
+          if (oauthToken) {
+            const res = await fetch(`${origin}/api/v1/auth/oauth/session`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ access_token: oauthToken, provider: oauthProvider })
+            }).catch(() => null)
+
+            if (res && res.ok) {
+              const data = await res.json()
+              const authUser: AuthUser = {
+                id: data.user.id,
+                email: data.user.email,
+                fullName: data.user.fullName ?? null,
+                username: data.user.username ?? null,
+                avatarUrl: data.user.avatarUrl ?? null,
+                provider: data.user.provider || oauthProvider,
+                providers: data.user.providers || [oauthProvider],
                 user_metadata: {
-                  full_name: syncData.user.fullName ?? null,
-                  username: syncData.user.username ?? null,
-                  email: syncData.user.email
+                  full_name: data.user.fullName ?? null,
+                  username: data.user.username ?? null,
+                  email: data.user.email
                 }
               }
-              const syncedSession: AuthSession = {
-                access_token: supabaseSession.access_token,
-                user: syncedUser
+              const authSession: AuthSession = {
+                access_token: data.token,
+                user: authUser
               }
 
               await encryptedStorageAdapter.setItem(
                 STORAGE_SESSION_KEY,
-                JSON.stringify({ token: supabaseSession.access_token, user: syncedUser })
+                JSON.stringify({ token: data.token, user: authUser })
               )
 
-              setUser(syncedUser)
-              setSession(syncedSession)
+              setUser(authUser)
+              setSession(authSession)
 
-              // Higienização de URL: remove fragmentos ou query params sensíveis de OAuth (#access_token ou ?code)
-              if (typeof window !== 'undefined' && window.history?.replaceState) {
-                const cleanUrl = window.location.pathname
-                window.history.replaceState({}, document.title, cleanUrl || '/')
+              // Higienização de URL
+              if (window.history?.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname || '/')
               }
 
               setLoading(false)
@@ -157,7 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        // 2. Fallback: Verificação de sessão salva em encryptedStorage
+        // 2. Verificação de sessão salva em encryptedStorage
         const stored = await encryptedStorageAdapter.getItem(STORAGE_SESSION_KEY)
         if (!stored) {
           setLoading(false)
@@ -171,7 +161,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Validação da sessão contra o BFF /api/v1/auth/me
-        const origin = getApiOrigin()
         const res = await fetch(`${origin}/api/v1/auth/me`, {
           headers: {
             Authorization: `Bearer ${parsed.token}`
@@ -218,19 +207,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     restoreSession()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (!newSession) {
-        // Sessão encerrada externamente
-      }
-    })
-
-    return () => {
-      authListener?.subscription?.unsubscribe()
-    }
   }, [])
 
-  const signInWithPassword = async ({ email, password }: { email: string; password: string }): Promise<SignInResult> => {
+  const signInWithPassword = async ({
+    email,
+    password
+  }: {
+    email: string
+    password: string
+  }): Promise<SignInResult> => {
     try {
       const hashedPassword = await hashPasswordClient(password)
       const origin = getApiOrigin()
@@ -363,24 +348,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithOAuth = async (provider: 'google' | 'apple'): Promise<{ error: AuthError | null }> => {
     try {
       const origin = getApiOrigin()
-      const options: { redirectTo: string; queryParams?: Record<string, string> } = {
-        redirectTo: origin
+      const res = await fetch(`${origin}/api/v1/auth/oauth/${provider}?redirectTo=${encodeURIComponent(origin)}`)
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        return { error: { message: data.error || 'Falha ao iniciar autenticação OAuth' } }
       }
 
-      if (provider === 'google') {
-        options.queryParams = {
-          access_type: 'offline',
-          prompt: 'select_account'
-        }
-      }
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options
-      })
-
-      if (error) {
-        return { error: { message: error.message } }
+      const data = await res.json()
+      if (data.url && typeof window !== 'undefined') {
+        window.location.href = data.url
       }
 
       return { error: null }
@@ -394,7 +371,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async (): Promise<{ error: AuthError | null }> => {
     try {
       const origin = getApiOrigin()
-      await supabase.auth.signOut().catch(() => {})
       await fetch(`${origin}/api/v1/auth/logout`, { method: 'POST' }).catch(() => {})
       await encryptedStorageAdapter.removeItem(STORAGE_SESSION_KEY)
       setSession(null)
@@ -428,8 +404,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         message: data.message || 'E-mail verificado com sucesso.'
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Falha na conexão ao verificar código.'
-      return { success: false, message: msg, error: msg }
+      const msg = err instanceof Error ? err.message : 'Erro ao verificar e-mail'
+      return {
+        success: false,
+        message: msg,
+        error: msg
+      }
     }
   }
 
@@ -443,7 +423,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       })
       const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string; success?: boolean }
       if (!res.ok) {
-        const msg = data.error || data.message || 'Não foi possível reenviar o código.'
+        const msg = data.error || data.message || 'Erro ao reenviar código de verificação.'
         return {
           success: false,
           message: msg,
@@ -452,27 +432,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return {
         success: true,
-        message: data.message || 'Novo código de verificação enviado para o seu e-mail.'
+        message: data.message || 'Novo código de verificação enviado.'
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Falha na conexão ao reenviar código.'
-      return { success: false, message: msg, error: msg }
+      const msg = err instanceof Error ? err.message : 'Erro ao reenviar código'
+      return {
+        success: false,
+        message: msg,
+        error: msg
+      }
     }
   }
 
   const updateUser = (updatedData: Partial<AuthUser>) => {
-    setUser((prev) => {
-      if (!prev) return null
-      const merged: AuthUser = { ...prev, ...updatedData }
-      if (updatedData.fullName !== undefined || updatedData.username !== undefined) {
-        merged.user_metadata = {
-          ...merged.user_metadata,
-          full_name: updatedData.fullName !== undefined ? updatedData.fullName : merged.user_metadata?.full_name,
-          username: updatedData.username !== undefined ? updatedData.username : merged.user_metadata?.username
-        }
-      }
-      return merged
-    })
+    if (!user) return
+    const newUser = { ...user, ...updatedData }
+    setUser(newUser)
+    if (session) {
+      const newSession = { ...session, user: newUser }
+      setSession(newSession)
+      encryptedStorageAdapter
+        .setItem(STORAGE_SESSION_KEY, JSON.stringify({ token: session.access_token, user: newUser }))
+        .catch(() => {})
+    }
   }
 
   return (
@@ -497,7 +479,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth deve ser utilizado dentro de um AuthProvider')
   }
   return context

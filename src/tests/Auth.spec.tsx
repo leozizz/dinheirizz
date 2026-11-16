@@ -1,21 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import type { Session } from '@supabase/supabase-js'
-import { AuthError } from '@supabase/supabase-js'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { LoginScreen } from '../components/auth/LoginScreen'
-import { supabase } from '../lib/supabase'
-
-vi.mock('../lib/supabase', () => ({
-  supabase: {
-    auth: {
-      signInWithOAuth: vi.fn(),
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
-      signOut: vi.fn().mockResolvedValue({ error: null })
-    }
-  }
-}))
 
 const TestConsumer = () => {
   const { user, signOut } = useAuth()
@@ -28,26 +14,15 @@ const TestConsumer = () => {
   )
 }
 
-describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
+describe('Auth & LoginScreen with BFF-Driven Auth (Zero Frontend Supabase)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     window.localStorage.clear()
 
-    // Configuração padrão dos mocks do Supabase
-    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
-      data: { provider: 'google', url: 'https://accounts.google.com/o/oauth2' },
-      error: null
-    })
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
-      data: { session: null },
-      error: null
-    })
-    vi.mocked(supabase.auth.signOut).mockResolvedValue({
-      error: null
-    })
-
     global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
-      if (typeof url === 'string' && url.includes('/api/v1/auth/login')) {
+      const urlStr = typeof url === 'string' ? url : ''
+
+      if (urlStr.includes('/api/v1/auth/login')) {
         const body = JSON.parse((init?.body as string) || '{}')
         if (body.email === 'errado@email.com') {
           return {
@@ -66,7 +41,7 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
         } as Response
       }
 
-      if (typeof url === 'string' && url.includes('/api/v1/auth/me')) {
+      if (urlStr.includes('/api/v1/auth/me')) {
         return {
           ok: false,
           status: 401,
@@ -74,7 +49,7 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
         } as Response
       }
 
-      if (typeof url === 'string' && url.includes('/api/v1/auth/logout')) {
+      if (urlStr.includes('/api/v1/auth/logout')) {
         return {
           ok: true,
           status: 200,
@@ -82,7 +57,7 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
         } as Response
       }
 
-      if (typeof url === 'string' && url.includes('/api/v1/auth/signup')) {
+      if (urlStr.includes('/api/v1/auth/signup')) {
         return {
           ok: true,
           status: 201,
@@ -93,19 +68,40 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
         } as Response
       }
 
-      if (typeof url === 'string' && url.includes('/api/v1/users/sync')) {
+      if (urlStr.includes('/api/v1/auth/oauth/google')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            url: 'https://auth.dinheirizz.com/oauth/google'
+          })
+        } as Response
+      }
+
+      if (urlStr.includes('/api/v1/auth/oauth/apple')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            url: 'https://auth.dinheirizz.com/oauth/apple'
+          })
+        } as Response
+      }
+
+      if (urlStr.includes('/api/v1/auth/oauth/session')) {
         const body = JSON.parse((init?.body as string) || '{}')
         const isApple = body.provider === 'apple'
         return {
           ok: true,
           status: 200,
           json: async () => ({
+            token: 'mock-jwt-token-oauth',
             user: {
               id: isApple ? 'apple-user-999' : 'google-user-123',
               email: isApple ? 'usuario.apple@privaterelay.appleid.com' : 'usuario.google@gmail.com',
-              fullName: body.fullName ?? (isApple ? 'Usuário Apple' : 'Usuário Google'),
+              fullName: isApple ? 'Usuário Apple' : 'Usuário Google',
               username: null,
-              avatarUrl: body.avatarUrl ?? null,
+              avatarUrl: isApple ? null : 'https://lh3.googleusercontent.com/avatar.jpg',
               provider: isApple ? 'apple' : 'google',
               providers: isApple ? ['apple'] : ['google']
             }
@@ -195,7 +191,7 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     expect(appleBtn.textContent).not.toContain('Em breve')
   })
 
-  it('deve invocar signInWithOAuth com provedor "apple" ao clicar no botão da Apple', async () => {
+  it('deve invocar GET /api/v1/auth/oauth/apple ao clicar no botão da Apple', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
@@ -206,36 +202,13 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     fireEvent.click(appleBtn)
 
     await waitFor(() => {
-      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
-        provider: 'apple',
-        options: {
-          redirectTo: window.location.origin
-        }
-      })
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/auth/oauth/apple')
+      )
     })
   })
 
-  it('deve exibir mensagem de erro quando signInWithOAuth com Apple falha', async () => {
-    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValueOnce({
-      data: { provider: 'apple', url: null },
-      error: new AuthError('Sign in with Apple popup closed', 400, 'popup_closed')
-    })
-
-    render(
-      <AuthProvider>
-        <TestConsumer />
-      </AuthProvider>
-    )
-
-    const appleBtn = screen.getByTestId('oauth-apple-btn')
-    fireEvent.click(appleBtn)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Sign in with Apple popup closed/i)).toBeInTheDocument()
-    })
-  })
-
-  it('deve invocar signInWithOAuth com provedor "google" ao clicar no botão do Google', async () => {
+  it('deve invocar GET /api/v1/auth/oauth/google ao clicar no botão do Google', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
@@ -246,65 +219,15 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     fireEvent.click(googleBtn)
 
     await waitFor(() => {
-      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account'
-          }
-        }
-      })
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/auth/oauth/google')
+      )
     })
   })
 
-  it('deve exibir mensagem de erro quando signInWithOAuth falha', async () => {
-    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValueOnce({
-      data: { provider: 'google', url: null },
-      error: new AuthError('Popup blocked by browser', 400, 'popup_closed')
-    })
-
-    render(
-      <AuthProvider>
-        <TestConsumer />
-      </AuthProvider>
-    )
-
-    const googleBtn = screen.getByTestId('oauth-google-btn')
-    fireEvent.click(googleBtn)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Popup blocked by browser/i)).toBeInTheDocument()
-    })
-  })
-
-  it('deve sincronizar usuário com BFF e persistir sessão após retorno do Google OAuth', async () => {
+  it('deve trocar token retornado na URL por sessão BFF e persistir sessão', async () => {
     const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
-    window.location.hash = '#access_token=google-access-token&token_type=bearer'
-
-    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
-      data: {
-        session: {
-          access_token: 'google-oauth-access-token',
-          token_type: 'bearer',
-          expires_in: 3600,
-          refresh_token: 'google-refresh-token',
-          user: {
-            id: 'google-user-123',
-            email: 'usuario.google@gmail.com',
-            app_metadata: { provider: 'google', providers: ['google'] },
-            user_metadata: {
-              full_name: 'Usuário Google',
-              avatar_url: 'https://lh3.googleusercontent.com/avatar.jpg'
-            },
-            aud: 'authenticated',
-            created_at: '2026-11-06T20:00:00.000Z'
-          }
-        } as unknown as Session
-      },
-      error: null
-    })
+    window.location.hash = '#access_token=google-oauth-access-token&provider=google'
 
     render(
       <AuthProvider>
@@ -314,16 +237,14 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/users/sync'),
+        expect.stringContaining('/api/v1/auth/oauth/session'),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            Authorization: 'Bearer google-oauth-access-token',
             'Content-Type': 'application/json'
           }),
           body: JSON.stringify({
-            fullName: 'Usuário Google',
-            avatarUrl: 'https://lh3.googleusercontent.com/avatar.jpg',
+            access_token: 'google-oauth-access-token',
             provider: 'google'
           })
         })
@@ -336,85 +257,11 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
 
     expect(replaceStateSpy).toHaveBeenCalled()
     replaceStateSpy.mockRestore()
+    window.location.hash = ''
   })
 
-  it('deve sincronizar usuário Apple com BFF (incluindo Private Relay) e persistir sessão após retorno do OAuth', async () => {
-    const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
-    window.location.hash = '#access_token=apple-access-token&token_type=bearer'
-
-    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
-      data: {
-        session: {
-          access_token: 'apple-oauth-access-token',
-          token_type: 'bearer',
-          expires_in: 3600,
-          refresh_token: 'apple-refresh-token',
-          user: {
-            id: 'apple-user-999',
-            email: 'usuario.apple@privaterelay.appleid.com',
-            app_metadata: { provider: 'apple', providers: ['apple'] },
-            user_metadata: {
-              full_name: 'Usuário Apple'
-            },
-            aud: 'authenticated',
-            created_at: '2026-11-06T20:00:00.000Z'
-          }
-        } as unknown as Session
-      },
-      error: null
-    })
-
-    render(
-      <AuthProvider>
-        <TestConsumer />
-      </AuthProvider>
-    )
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/users/sync'),
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer apple-oauth-access-token',
-            'Content-Type': 'application/json'
-          }),
-          body: JSON.stringify({
-            fullName: 'Usuário Apple',
-            provider: 'apple'
-          })
-        })
-      )
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText(/Logado como: usuario.apple@privaterelay.appleid.com/i)).toBeInTheDocument()
-    })
-
-    expect(replaceStateSpy).toHaveBeenCalled()
-    replaceStateSpy.mockRestore()
-  })
-
-  it('deve revogar sessão no Supabase e no BFF ao executar signOut', async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
-      data: {
-        session: {
-          access_token: 'google-oauth-access-token',
-          token_type: 'bearer',
-          expires_in: 3600,
-          refresh_token: 'google-refresh-token',
-          user: {
-            id: 'google-user-123',
-            email: 'usuario.google@gmail.com',
-            app_metadata: { provider: 'google', providers: ['google'] },
-            user_metadata: { full_name: 'Usuário Google' },
-            aud: 'authenticated',
-            created_at: '2026-11-06T20:00:00.000Z'
-          }
-        } as unknown as Session
-      },
-      error: null
-    })
+  it('deve encerrar sessão via BFF ao executar signOut', async () => {
+    window.location.hash = '#access_token=google-oauth-access-token&provider=google'
 
     render(
       <AuthProvider>
@@ -430,13 +277,13 @@ describe('Auth & LoginScreen with BFF-Driven Auth (TDD)', () => {
     fireEvent.click(logoutBtn)
 
     await waitFor(() => {
-      expect(supabase.auth.signOut).toHaveBeenCalled()
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/auth/logout'),
         expect.objectContaining({ method: 'POST' })
       )
       expect(screen.getByText('Dinheirizz')).toBeInTheDocument()
     })
+    window.location.hash = ''
   })
 
   it('deve exibir mensagem de erro quando o login com senha falha', async () => {

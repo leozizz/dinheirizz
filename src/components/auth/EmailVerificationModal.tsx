@@ -219,21 +219,21 @@ export const EmailVerificationModal = ({
         </form>
 
         {/* Área de Reenvio com Rate Limit Cooldown */}
-        <div className="mt-6 pt-5 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between text-xs gap-3">
-          <span className="text-zinc-400">Não recebeu o código?</span>
+        <div className="mt-6 pt-5 border-t border-border flex flex-col sm:flex-row items-center justify-between text-xs gap-3">
+          <span className="text-muted-foreground">Não recebeu o código?</span>
           <button
             type="button"
             onClick={handleResend}
             disabled={cooldown > 0 || resending}
             data-testid="resend-otp-btn"
-            className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg font-medium text-lime-400 hover:text-lime-300 hover:bg-lime-400/10 disabled:text-zinc-600 disabled:hover:bg-transparent transition-colors flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg font-medium text-primary hover:text-primary/90 hover:bg-primary/10 disabled:text-muted-foreground disabled:hover:bg-transparent transition-colors flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
             <span>Reenviar código</span>
             {cooldown > 0 && (
               <span
                 data-testid="resend-cooldown-timer"
-                className="ml-1 text-zinc-500 font-mono"
+                className="ml-1 text-muted-foreground font-mono"
               >
                 ({cooldown}s)
               </span>

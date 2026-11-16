@@ -81,15 +81,15 @@ export const QuickActions = ({ onAction }: QuickActionsProps) => {
             type="button"
             data-testid={getTestId(action.id)}
             onClick={() => onAction(action.id)}
-            className={`glass-card-interactive p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-white/10 bg-gradient-to-b min-h-[80px] sm:min-h-[96px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
+            className={`glass-card-interactive p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-border/40 bg-gradient-to-b min-h-[80px] sm:min-h-[96px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
           >
-            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 mb-2 sm:mb-2.5 shadow-sm group-hover:scale-110 transition-transform ${action.color}`}>
+            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-muted/40 border border-border/40 mb-2 sm:mb-2.5 shadow-sm group-hover:scale-110 transition-transform ${action.color}`}>
               <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-xs sm:text-sm font-semibold text-white group-hover:text-white block truncate w-full">
+            <span className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-foreground block truncate w-full">
               {action.label}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 block truncate w-full">
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 block truncate w-full">
               {action.sublabel}
             </span>
           </button>

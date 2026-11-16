@@ -182,8 +182,9 @@ export const ProfileModal = ({
       })
       setApiKeyInput('')
       setAiFeedback({ type: 'success', message: 'Configurações de IA salvas com sucesso!' })
-    } catch (err: any) {
-      setAiFeedback({ type: 'error', message: err.message || 'Erro ao salvar chave de API.' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao salvar chave de API.'
+      setAiFeedback({ type: 'error', message })
     }
   }
 
@@ -201,8 +202,9 @@ export const ProfileModal = ({
         provider: aiProvider
       })
       setAiFeedback({ type: 'success', message: res.message || 'Conexão com Gemini validada!' })
-    } catch (err: any) {
-      setAiFeedback({ type: 'error', message: err.message || 'Falha na validação da chave.' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Falha na validação da chave.'
+      setAiFeedback({ type: 'error', message })
     }
   }
 
@@ -212,8 +214,9 @@ export const ProfileModal = ({
       await deleteAiSettingsMutation.mutateAsync()
       setApiKeyInput('')
       setAiFeedback({ type: 'success', message: 'Chave removida. O sistema usará o diagnóstico gratuito heurístico.' })
-    } catch (err: any) {
-      setAiFeedback({ type: 'error', message: err.message || 'Erro ao remover chave.' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao remover chave.'
+      setAiFeedback({ type: 'error', message })
     }
   }
 
@@ -233,8 +236,9 @@ export const ProfileModal = ({
       setInviteEmailInput('')
       setInviteFeedback({ type: 'success', message: res.message || 'Convite PRO concedido com sucesso!' })
       refetchAdminUsers()
-    } catch (err: any) {
-      setInviteFeedback({ type: 'error', message: err.message || 'Falha ao conceder convite PRO.' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Falha ao conceder convite PRO.'
+      setInviteFeedback({ type: 'error', message })
     }
   }
 
@@ -248,8 +252,9 @@ export const ProfileModal = ({
       })
       setInviteFeedback({ type: 'success', message: res.message })
       refetchAdminUsers()
-    } catch (err: any) {
-      setInviteFeedback({ type: 'error', message: err.message || 'Falha ao atualizar papel.' })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Falha ao atualizar papel.'
+      setInviteFeedback({ type: 'error', message })
     }
   }
 

@@ -406,8 +406,9 @@ const MainApp = () => {
           toast.success(successMsg)
         }
         setIsTxModalOpen(false)
-      } catch (err: any) {
-        toast.error(err?.message || 'Erro ao registrar movimentação')
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Erro ao registrar movimentação'
+        toast.error(errorMsg)
       }
     } else {
       // Modo Demonstração (em memória)
@@ -594,8 +595,9 @@ const MainApp = () => {
         }
         await payTxMutation.mutateAsync({ transactionId: txId })
         toast.success('Transação baixada com sucesso!')
-      } catch (err: any) {
-        toast.error(err?.message || 'Erro ao dar baixa na transação')
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Erro ao dar baixa na transação'
+        toast.error(errorMsg)
       }
     } else {
       if (txId.startsWith('rec-proj-')) {

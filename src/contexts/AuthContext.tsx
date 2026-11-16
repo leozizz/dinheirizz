@@ -51,7 +51,7 @@ export interface ResendVerificationResult {
   error?: string
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: AuthUser | null
   session: AuthSession | null
   loading: boolean

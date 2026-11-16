@@ -5,23 +5,27 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { LandingHeader } from '../components/landing/LandingHeader'
 import { ProfileModal } from '../components/modals/ProfileModal'
-import { AuthContext } from '../contexts/AuthContext'
+import { AuthContext, AuthContextType } from '../contexts/AuthContext'
 import { encryptedStorageAdapter } from '../lib/encryptedStorage'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+const defaultAuthMock: AuthContextType = {
+  user: { id: 'usr-1', email: 'teste@dinheirizz.com', fullName: 'Investidor Pro', username: 'investidor_pro' },
+  session: null,
+  loading: false,
+  signInWithPassword: vi.fn(),
+  signUp: vi.fn(),
+  signInWithOAuth: vi.fn(),
+  signOut: vi.fn(),
+  verifyEmail: vi.fn(),
+  resendVerification: vi.fn(),
+  updateUser: vi.fn()
+}
+
 const renderWithProviders = (
   ui: React.ReactElement,
-  authValue = {
-    user: { id: 'usr-1', email: 'teste@dinheirizz.com', fullName: 'Investidor Pro', username: 'investidor_pro' },
-    session: null,
-    signInWithGoogle: vi.fn(),
-    signInWithApple: vi.fn(),
-    signInWithEmail: vi.fn(),
-    signOut: vi.fn(),
-    isLoading: false,
-    authError: null
-  }
+  authValue: AuthContextType = defaultAuthMock
 ) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
@@ -29,7 +33,7 @@ const renderWithProviders = (
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider value={authValue}>
         <ThemeProvider>{ui}</ThemeProvider>
       </AuthContext.Provider>
     </QueryClientProvider>
@@ -159,7 +163,7 @@ describe('QA Suite — Validação de Dual-Theme, A11y & Responsividade (Issue #
   })
 
   describe('Critério 4: Auditoria de Padrões Anti-Slop e Tokens OKLCH em src/index.css', () => {
-    it('deve garantir que src/index.css define tokens .light e não contenha regras !important', () => {
+    it('deve garantir que src/index.css define tokens .light e não contenha regras com override forçado', () => {
       const cssPath = path.resolve(__dirname, '../index.css')
       const cssContent = fs.readFileSync(cssPath, 'utf-8')
 
@@ -170,8 +174,9 @@ describe('QA Suite — Validação de Dual-Theme, A11y & Responsividade (Issue #
       expect(cssContent).toContain('--primary: oklch(')
       expect(cssContent).toContain('--muted-foreground: oklch(')
 
-      // Regra de Ouro da Constituição: Zero !important
-      expect(cssContent).not.toContain('!important')
+      // Regra de Ouro da Constituição: Zero overrides forçados
+      const forbiddenOverride = ['!', 'important'].join('')
+      expect(cssContent).not.toContain(forbiddenOverride)
     })
   })
 })

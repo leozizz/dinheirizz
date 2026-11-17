@@ -9,6 +9,8 @@ export interface CreateTransactionInput {
   description?: string
   categoryId?: string | null
   accountId?: string
+  creditCardId?: string | null
+  invoiceId?: string | null
   occurredAt?: string
   paid?: boolean
   dueDate?: string | null
@@ -73,6 +75,10 @@ interface RawTransactionItem {
   type?: 'income' | 'expense' | 'transfer'
   accountId?: string | null
   account_id?: string | null
+  creditCardId?: string | null
+  credit_card_id?: string | null
+  invoiceId?: string | null
+  invoice_id?: string | null
 }
 
 export const TRANSACTIONS_QUERY_KEY = ['transactions'] as const
@@ -163,7 +169,9 @@ export const useTransactions = (options?: UseTransactionsOptions) => {
               ? { name: item.category, color: null, icon: null }
               : (item.category ?? null),
           type: item.type || (amountNum >= 0 ? 'income' : 'expense'),
-          accountId: item.accountId || item.account_id || null
+          accountId: item.accountId || item.account_id || null,
+          creditCardId: item.creditCardId || item.credit_card_id || null,
+          invoiceId: item.invoiceId || item.invoice_id || null
         }
       })
 
@@ -274,7 +282,9 @@ export const useCreateTransaction = () => {
         recurrencePeriod: input.recurrencePeriod || undefined,
         recurrenceDay: input.recurrenceDay ?? undefined,
         adjustBusinessDay: input.adjustBusinessDay ?? undefined,
-        installmentTotal: input.installmentTotal || undefined
+        installmentTotal: input.installmentTotal || undefined,
+        creditCardId: input.creditCardId || undefined,
+        invoiceId: input.invoiceId || undefined
       }
 
       const res = await fetch(`${origin}/api/v1/transactions`, {
@@ -295,6 +305,7 @@ export const useCreateTransaction = () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTIONS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: FORECAST_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
     }
   })
 }

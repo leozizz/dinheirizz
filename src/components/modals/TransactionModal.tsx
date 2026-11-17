@@ -8,6 +8,7 @@ import {
   Calendar,
   Tag,
   CreditCard,
+  Wallet,
   AlertCircle,
   CheckCircle2,
   Clock,
@@ -39,11 +40,23 @@ export interface AccountOption {
   balance?: number
 }
 
+export interface CreditCardOption {
+  id: string
+  name: string
+  brand?: string
+  closingDay: number
+  dueDay: number
+  limitAmount?: number
+  availableLimit?: number
+  accountId?: string
+}
+
 interface TransactionModalProps {
   isOpen: boolean
   mode: TransactionMode
   categories?: CategoryOption[]
   accounts?: AccountOption[]
+  creditCards?: CreditCardOption[]
   defaultAccountId?: string | null
   initialOpenOcr?: boolean
   onClose: () => void
@@ -63,6 +76,7 @@ interface TransactionModalProps {
     recurrenceDay?: number
     adjustBusinessDay?: boolean
     installmentTotal?: number
+    creditCardId?: string
     type: TransactionMode
   }) => Promise<void> | void
 }
@@ -77,12 +91,45 @@ const getTodayLocalDate = (): string => {
 
 const EMPTY_CATEGORIES: CategoryOption[] = []
 const EMPTY_ACCOUNTS: AccountOption[] = []
+const EMPTY_CREDIT_CARDS: CreditCardOption[] = []
+
+const calculateInvoiceCyclePreview = (occurredAtStr: string, closingDay: number, dueDay: number) => {
+  const parts = occurredAtStr.split('-').map(Number)
+  const year = parts[0] || new Date().getFullYear()
+  const month = (parts[1] || 1) - 1
+  const day = parts[2] || 1
+
+  let invoiceMonth = month
+  let invoiceYear = year
+
+  if (day >= closingDay) {
+    invoiceMonth += 1
+    if (invoiceMonth > 11) {
+      invoiceMonth = 0
+      invoiceYear += 1
+    }
+  }
+
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ]
+
+  return {
+    period: `${invoiceYear}-${String(invoiceMonth + 1).padStart(2, '0')}`,
+    monthName: monthNames[invoiceMonth],
+    year: invoiceYear,
+    closingDay,
+    dueDay
+  }
+}
 
 export const TransactionModal = ({
   isOpen,
   mode,
   categories = EMPTY_CATEGORIES,
   accounts = EMPTY_ACCOUNTS,
+  creditCards = EMPTY_CREDIT_CARDS,
   defaultAccountId,
   initialOpenOcr = false,
   onClose,
@@ -95,6 +142,9 @@ export const TransactionModal = ({
   const [accountId, setAccountId] = useState('')
   const [fromAccountId, setFromAccountId] = useState('')
   const [toAccountId, setToAccountId] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<'account' | 'credit_card'>('account')
+  const [creditCardId, setCreditCardId] = useState<string>('')
+  const [cardInstallments, setCardInstallments] = useState<number>(1)
   const [occurredAt, setOccurredAt] = useState(() => getTodayLocalDate())
   const [status, setStatus] = useState<'completed' | 'pending'>('completed')
   const [dueDate, setDueDate] = useState(() => getTodayLocalDate())
@@ -138,6 +188,9 @@ export const TransactionModal = ({
       setRecurrencePeriod('monthly')
       setRecurrenceDay(10)
       setAdjustBusinessDay(false)
+      setPaymentMethod('account')
+      setCreditCardId(creditCards[0]?.id || '')
+      setCardInstallments(1)
       setIsOcrOpen(Boolean(initialOpenOcr))
       setAiExtractedInfo(null)
       resetScanState()
@@ -155,7 +208,7 @@ export const TransactionModal = ({
       const otherAccount = accounts.find((a) => a.id !== selectedOrFirst)
       setToAccountId(otherAccount?.id || accounts[1]?.id || selectedOrFirst)
     }
-  }, [isOpen, mode, categories, accounts, defaultAccountId, initialOpenOcr, resetScanState])
+  }, [isOpen, mode, categories, accounts, creditCards, defaultAccountId, initialOpenOcr, resetScanState])
 
   const handleOcrFileSelected = async (file: File) => {
     try {
@@ -216,6 +269,11 @@ export const TransactionModal = ({
 
   const numAmount = parseCurrencyToNumber(amountStr)
 
+  const selectedCard = creditCards.find((c) => c.id === creditCardId) || creditCards[0]
+  const cyclePreview = selectedCard
+    ? calculateInvoiceCyclePreview(occurredAt, selectedCard.closingDay, selectedCard.dueDay)
+    : null
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -256,21 +314,30 @@ export const TransactionModal = ({
         finalDueDate = dueDate || occurredAt
       }
 
+      const isCardPayment = mode === 'expense' && paymentMethod === 'credit_card' && Boolean(creditCardId)
+
       await onSubmit({
         amount: num,
         description,
         categoryId: categoryId || undefined,
-        accountId: mode === 'transfer' ? fromAccountId : (accountId || undefined),
+        accountId: mode === 'transfer'
+          ? fromAccountId
+          : isCardPayment
+            ? (selectedCard?.accountId || accountId || undefined)
+            : (accountId || undefined),
         fromAccountId: mode === 'transfer' ? fromAccountId : undefined,
         toAccountId: mode === 'transfer' ? toAccountId : undefined,
         occurredAt,
-        dueDate: finalDueDate,
-        status: mode === 'transfer' ? 'completed' : status,
-        isRecurring: mode !== 'transfer' ? isRecurring : false,
-        recurrencePeriod: mode !== 'transfer' && isRecurring ? recurrencePeriod : undefined,
-        recurrenceDay: mode !== 'transfer' && isRecurring ? recurrenceDay : undefined,
-        adjustBusinessDay: mode !== 'transfer' && isRecurring ? adjustBusinessDay : undefined,
-        installmentTotal: mode !== 'transfer' && isInstallment ? installmentTotal : undefined,
+        dueDate: isCardPayment ? undefined : finalDueDate,
+        status: mode === 'transfer' || isCardPayment ? 'completed' : status,
+        isRecurring: mode !== 'transfer' && !isCardPayment ? isRecurring : false,
+        recurrencePeriod: mode !== 'transfer' && !isCardPayment && isRecurring ? recurrencePeriod : undefined,
+        recurrenceDay: mode !== 'transfer' && !isCardPayment && isRecurring ? recurrenceDay : undefined,
+        adjustBusinessDay: mode !== 'transfer' && !isCardPayment && isRecurring ? adjustBusinessDay : undefined,
+        installmentTotal: isCardPayment
+          ? (cardInstallments > 1 ? cardInstallments : undefined)
+          : (mode !== 'transfer' && isInstallment ? installmentTotal : undefined),
+        creditCardId: isCardPayment ? creditCardId : undefined,
         type: mode
       })
       onClose()
@@ -424,6 +491,48 @@ export const TransactionModal = ({
                 />
               </div>
 
+              {/* Forma de Pagamento (Conta vs Cartão) */}
+              {mode === 'expense' && creditCards.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-foreground ml-1">
+                    Forma de Pagamento
+                  </label>
+                  <div className="flex p-1 bg-muted/50 border border-border rounded-xl gap-1">
+                    <button
+                      type="button"
+                      data-testid="payment-method-account-btn"
+                      onClick={() => setPaymentMethod('account')}
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[44px] ${
+                        paymentMethod === 'account'
+                          ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Wallet className="w-3.5 h-3.5" />
+                      <span>Conta Bancária</span>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="payment-method-card-btn"
+                      onClick={() => {
+                        setPaymentMethod('credit_card')
+                        if (!creditCardId && creditCards[0]) {
+                          setCreditCardId(creditCards[0].id)
+                        }
+                      }}
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[44px] ${
+                        paymentMethod === 'credit_card'
+                          ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Cartão de Crédito</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Categoria e Conta (ou Origem/Destino em transferências) */}
               {mode === 'transfer' ? (
                 <div className="space-y-3">
@@ -508,28 +617,90 @@ export const TransactionModal = ({
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
-                      Conta
+                  {paymentMethod === 'credit_card' ? (
+                    <div>
+                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                        Cartão de Crédito
+                      </label>
+                      <select
+                        data-testid="transaction-credit-card-select"
+                        value={creditCardId}
+                        onChange={(e) => setCreditCardId(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                      >
+                        {creditCards.map((card) => (
+                          <option key={card.id} value={card.id}>
+                            {card.name} (Fecha dia {card.closingDay})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                        Conta
+                      </label>
+                      <select
+                        value={accountId}
+                        onChange={(e) => setAccountId(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                      >
+                        {accounts.map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Parcelamento e Ciclo do Cartão */}
+              {mode === 'expense' && paymentMethod === 'credit_card' && (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-muted/20 border border-border/80">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-xs font-medium text-foreground">
+                      Parcelas no Cartão
                     </label>
                     <select
-                      value={accountId}
-                      onChange={(e) => setAccountId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                      data-testid="credit-card-installments-select"
+                      value={cardInstallments}
+                      onChange={(e) => setCardInstallments(Number(e.target.value))}
+                      className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none min-h-[44px]"
                     >
-                      {accounts.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.name}
+                      {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n === 1 ? '1x à vista' : `${n}x parcelado`}
+                          {numAmount > 0 ? ` (${formatBRL(numAmount / n)})` : ''}
                         </option>
                       ))}
                     </select>
                   </div>
+
+                  {cyclePreview && selectedCard && (
+                    <div
+                      data-testid="credit-card-cycle-preview"
+                      className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs text-foreground space-y-1"
+                    >
+                      <div className="flex items-center gap-1.5 font-semibold text-primary">
+                        <Sparkles className="w-4 h-4" />
+                        <span>Regra de Fechamento de Fatura</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {Number(occurredAt.split('-')[2] || 1) >= selectedCard.closingDay
+                          ? `Compra realizada a partir do dia de fechamento (${selectedCard.closingDay}). A 1ª parcela cairá na fatura de ${cyclePreview.monthName}/${cyclePreview.year} (vencimento dia ${selectedCard.dueDay}).`
+                          : `A 1ª parcela cairá na fatura de ${cyclePreview.monthName}/${cyclePreview.year} (vencimento dia ${selectedCard.dueDay}).`}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Status da Transação (Paga vs Pendente) */}
-              {mode !== 'transfer' && (
+              {mode !== 'transfer' && paymentMethod !== 'credit_card' && (
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-foreground ml-1">
                     Situação da Movimentação

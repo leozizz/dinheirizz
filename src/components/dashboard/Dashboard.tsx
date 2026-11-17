@@ -8,9 +8,11 @@ import { CategoryDonutChart } from './CategoryDonutChart'
 import { ForecastCard } from './ForecastCard'
 import { FinancialCalendar } from './FinancialCalendar'
 import { BudgetProgressWidget } from './BudgetProgressWidget'
+import { CreditCardWidget } from '../cards/CreditCardWidget'
 import type { BudgetProgressItem } from '../../hooks/useBudgets'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
+import type { CreditCard as CreditCardItemType } from '../../types/database.types'
 import {
   TrendingUp,
   TrendingDown,
@@ -59,6 +61,8 @@ export interface TransactionItem {
   installmentCurrent?: number | null
   installmentTotal?: number | null
   parentTransactionId?: string | null
+  creditCardId?: string | null
+  invoiceId?: string | null
 }
 
 export interface DashboardProps {
@@ -97,6 +101,13 @@ export interface DashboardProps {
   onOpenBudgetModal?: () => void
   isBudgetsLoading?: boolean
   onImportStatement?: () => void
+  // Issue #53: Gestão Avançada de Cartões de Crédito e Faturas
+  creditCards?: CreditCardItemType[]
+  isCreditCardsLoading?: boolean
+  onOpenCreateCreditCard?: () => void
+  onOpenInvoiceDetails?: (card: CreditCardItemType) => void
+  onOpenPayInvoice?: (card: CreditCardItemType) => void
+  onOpenAnticipate?: (card: CreditCardItemType) => void
 }
 
 const getDueStatus = (dueDateStr?: string | null) => {
@@ -146,7 +157,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   budgetSummary,
   onOpenBudgetModal,
   isBudgetsLoading = false,
-  onImportStatement
+  onImportStatement,
+  creditCards,
+  isCreditCardsLoading = false,
+  onOpenCreateCreditCard,
+  onOpenInvoiceDetails,
+  onOpenPayInvoice,
+  onOpenAnticipate
 }) => {
   const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
@@ -507,6 +524,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           selectedAccountId={selectedAccountId}
           onSelectAccount={onSelectAccount}
           onNewAccount={onNewAccount}
+        />
+      )}
+
+      {/* Cartões de Crédito e Faturas (Issue #53) */}
+      {(creditCards !== undefined || onOpenCreateCreditCard !== undefined) && (
+        <CreditCardWidget
+          cards={creditCards || []}
+          isLoading={isCreditCardsLoading}
+          onOpenCreateCard={onOpenCreateCreditCard || (() => {})}
+          onOpenInvoiceDetails={onOpenInvoiceDetails}
+          onOpenPayInvoice={onOpenPayInvoice}
+          onOpenAnticipate={onOpenAnticipate}
         />
       )}
 

@@ -87,6 +87,105 @@ export type Database = {
           },
         ]
       }
+      credit_cards: {
+        Row: {
+          account_id: string
+          archived: boolean
+          brand: string
+          closing_day: number
+          color: string | null
+          created_at: string
+          due_day: number
+          id: string
+          last_four_digits: string | null
+          limit_amount: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          archived?: boolean
+          brand?: string
+          closing_day: number
+          color?: string | null
+          created_at?: string
+          due_day: number
+          id?: string
+          last_four_digits?: string | null
+          limit_amount: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          archived?: boolean
+          brand?: string
+          closing_day?: number
+          color?: string | null
+          created_at?: string
+          due_day?: number
+          id?: string
+          last_four_digits?: string | null
+          limit_amount?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: string
+          closing_date: string
+          created_at: string
+          credit_card_id: string
+          due_date: string
+          id: string
+          paid_amount: string
+          paid_at: string | null
+          payment_account_id: string | null
+          payment_transaction_id: string | null
+          period: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: string
+          closing_date: string
+          created_at?: string
+          credit_card_id: string
+          due_date: string
+          id?: string
+          paid_amount?: string
+          paid_at?: string | null
+          payment_account_id?: string | null
+          payment_transaction_id?: string | null
+          period: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: string
+          closing_date?: string
+          created_at?: string
+          credit_card_id?: string
+          due_date?: string
+          id?: string
+          paid_amount?: string
+          paid_at?: string | null
+          payment_account_id?: string | null
+          payment_transaction_id?: string | null
+          period?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pix_keys: {
         Row: {
           bank_name: string
@@ -130,6 +229,8 @@ export type Database = {
           account_id: string
           amount: number
           category_id: string | null
+          credit_card_id?: string | null
+          invoice_id?: string | null
           created_at: string
           description: string | null
           id: string
@@ -141,6 +242,8 @@ export type Database = {
           account_id: string
           amount: number
           category_id?: string | null
+          credit_card_id?: string | null
+          invoice_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -152,6 +255,8 @@ export type Database = {
           account_id?: string
           amount?: number
           category_id?: string | null
+          credit_card_id?: string | null
+          invoice_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -345,3 +450,67 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+export type CreditCardBrand = 'mastercard' | 'visa' | 'elo' | 'amex' | 'hipercard' | 'other'
+export type InvoiceStatus = 'open' | 'closed' | 'paid' | 'overdue'
+
+export interface CreditCardCurrentInvoice {
+  id: string
+  period: string
+  amount: number
+  status: InvoiceStatus
+  closingDate: string
+  dueDate: string
+}
+
+export interface CreditCard {
+  id: string
+  userId?: string
+  accountId: string
+  name: string
+  brand: CreditCardBrand
+  limitAmount: number
+  usedLimit: number
+  availableLimit: number
+  closingDay: number
+  dueDay: number
+  color: string | null
+  lastFourDigits: string | null
+  archived?: boolean
+  createdAt?: string
+  updatedAt?: string | null
+  currentInvoice?: CreditCardCurrentInvoice | null
+  invoices?: Invoice[]
+}
+
+export interface InvoiceItem {
+  id: string
+  description: string | null
+  amount: number
+  occurredAt: string
+  installmentCurrent: number | null
+  installmentTotal: number | null
+  category?: {
+    name: string
+    color?: string | null
+  } | null
+}
+
+export interface Invoice {
+  id: string
+  creditCardId: string
+  userId?: string
+  period: string
+  closingDate: string
+  dueDate: string
+  amount: number
+  status: InvoiceStatus
+  paidAmount: number
+  paidAt: string | null
+  paymentAccountId?: string | null
+  paymentTransactionId?: string | null
+  createdAt?: string
+  updatedAt?: string | null
+  items?: InvoiceItem[]
+}
+

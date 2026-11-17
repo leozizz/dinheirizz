@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BellRing, X, Sparkles } from 'lucide-react'
+import { BellRing, X } from 'lucide-react'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 const STORAGE_KEY = 'dinheirizz_push_banner_dismissed'
@@ -50,9 +50,8 @@ export const PushNotificationBanner: React.FC = () => {
           <BellRing className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <h4 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <span>Evite juros e multas com alertas pró-ativos</span>
-            <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+          <h4 className="text-xs sm:text-sm font-semibold text-foreground">
+            Evite juros e multas com alertas pró-ativos
           </h4>
           <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
             Receba notificações direto no seu navegador antes do vencimento de contas e ao atingir o teto de gastos.

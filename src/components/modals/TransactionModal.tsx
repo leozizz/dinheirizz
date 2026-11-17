@@ -378,6 +378,7 @@ export const TransactionModal = ({
                   <input
                     type="text"
                     autoFocus
+                    data-testid="transaction-amount-input"
                     value={amountStr}
                     onChange={(e) => setAmountStr(e.target.value)}
                     placeholder="0,00"
@@ -415,6 +416,7 @@ export const TransactionModal = ({
                 </label>
                 <input
                   type="text"
+                  data-testid="transaction-description-input"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descrição da movimentação"

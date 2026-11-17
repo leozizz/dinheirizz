@@ -322,7 +322,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Valor de Destaque */}
         <div className="mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-display break-words">
+          <h2
+            data-testid="main-balance-value"
+            className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-display break-words"
+          >
             <AnimatedNumber value={displayBalance} formatter={formatBRL} />
           </h2>
 
@@ -667,6 +670,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               return (
                 <div
                   key={t.id}
+                  data-testid="transaction-item"
                   className="py-3 sm:py-3.5 flex items-center justify-between hover:bg-muted/40 px-2 rounded-xl transition-colors gap-3"
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">

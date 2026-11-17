@@ -209,6 +209,7 @@ export const LoginScreen = () => {
                   <input
                     type="text"
                     required
+                    data-testid="auth-fullname-input"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Seu nome completo"
@@ -229,6 +230,7 @@ export const LoginScreen = () => {
                   <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     type="text"
+                    data-testid="auth-username-input"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
                     placeholder="seu_usuario"
@@ -249,6 +251,7 @@ export const LoginScreen = () => {
               <input
                 type="email"
                 required
+                data-testid="auth-email-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
@@ -267,6 +270,7 @@ export const LoginScreen = () => {
               <input
                 type="password"
                 required
+                data-testid="auth-password-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -292,6 +296,7 @@ export const LoginScreen = () => {
                 <input
                   type="password"
                   required
+                  data-testid="auth-confirm-password-input"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repita sua senha"

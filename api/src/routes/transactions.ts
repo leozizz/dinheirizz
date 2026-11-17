@@ -26,7 +26,9 @@ export const createTransactionSchema = z.object({
   adjustBusinessDay: z.boolean().optional(),
   installmentCurrent: z.number().int().positive().optional().nullable(),
   installmentTotal: z.number().int().positive().optional().nullable(),
-  parentTransactionId: z.string().optional().nullable()
+  parentTransactionId: z.string().optional().nullable(),
+  creditCardId: z.string().optional().nullable(),
+  invoiceId: z.string().optional().nullable()
 })
 
 export const batchCreateTransactionItemSchema = z.object({
@@ -63,6 +65,8 @@ export interface MockTransaction {
   installmentCurrent?: number | null
   installmentTotal?: number | null
   parentTransactionId?: string | null
+  creditCardId?: string | null
+  invoiceId?: string | null
   type?: 'income' | 'expense' | 'transfer'
   occurredAt: string
   createdAt: string
@@ -389,6 +393,8 @@ transactionsRouter.post('/', async (c) => {
         installmentCurrent: installmentCount > 1 ? i : null,
         installmentTotal: installmentCount > 1 ? installmentCount : null,
         parentTransactionId: null,
+        creditCardId: data.creditCardId ?? null,
+        invoiceId: data.invoiceId ?? null,
         type: data.type,
         accountId: data.accountId || '00000000-0000-0000-0000-000000000000',
         categoryId: data.categoryId ?? null,
@@ -518,6 +524,8 @@ transactionsRouter.post('/', async (c) => {
         adjustBusinessDay,
         installmentCurrent: installmentCount > 1 ? i : null,
         installmentTotal: installmentCount > 1 ? installmentCount : null,
+        creditCardId: data.creditCardId || null,
+        invoiceId: data.invoiceId || null,
         occurredAt: itemOccurred
       })
     }

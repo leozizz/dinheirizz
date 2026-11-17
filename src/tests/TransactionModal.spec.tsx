@@ -369,5 +369,65 @@ describe('TransactionModal (TDD)', () => {
       )
     })
   })
+
+  it('deve permitir selecionar Cartão de Crédito, configurar parcelamento e submeter com creditCardId', async () => {
+    const handleSubmit = vi.fn()
+    const mockCreditCards = [
+      {
+        id: 'card-1',
+        name: 'Nubank Ultravioleta',
+        brand: 'mastercard',
+        closingDay: 25,
+        dueDay: 5,
+        limitAmount: 10000,
+        availableLimit: 7000,
+        accountId: 'acc-1'
+      }
+    ]
+
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="expense"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        creditCards={mockCreditCards}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    const amountInput = screen.getByPlaceholderText('0,00')
+    fireEvent.change(amountInput, { target: { value: '900,00' } })
+
+    const descInput = screen.getByTestId('transaction-description-input')
+    fireEvent.change(descInput, { target: { value: 'Notebook Gamer' } })
+
+    // Selecionar cartão de crédito
+    const cardMethodBtn = screen.getByTestId('payment-method-card-btn')
+    fireEvent.click(cardMethodBtn)
+
+    expect(screen.getByTestId('transaction-credit-card-select')).toBeInTheDocument()
+    expect(screen.getByTestId('credit-card-installments-select')).toBeInTheDocument()
+    expect(screen.getByTestId('credit-card-cycle-preview')).toBeInTheDocument()
+
+    // Alterar para 3x
+    const installmentsSelect = screen.getByTestId('credit-card-installments-select')
+    fireEvent.change(installmentsSelect, { target: { value: '3' } })
+
+    const submitBtn = screen.getByTestId('transaction-submit-btn')
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 900.0,
+          description: 'Notebook Gamer',
+          creditCardId: 'card-1',
+          installmentTotal: 3
+        })
+      )
+    })
+  })
 })
 

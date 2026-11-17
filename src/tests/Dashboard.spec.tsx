@@ -523,6 +523,48 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(localStorage.getItem('dinheirizz_view_mode')).toBe('feed')
     expect(screen.getByText('Últimas Movimentações')).toBeInTheDocument()
   })
+
+  it('deve renderizar o CreditCardWidget quando cartões de crédito forem informados', () => {
+    const mockCreditCards = [
+      {
+        id: 'card-1',
+        name: 'Nubank Ultravioleta',
+        brand: 'mastercard' as const,
+        limitAmount: 15000,
+        usedLimit: 3000,
+        availableLimit: 12000,
+        closingDay: 25,
+        dueDay: 5,
+        color: '#7bc816',
+        lastFourDigits: '8821',
+        accountId: 'acc-1',
+        currentInvoice: {
+          id: 'inv-1',
+          period: '2026-11',
+          amount: 1500,
+          status: 'open' as const,
+          closingDate: '2026-11-25T00:00:00.000Z',
+          dueDate: '2026-12-05T00:00:00.000Z'
+        }
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        creditCards={mockCreditCards}
+        onOpenCreateCreditCard={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('credit-cards-container')).toBeInTheDocument()
+    expect(screen.getByTestId('credit-card-item-card-1')).toBeInTheDocument()
+    expect(screen.getByText('Nubank Ultravioleta')).toBeInTheDocument()
+  })
 })
 
 

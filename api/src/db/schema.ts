@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer, index, uniqueIndex, type AnyPgColumn } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -49,6 +49,29 @@ export const categories = pgTable(
   ]
 )
 
+export const creditCards = pgTable(
+  'credit_cards',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    brand: text('brand').default('mastercard').notNull(),
+    limitAmount: numeric('limit_amount', { precision: 12, scale: 2 }).notNull(),
+    closingDay: integer('closing_day').notNull(),
+    dueDay: integer('due_day').notNull(),
+    color: text('color').default('#7bc816'),
+    lastFourDigits: text('last_four_digits'),
+    archived: boolean('archived').default(false).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('credit_cards_user_id_idx').on(table.userId),
+    index('credit_cards_account_id_idx').on(table.accountId)
+  ]
+)
+
 export const transactions = pgTable(
   'transactions',
   {
@@ -56,6 +79,8 @@ export const transactions = pgTable(
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    creditCardId: uuid('credit_card_id').references(() => creditCards.id, { onDelete: 'set null' }),
+    invoiceId: uuid('invoice_id').references((): AnyPgColumn => invoices.id, { onDelete: 'set null' }),
     amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
     description: text('description'),
     occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
@@ -76,9 +101,36 @@ export const transactions = pgTable(
     index('transactions_user_id_idx').on(table.userId),
     index('transactions_account_id_idx').on(table.accountId),
     index('transactions_category_id_idx').on(table.categoryId),
+    index('transactions_credit_card_id_idx').on(table.creditCardId),
+    index('transactions_invoice_id_idx').on(table.invoiceId),
     index('transactions_user_occurred_idx').on(table.userId, table.occurredAt),
     index('transactions_user_due_date_idx').on(table.userId, table.dueDate),
     index('transactions_user_status_idx').on(table.userId, table.status)
+  ]
+)
+
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    creditCardId: uuid('credit_card_id').references(() => creditCards.id, { onDelete: 'cascade' }).notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    period: text('period').notNull(), // 'YYYY-MM'
+    closingDate: timestamp('closing_date', { withTimezone: true }).notNull(),
+    dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
+    amount: numeric('amount', { precision: 12, scale: 2 }).default('0.00').notNull(),
+    status: text('status').default('open').notNull(), // 'open' | 'closed' | 'paid' | 'overdue'
+    paidAmount: numeric('paid_amount', { precision: 12, scale: 2 }).default('0.00').notNull(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    paymentAccountId: uuid('payment_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    paymentTransactionId: uuid('payment_transaction_id').references((): AnyPgColumn => transactions.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('invoices_card_id_idx').on(table.creditCardId),
+    index('invoices_user_period_idx').on(table.userId, table.period),
+    uniqueIndex('invoices_card_period_unique').on(table.creditCardId, table.period)
   ]
 )
 
@@ -191,6 +243,12 @@ export type NewUserAiSetting = typeof userAiSettings.$inferInsert
 
 export type Budget = typeof budgets.$inferSelect
 export type NewBudget = typeof budgets.$inferInsert
+
+export type CreditCard = typeof creditCards.$inferSelect
+export type NewCreditCard = typeof creditCards.$inferInsert
+
+export type Invoice = typeof invoices.$inferSelect
+export type NewInvoice = typeof invoices.$inferInsert
 
 export type VerificationToken = typeof verificationTokens.$inferSelect
 export type NewVerificationToken = typeof verificationTokens.$inferInsert

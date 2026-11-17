@@ -43,6 +43,18 @@ const LoginScreen = React.lazy(() =>
 const WelcomeScreen = React.lazy(() =>
   import('./components/auth/WelcomeScreen').then((m) => ({ default: m.WelcomeScreen }))
 )
+const CreditCardModal = React.lazy(() =>
+  import('./components/modals/CreditCardModal').then((m) => ({ default: m.CreditCardModal }))
+)
+const InvoicePaymentModal = React.lazy(() =>
+  import('./components/modals/InvoicePaymentModal').then((m) => ({ default: m.InvoicePaymentModal }))
+)
+const AnticipateInstallmentsModal = React.lazy(() =>
+  import('./components/modals/AnticipateInstallmentsModal').then((m) => ({ default: m.AnticipateInstallmentsModal }))
+)
+const InvoiceDetailsModal = React.lazy(() =>
+  import('./components/modals/InvoiceDetailsModal').then((m) => ({ default: m.InvoiceDetailsModal }))
+)
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
 import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
 import { useTransferTransaction } from './hooks/useTransfer'
@@ -56,6 +68,14 @@ import {
   useDeleteBudget,
   type BudgetProgressItem
 } from './hooks/useBudgets'
+import {
+  useCreditCards,
+  useCreateCreditCard,
+  usePayInvoice,
+  useAnticipateInstallments
+} from './hooks/useCreditCards'
+import type { CreditCard } from './types/database.types'
+import type { CreateCreditCardInput } from './schemas/creditCards'
 import { calculateRecurringDueDate } from './lib/businessDays'
 import { formatYMD } from './lib/calendar'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut, Sun, Moon } from 'lucide-react'
@@ -150,6 +170,30 @@ const initialAccounts: AccountItem[] = [
   { id: 'acc-2', name: 'Itaú Reserva de Emergência', type: 'savings', balance: 4350.2, bank: 'Itaú', color: '#ec7000' }
 ]
 
+const initialCreditCards: CreditCard[] = [
+  {
+    id: 'demo-card-1',
+    name: 'Nubank Ultravioleta',
+    brand: 'mastercard',
+    limitAmount: 15000,
+    usedLimit: 3450.8,
+    availableLimit: 11549.2,
+    closingDay: 25,
+    dueDay: 5,
+    color: '#7bc816',
+    lastFourDigits: '8821',
+    accountId: 'acc-1',
+    currentInvoice: {
+      id: 'demo-inv-1',
+      period: '2026-11',
+      amount: 1250.4,
+      status: 'open',
+      closingDate: '2026-11-25T00:00:00.000Z',
+      dueDate: '2026-12-05T00:00:00.000Z'
+    }
+  }
+]
+
 const MainApp = () => {
   const { user, signOut } = useAuth()
   const { resolvedTheme, toggleTheme } = useTheme()
@@ -157,6 +201,7 @@ const MainApp = () => {
   const [demoTransactions, setDemoTransactions] = useState<TransactionItem[]>(initialTransactions)
   const [demoAccounts, setDemoAccounts] = useState<AccountItem[]>(initialAccounts)
   const [demoPixKeys, setDemoPixKeys] = useState<PixKeyItem[]>(initialPixKeys)
+  const [demoCreditCards, setDemoCreditCards] = useState<CreditCard[]>(initialCreditCards)
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
 
   // Modals state
@@ -171,6 +216,14 @@ const MainApp = () => {
   const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isCreditCardModalOpen, setIsCreditCardModalOpen] = useState(false)
+  const [selectedCardForEdit, setSelectedCardForEdit] = useState<CreditCard | null>(null)
+  const [isInvoicePaymentModalOpen, setIsInvoicePaymentModalOpen] = useState(false)
+  const [cardForPayment, setCardForPayment] = useState<CreditCard | null>(null)
+  const [isAnticipateModalOpen, setIsAnticipateModalOpen] = useState(false)
+  const [cardForAnticipate, setCardForAnticipate] = useState<CreditCard | null>(null)
+  const [isInvoiceDetailsModalOpen, setIsInvoiceDetailsModalOpen] = useState(false)
+  const [cardForDetails, setCardForDetails] = useState<CreditCard | null>(null)
   const [demoBudgets, setDemoBudgets] = useState<Array<{ id: string; categoryId: string; amountLimit: number }>>([
     { id: 'demo-b-1', categoryId: 'cat-1', amountLimit: 1500 },
     { id: 'demo-b-2', categoryId: 'cat-3', amountLimit: 1200 },
@@ -217,6 +270,11 @@ const MainApp = () => {
     generateInsights
   } = useAiInsights()
 
+  const { creditCards: apiCreditCards, isLoading: isCreditCardsLoading } = useCreditCards()
+  const createCardMutation = useCreateCreditCard()
+  const payInvoiceMutation = usePayInvoice()
+  const anticipateMutation = useAnticipateInstallments()
+
   // Totais do modo de demonstração
   let demoIncome = 0
   let demoExpense = 0
@@ -229,6 +287,7 @@ const MainApp = () => {
   const activeAccounts = user ? apiAccounts : demoAccounts
   const activePixKeys = user ? apiPixKeys : demoPixKeys
   const activeTransactions = user ? apiTransactions : demoTransactions
+  const activeCreditCards = user ? apiCreditCards : demoCreditCards
   const activeBalance = activeAccounts.length > 0
     ? activeAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0)
     : (user ? apiBalance : demoBalance)
@@ -317,6 +376,116 @@ const MainApp = () => {
     } else {
       setDemoBudgets((prev) => prev.filter((b) => b.id !== budgetId))
       toast.success('Orçamento removido (modo demo)!')
+    }
+  }
+
+  // Issue #53: Handlers de Cartões de Crédito e Faturas
+  const handleOpenCreateCard = () => {
+    setSelectedCardForEdit(null)
+    setIsCreditCardModalOpen(true)
+  }
+
+  const handleOpenInvoiceDetails = (card: CreditCard) => {
+    setCardForDetails(card)
+    setIsInvoiceDetailsModalOpen(true)
+  }
+
+  const handleOpenPayInvoice = (card: CreditCard) => {
+    setCardForPayment(card)
+    setIsInvoicePaymentModalOpen(true)
+  }
+
+  const handleOpenAnticipate = (card: CreditCard) => {
+    setCardForAnticipate(card)
+    setIsAnticipateModalOpen(true)
+  }
+
+  const handleSaveCreditCard = async (input: CreateCreditCardInput) => {
+    if (user) {
+      await createCardMutation.mutateAsync(input)
+      toast.success('Cartão de crédito salvo com sucesso!')
+    } else {
+      const newCard: CreditCard = {
+        id: `demo-card-${Date.now()}`,
+        name: input.name,
+        brand: input.brand,
+        limitAmount: input.limitAmount,
+        usedLimit: 0,
+        availableLimit: input.limitAmount,
+        closingDay: input.closingDay,
+        dueDay: input.dueDay,
+        color: input.color || '#7bc816',
+        lastFourDigits: input.lastFourDigits || null,
+        accountId: input.accountId,
+        currentInvoice: {
+          id: `demo-inv-${Date.now()}`,
+          period: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+          amount: 0,
+          status: 'open',
+          closingDate: new Date().toISOString(),
+          dueDate: new Date().toISOString()
+        }
+      }
+      setDemoCreditCards((prev) => [...prev, newCard])
+      toast.success('Cartão cadastrado com sucesso (modo demonstração)!')
+    }
+  }
+
+  const handleConfirmInvoicePayment = async (data: {
+    invoiceId: string
+    paymentAccountId: string
+    amount: number
+  }) => {
+    if (user) {
+      await payInvoiceMutation.mutateAsync({
+        invoiceId: data.invoiceId,
+        data: {
+          paymentAccountId: data.paymentAccountId,
+          amount: data.amount
+        }
+      })
+      toast.success('Fatura liquidada com sucesso e débito lançado em conta!')
+    } else {
+      setDemoAccounts((prev) =>
+        prev.map((acc) =>
+          acc.id === data.paymentAccountId
+            ? { ...acc, balance: acc.balance - data.amount }
+            : acc
+        )
+      )
+      setDemoCreditCards((prev) =>
+        prev.map((card) => {
+          if (card.currentInvoice?.id === data.invoiceId) {
+            return {
+              ...card,
+              usedLimit: Math.max(0, card.usedLimit - data.amount),
+              availableLimit: Math.min(card.limitAmount, card.availableLimit + data.amount),
+              currentInvoice: {
+                ...card.currentInvoice,
+                status: 'paid',
+                amount: 0
+              }
+            }
+          }
+          return card
+        })
+      )
+      toast.success('Fatura liquidada com sucesso no modo demonstração!')
+    }
+  }
+
+  const handleConfirmAnticipation = async (data: {
+    cardId: string
+    transactionIds: string[]
+  }) => {
+    if (user) {
+      await anticipateMutation.mutateAsync({
+        cardId: data.cardId,
+        data: { transactionIds: data.transactionIds }
+      })
+      toast.success('Parcelas antecipadas com sucesso para a fatura aberta!')
+    } else {
+      toast.success('Parcelas antecipadas no modo demonstração!')
     }
   }
 
@@ -912,6 +1081,12 @@ const MainApp = () => {
           onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
           isBudgetsLoading={Boolean(user && isBudgetsLoading)}
           onImportStatement={() => setIsImportModalOpen(true)}
+          creditCards={activeCreditCards}
+          isCreditCardsLoading={Boolean(user && isCreditCardsLoading)}
+          onOpenCreateCreditCard={handleOpenCreateCard}
+          onOpenInvoiceDetails={handleOpenInvoiceDetails}
+          onOpenPayInvoice={handleOpenPayInvoice}
+          onOpenAnticipate={handleOpenAnticipate}
         />
       </main>
 
@@ -923,6 +1098,7 @@ const MainApp = () => {
             mode={txMode}
             categories={activeCategories}
             accounts={activeAccounts}
+            creditCards={activeCreditCards}
             defaultAccountId={selectedAccountId || undefined}
             initialOpenOcr={isTxModalOcrInitial}
             onClose={() => setIsTxModalOpen(false)}
@@ -1022,6 +1198,101 @@ const MainApp = () => {
             onClose={() => setIsLogoutModalOpen(false)}
             onConfirm={handleConfirmLogout}
             isLoading={isLoggingOut}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Modal de Gestão de Cartão de Crédito */}
+      {isCreditCardModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando cartão..." />}>
+          <CreditCardModal
+            isOpen={isCreditCardModalOpen}
+            card={selectedCardForEdit}
+            accounts={activeAccounts}
+            onClose={() => setIsCreditCardModalOpen(false)}
+            onSave={handleSaveCreditCard}
+            isLoading={Boolean(user && createCardMutation.isPending)}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Modal de Detalhes da Fatura */}
+      {isInvoiceDetailsModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando fatura..." />}>
+          <InvoiceDetailsModal
+            isOpen={isInvoiceDetailsModalOpen}
+            card={cardForDetails}
+            invoice={cardForDetails?.currentInvoice ? {
+              id: cardForDetails.currentInvoice.id,
+              creditCardId: cardForDetails.id,
+              period: cardForDetails.currentInvoice.period,
+              closingDate: cardForDetails.currentInvoice.closingDate,
+              dueDate: cardForDetails.currentInvoice.dueDate,
+              amount: cardForDetails.currentInvoice.amount,
+              status: cardForDetails.currentInvoice.status,
+              paidAmount: 0,
+              paidAt: null,
+              items: activeTransactions
+                .filter((tx) => tx.creditCardId === cardForDetails.id)
+                .map((tx) => ({
+                  id: tx.id,
+                  description: tx.description,
+                  amount: Math.abs(tx.amount),
+                  occurredAt: tx.occurred_at,
+                  installmentCurrent: tx.installmentCurrent ?? null,
+                  installmentTotal: tx.installmentTotal ?? null,
+                  category: tx.category || null
+                }))
+            } : null}
+            onClose={() => setIsInvoiceDetailsModalOpen(false)}
+            onPayInvoice={() => {
+              setIsInvoiceDetailsModalOpen(false)
+              if (cardForDetails) handleOpenPayInvoice(cardForDetails)
+            }}
+            onAnticipate={() => {
+              setIsInvoiceDetailsModalOpen(false)
+              if (cardForDetails) handleOpenAnticipate(cardForDetails)
+            }}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Modal de Liquidação / Pagamento de Fatura */}
+      {isInvoicePaymentModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando pagamento..." />}>
+          <InvoicePaymentModal
+            isOpen={isInvoicePaymentModalOpen}
+            card={cardForPayment}
+            accounts={activeAccounts}
+            onClose={() => setIsInvoicePaymentModalOpen(false)}
+            onConfirmPayment={handleConfirmInvoicePayment}
+            isLoading={Boolean(user && payInvoiceMutation.isPending)}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Modal de Antecipação de Parcelas */}
+      {isAnticipateModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando antecipação..." />}>
+          <AnticipateInstallmentsModal
+            isOpen={isAnticipateModalOpen}
+            card={cardForAnticipate}
+            futureInstallments={activeTransactions
+              .filter(
+                (tx) =>
+                  tx.creditCardId === cardForAnticipate?.id &&
+                  (tx.installmentCurrent || 1) > 1
+              )
+              .map((tx) => ({
+                id: tx.id,
+                description: tx.description || 'Parcela de compra',
+                amount: Math.abs(tx.amount),
+                installmentCurrent: tx.installmentCurrent,
+                installmentTotal: tx.installmentTotal
+              }))}
+            onClose={() => setIsAnticipateModalOpen(false)}
+            onConfirmAnticipation={handleConfirmAnticipation}
+            isLoading={Boolean(user && anticipateMutation.isPending)}
           />
         </React.Suspense>
       )}

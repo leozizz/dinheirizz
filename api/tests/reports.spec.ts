@@ -5,6 +5,7 @@ import { mockTransactionsStore } from '../src/routes/transactions'
 import { mockAccountsStore } from '../src/routes/accounts'
 import { mockCategoriesStore, DEFAULT_CATEGORIES } from '../src/routes/categories'
 import { mockCreditCardsStore } from '../src/routes/creditCards'
+import type { CategoryBreakdownItem, CostCenterSummaryItem } from '../src/schemas/reports'
 
 describe('BFF Reports API (TDD)', () => {
   let authToken: string
@@ -183,13 +184,13 @@ describe('BFF Reports API (TDD)', () => {
 
       // Categories breakdown
       expect(Array.isArray(data.categoriesBreakdown)).toBe(true)
-      const incomeCat = data.categoriesBreakdown.find((c: any) => c.type === 'income')
+      const incomeCat = data.categoriesBreakdown.find((c: CategoryBreakdownItem) => c.type === 'income')
       expect(incomeCat).toBeDefined()
       expect(incomeCat.amount).toBe(8000)
 
       // Cost centers
       expect(Array.isArray(data.costCentersSummary)).toBe(true)
-      const interAccount = data.costCentersSummary.find((a: any) => a.accountId === accountId1)
+      const interAccount = data.costCentersSummary.find((a: CostCenterSummaryItem) => a.accountId === accountId1)
       expect(interAccount).toBeDefined()
       expect(interAccount.income).toBe(8000)
       expect(interAccount.expense).toBe(1200.5)

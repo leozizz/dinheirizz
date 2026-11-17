@@ -61,8 +61,18 @@ const getJwtSecret = (c: Context<AuthEnv>): string => {
 
 const getSupabaseConfig = (c: Context<AuthEnv>): { url: string; anonKey: string } => {
   const env = c.env
-  const url = env?.SUPABASE_URL || process.env.SUPABASE_URL || ''
-  const anonKey = env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+  const url =
+    env?.SUPABASE_URL ||
+    env?.VITE_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    ''
+  const anonKey =
+    env?.SUPABASE_ANON_KEY ||
+    env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    ''
   return { url: url.replace(/\/$/, ''), anonKey }
 }
 
@@ -161,6 +171,15 @@ authRouter.post('/signup', async (c) => {
   }
 
   try {
+    const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
+
+    if (isProductionEnv(c.env) && (!supabaseUrl || !anonKey)) {
+      return c.json(
+        { error: 'Serviço de autenticação não configurado no ambiente de produção.' },
+        500
+      )
+    }
+
     // Verifica email duplicado em public.users
     const existingUsers = await db
       .select({ id: users.id, email: users.email, username: users.username })
@@ -188,7 +207,6 @@ authRouter.post('/signup', async (c) => {
     }
 
     // 2. Criação do usuário no Supabase Auth via REST server-to-server
-    const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
     let createdUserId: UUIDString = crypto.randomUUID() as UUIDString
 
     if (supabaseUrl && anonKey) {

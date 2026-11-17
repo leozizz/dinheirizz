@@ -137,9 +137,75 @@ describe('BFF-Driven Auth Endpoints (/api/v1/auth/*)', () => {
   describe('Production Environment & c.env Guards', () => {
     afterEach(() => {
       vi.restoreAllMocks()
+      vi.unstubAllEnvs()
+    })
+
+    it('deve retornar 500 no /signup em produção quando SUPABASE_URL/SUPABASE_ANON_KEY estiverem ausentes com banco ativo', async () => {
+      vi.stubEnv('SUPABASE_URL', '')
+      vi.stubEnv('VITE_SUPABASE_URL', '')
+      vi.stubEnv('SUPABASE_ANON_KEY', '')
+      vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', '')
+
+      const res = await app.request(
+        '/api/v1/auth/signup',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'prod-signup@dinheirizz.com',
+            password: 'Password123!'
+          })
+        },
+        {
+          ENVIRONMENT: 'production',
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/dinheirizz',
+          JWT_SECRET: 'prod-jwt-secret-test'
+        }
+      )
+
+      expect(res.status).toBe(500)
+      const data = await res.json()
+      expect(data.error).toContain('não configurado')
+    })
+
+    it('deve aceitar VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY como fallback no /login em produção', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'invalid_grant' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+
+      const res = await app.request(
+        '/api/v1/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'prod@dinheirizz.com',
+            password: 'WrongPassword!'
+          })
+        },
+        {
+          ENVIRONMENT: 'production',
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/dinheirizz',
+          JWT_SECRET: 'prod-jwt-secret-test',
+          VITE_SUPABASE_URL: 'https://example.supabase.co',
+          VITE_SUPABASE_PUBLISHABLE_KEY: 'publishable-key-test'
+        }
+      )
+
+      expect(res.status).toBe(401)
+      const data = await res.json()
+      expect(data.error).toBe('E-mail ou senha incorretos')
     })
 
     it('deve retornar 500 no /login em produção quando SUPABASE_URL/SUPABASE_ANON_KEY estiverem ausentes com banco ativo', async () => {
+      vi.stubEnv('SUPABASE_URL', '')
+      vi.stubEnv('VITE_SUPABASE_URL', '')
+      vi.stubEnv('SUPABASE_ANON_KEY', '')
+      vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', '')
+
       const res = await app.request(
         '/api/v1/auth/login',
         {

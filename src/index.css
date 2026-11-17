@@ -242,3 +242,38 @@ html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* === REGRAS DE IMPRESSÃO & RELATÓRIOS EXECUTIVOS (@media print) === */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+
+  body {
+    background: #ffffff;
+    color: #0f172a;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none;
+  }
+}
+

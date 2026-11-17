@@ -20,14 +20,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
+
+      - name: Setup pnpm via Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.28.0 --activate
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -35,8 +36,8 @@ jobs:
       - name: Agent Standards Review
         run: pnpm standards:review
 
-      - name: Run Test Suite (Vitest)
-        run: pnpm test
-
       - name: Build Application & PWA
         run: pnpm build
+
+      - name: Run Test Suite (Vitest)
+        run: pnpm test

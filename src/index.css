@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
+  :root, .dark {
     /* === FUNDOS DARK LUXURY (MINIMALISMO EQUILIBRADO iOS & OneUI) === */
     --background: oklch(0.11 0.006 260);        /* #0d0e12 - Fundo ônix profundo com calma ardósia */
     --card: oklch(0.16 0.008 260 / 0.65);       /* Fundo de vidro fosco homogêneo */
@@ -86,6 +86,32 @@
     --chart-4: oklch(0.60 0.15 90);
     --chart-5: oklch(0.58 0.22 25);
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
 body {
@@ -242,3 +268,48 @@ html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* === REGRAS DE IMPRESSÃO & RELATÓRIOS EXECUTIVOS (@media print) === */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff;
+    color: #0f172a;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  #root > .no-print,
+  header,
+  nav,
+  main:not(.print-only),
+  aside,
+  footer,
+  [role="dialog"] {
+    display: none;
+  }
+
+  .print-only {
+    display: block;
+    width: 100%;
+    background: #ffffff;
+    color: #0f172a;
+  }
+
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none;
+  }
+}
+

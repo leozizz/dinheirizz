@@ -55,6 +55,11 @@ const AnticipateInstallmentsModal = React.lazy(() =>
 const InvoiceDetailsModal = React.lazy(() =>
   import('./components/modals/InvoiceDetailsModal').then((m) => ({ default: m.InvoiceDetailsModal }))
 )
+const ExportReportModal = React.lazy(() =>
+  import('./components/modals/ExportReportModal').then((m) => ({ default: m.ExportReportModal }))
+)
+import { ReportPrintView } from './lib/export/reportPrintView'
+import { useReportExport, type ReportPdfData } from './hooks/useReportExport'
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
 import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
 import { useTransferTransaction } from './hooks/useTransfer'
@@ -224,6 +229,9 @@ const MainApp = () => {
   const [cardForAnticipate, setCardForAnticipate] = useState<CreditCard | null>(null)
   const [isInvoiceDetailsModalOpen, setIsInvoiceDetailsModalOpen] = useState(false)
   const [cardForDetails, setCardForDetails] = useState<CreditCard | null>(null)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [printData, setPrintData] = useState<ReportPdfData | null>(null)
+  const { fetchPdfData } = useReportExport()
   const [demoBudgets, setDemoBudgets] = useState<Array<{ id: string; categoryId: string; amountLimit: number }>>([
     { id: 'demo-b-1', categoryId: 'cat-1', amountLimit: 1500 },
     { id: 'demo-b-2', categoryId: 'cat-3', amountLimit: 1200 },
@@ -953,7 +961,8 @@ const MainApp = () => {
   }
 
   return (
-    <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom">
+    <>
+      <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom no-print">
       {/* Background Orbs */}
       <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-40" />
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-25" />
@@ -1081,6 +1090,7 @@ const MainApp = () => {
           onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
           isBudgetsLoading={Boolean(user && isBudgetsLoading)}
           onImportStatement={() => setIsImportModalOpen(true)}
+          onExportReport={() => setIsExportModalOpen(true)}
           creditCards={activeCreditCards}
           isCreditCardsLoading={Boolean(user && isCreditCardsLoading)}
           onOpenCreateCreditCard={handleOpenCreateCard}
@@ -1297,10 +1307,56 @@ const MainApp = () => {
         </React.Suspense>
       )}
 
-      {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+      {/* Modal de Exportação de Relatórios Financeiros (PDF / CSV) */}
+      {isExportModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando exportador..." />}>
+          <ExportReportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            accounts={activeAccounts}
+            existingTransactions={activeTransactions.map((tx) => ({
+              id: tx.id,
+              occurredAt: tx.occurred_at,
+              description: tx.description,
+              type: tx.type === 'income' ? 'income' : tx.type === 'transfer' ? 'transfer' : 'expense',
+              categoryName: tx.category?.name,
+              accountName: activeAccounts.find((a) => a.id === (tx.accountId || tx.account_id))?.name,
+              creditCardName: activeCreditCards.find((c) => c.id === tx.creditCardId)?.name,
+              installment:
+                tx.installmentCurrent && tx.installmentTotal
+                  ? `${tx.installmentCurrent}/${tx.installmentTotal}`
+                  : undefined,
+              status: tx.paid ? 'completed' : 'pending',
+              paidAt: tx.paid ? tx.occurred_at : null,
+              amount: Math.abs(tx.amount)
+            }))}
+            onExportPDF={async (filters) => {
+              const data = await fetchPdfData(filters)
+              setPrintData(data)
+              setTimeout(() => {
+                if (typeof window !== 'undefined') {
+                  window.print()
+                }
+              }, 150)
+            }}
+          />
+        </React.Suspense>
+      )}
+    </div>
+
+    {/* Container de Impressão Oficial (@media print) */}
+    {printData && (
+      <div className="print-only">
+        <ReportPrintView data={printData} />
+      </div>
+    )}
+
+    {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+    <div className="no-print">
       <Toaster position="bottom-right" richColors theme={resolvedTheme} />
     </div>
-  )
+  </>
+)
 }
 
 const App = () => {

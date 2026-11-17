@@ -29,7 +29,8 @@ import {
   Sparkles,
   List,
   Calendar,
-  UploadCloud
+  UploadCloud,
+  Download
 } from 'lucide-react'
 
 export interface TransactionItem {
@@ -101,6 +102,7 @@ export interface DashboardProps {
   onOpenBudgetModal?: () => void
   isBudgetsLoading?: boolean
   onImportStatement?: () => void
+  onExportReport?: () => void
   // Issue #53: Gestão Avançada de Cartões de Crédito e Faturas
   creditCards?: CreditCardItemType[]
   isCreditCardsLoading?: boolean
@@ -158,6 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenBudgetModal,
   isBudgetsLoading = false,
   onImportStatement,
+  onExportReport,
   creditCards,
   isCreditCardsLoading = false,
   onOpenCreateCreditCard,
@@ -572,6 +575,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
               <span>Importar Extrato</span>
+            </button>
+          )}
+          {onExportReport && (
+            <button
+              type="button"
+              data-testid="dashboard-export-report-btn"
+              onClick={onExportReport}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-primary" />
+              <span>Exportar Relatório</span>
             </button>
           )}
         </div>

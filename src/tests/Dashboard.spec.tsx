@@ -565,6 +565,28 @@ describe('Dashboard & QuickActions (TDD)', () => {
     expect(screen.getByTestId('credit-card-item-card-1')).toBeInTheDocument()
     expect(screen.getByText('Nubank Ultravioleta')).toBeInTheDocument()
   })
+
+  it('deve renderizar o botão Exportar Relatório e disparar onExportReport ao clicar', () => {
+    const handleExport = vi.fn()
+
+    render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        onExportReport={handleExport}
+      />
+    )
+
+    const exportBtn = screen.getByTestId('dashboard-export-report-btn')
+    expect(exportBtn).toBeInTheDocument()
+    expect(exportBtn).toHaveTextContent('Exportar Relatório')
+
+    fireEvent.click(exportBtn)
+    expect(handleExport).toHaveBeenCalledTimes(1)
+  })
 })
 
 

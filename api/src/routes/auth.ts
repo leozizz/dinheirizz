@@ -5,8 +5,9 @@ import { sign } from 'hono/jwt'
 import { getDb } from '../db/client'
 import { users, verificationTokens } from '../db/schema'
 import { signupSchema, loginSchema, verifyEmailSchema, resendVerificationSchema } from '../schemas/auth'
-import { sendVerificationEmail } from '../services/email'
+import { sendVerificationEmail, type RuntimeEmailEnv } from '../services/email'
 import type { AuthEnv } from '../middlewares/auth'
+import { isProductionEnv } from '../lib/env'
 
 export const authRouter = new Hono<AuthEnv>()
 
@@ -44,14 +45,14 @@ const generateOtpCode = (): string => {
 }
 
 const getJwtSecret = (c: Context<AuthEnv>): string => {
-  const env = c.env as Record<string, string | undefined> | undefined
+  const env = c.env
   const secret =
     env?.JWT_SECRET ||
     env?.SUPABASE_JWT_SECRET ||
     process.env.JWT_SECRET ||
     process.env.SUPABASE_JWT_SECRET
 
-  if (process.env.NODE_ENV === 'production' && !secret) {
+  if (isProductionEnv(env) && !secret) {
     throw new Error('Variável JWT_SECRET ou SUPABASE_JWT_SECRET ausente em produção')
   }
 
@@ -59,19 +60,9 @@ const getJwtSecret = (c: Context<AuthEnv>): string => {
 }
 
 const getSupabaseConfig = (c: Context<AuthEnv>): { url: string; anonKey: string } => {
-  const env = c.env as Record<string, string | undefined> | undefined
-  const url =
-    env?.SUPABASE_URL ||
-    env?.VITE_SUPABASE_URL ||
-    process.env.SUPABASE_URL ||
-    process.env.VITE_SUPABASE_URL ||
-    ''
-  const anonKey =
-    env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    env?.SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    ''
+  const env = c.env
+  const url = env?.SUPABASE_URL || process.env.SUPABASE_URL || ''
+  const anonKey = env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
   return { url: url.replace(/\/$/, ''), anonKey }
 }
 
@@ -141,11 +132,24 @@ authRouter.post('/signup', async (c) => {
       createdAt: now
     })
 
-    await sendVerificationEmail({
-      to: email,
-      code: otpCode,
-      name: fullName || undefined
-    })
+    const emailResult = await sendVerificationEmail(
+      {
+        to: email,
+        code: otpCode,
+        name: fullName || undefined
+      },
+      c.env as RuntimeEmailEnv
+    )
+
+    if (!emailResult.success) {
+      return c.json(
+        {
+          error: 'Falha ao enviar e-mail de verificação.',
+          message: emailResult.error
+        },
+        502
+      )
+    }
 
     return c.json(
       {
@@ -263,11 +267,24 @@ authRouter.post('/signup', async (c) => {
       createdAt: now
     })
 
-    await sendVerificationEmail({
-      to: email,
-      code: otpCode,
-      name: fullName || undefined
-    })
+    const emailResult = await sendVerificationEmail(
+      {
+        to: email,
+        code: otpCode,
+        name: fullName || undefined
+      },
+      c.env as RuntimeEmailEnv
+    )
+
+    if (!emailResult.success) {
+      return c.json(
+        {
+          error: 'Falha ao enviar e-mail de verificação.',
+          message: emailResult.error
+        },
+        502
+      )
+    }
 
     // Retorno estritamente sanitizado - Zero vazamento de dados internos
     return c.json(
@@ -428,11 +445,24 @@ authRouter.post('/resend-verification', async (c) => {
       createdAt: now
     })
 
-    await sendVerificationEmail({
-      to: email,
-      code: otpCode,
-      name: user?.fullName || undefined
-    })
+    const emailResult = await sendVerificationEmail(
+      {
+        to: email,
+        code: otpCode,
+        name: user?.fullName || undefined
+      },
+      c.env as RuntimeEmailEnv
+    )
+
+    if (!emailResult.success) {
+      return c.json(
+        {
+          error: 'Falha ao enviar e-mail de verificação.',
+          message: emailResult.error
+        },
+        502
+      )
+    }
 
     return c.json({
       success: true,
@@ -477,11 +507,24 @@ authRouter.post('/resend-verification', async (c) => {
       createdAt: now
     })
 
-    await sendVerificationEmail({
-      to: email,
-      code: otpCode,
-      name: existingUsers[0]?.fullName || undefined
-    })
+    const emailResult = await sendVerificationEmail(
+      {
+        to: email,
+        code: otpCode,
+        name: existingUsers[0]?.fullName || undefined
+      },
+      c.env as RuntimeEmailEnv
+    )
+
+    if (!emailResult.success) {
+      return c.json(
+        {
+          error: 'Falha ao enviar e-mail de verificação.',
+          message: emailResult.error
+        },
+        502
+      )
+    }
 
     return c.json({
       success: true,
@@ -550,6 +593,13 @@ authRouter.post('/login', async (c) => {
     const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
     let authUserId: UUIDString | null = null
 
+    if (isProductionEnv(c.env) && (!supabaseUrl || !anonKey)) {
+      return c.json(
+        { error: 'Serviço de autenticação não configurado no ambiente de produção.' },
+        500
+      )
+    }
+
     // 2. Autenticação server-side com Supabase Auth
     if (supabaseUrl && anonKey) {
       const supaRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
@@ -567,6 +617,12 @@ authRouter.post('/login', async (c) => {
       const supaData = (await supaRes.json().catch(() => ({}))) as { user?: { id?: UUIDString } }
 
       if (!supaRes.ok) {
+        if (supaRes.status >= 500) {
+          return c.json(
+            { error: 'Serviço de autenticação temporariamente indisponível.' },
+            502
+          )
+        }
         return c.json({ error: 'E-mail ou senha incorretos' }, 401)
       }
 

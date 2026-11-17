@@ -1,5 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import { verify } from 'hono/jwt'
+import { isProductionEnv, type RuntimeEnv } from '../lib/env'
 
 export type AuthUser = {
   id: string
@@ -9,6 +10,7 @@ export type AuthUser = {
 }
 
 export type AuthEnv = {
+  Bindings: RuntimeEnv
   Variables: {
     userId: string
     user: AuthUser
@@ -40,10 +42,10 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
   }
 
   // Chave secreta de validação do JWT (JWT_SECRET ou SUPABASE_JWT_SECRET)
-  const isProduction = process.env.NODE_ENV === 'production'
+  const isProduction = isProductionEnv(c.env)
   const envSecret =
-    (c.env as { JWT_SECRET?: string; SUPABASE_JWT_SECRET?: string } | undefined)?.JWT_SECRET ||
-    (c.env as { JWT_SECRET?: string; SUPABASE_JWT_SECRET?: string } | undefined)?.SUPABASE_JWT_SECRET ||
+    c.env?.JWT_SECRET ||
+    c.env?.SUPABASE_JWT_SECRET ||
     process.env.JWT_SECRET ||
     process.env.SUPABASE_JWT_SECRET
 

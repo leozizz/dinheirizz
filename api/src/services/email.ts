@@ -2,6 +2,12 @@ import { Resend } from 'resend'
 import { getWelcomeEmailTemplate } from './templates/welcome'
 import { getPasswordResetEmailTemplate } from './templates/passwordReset'
 import { getSecurityAlertEmailTemplate } from './templates/securityAlert'
+import { isProductionEnv, type RuntimeEnv } from '../lib/env'
+
+export type RuntimeEmailEnv = Pick<
+  RuntimeEnv,
+  'RESEND_API_KEY' | 'EMAIL_FROM' | 'ENVIRONMENT' | 'NODE_ENV'
+>
 
 export interface SentEmailRecord {
   to: string
@@ -20,16 +26,57 @@ export const clearSentEmails = (): void => {
   sentEmailsStore.length = 0
 }
 
-const getSenderEmail = (): string => {
-  return process.env.EMAIL_FROM || 'Dinheirizz <onboarding@resend.dev>'
+interface ResolvedEmailConfig {
+  apiKey?: string
+  from: string
+  isProduction: boolean
+  isTest: boolean
 }
 
-const getResendClient = (): Resend | null => {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey || process.env.NODE_ENV === 'test') {
-    return null
+const resolveEmailConfig = (env?: RuntimeEmailEnv): ResolvedEmailConfig => {
+  const apiKey = env?.RESEND_API_KEY ?? process.env.RESEND_API_KEY
+  const from = env?.EMAIL_FROM ?? process.env.EMAIL_FROM ?? 'Dinheirizz <onboarding@resend.dev>'
+  const isProduction = isProductionEnv(env)
+  const isTest = (env?.NODE_ENV ?? process.env.NODE_ENV) === 'test'
+
+  return { apiKey, from, isProduction, isTest }
+}
+
+const sendWithResend = async (
+  params: { to: string; subject: string; html: string; fallbackError: string },
+  env?: RuntimeEmailEnv
+): Promise<EmailResult> => {
+  const { apiKey, from, isProduction, isTest } = resolveEmailConfig(env)
+
+  if (isProduction) {
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'Serviço de e-mail não configurado (RESEND_API_KEY ausente).'
+      }
+    }
+  } else if (isTest || !apiKey) {
+    return { success: true, id: `mock-${Date.now()}` }
   }
-  return new Resend(apiKey)
+
+  try {
+    const resend = new Resend(apiKey)
+    const { data, error } = await resend.emails.send({
+      from,
+      to: params.to,
+      subject: params.subject,
+      html: params.html
+    })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, id: data?.id }
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : params.fallbackError
+    return { success: false, error: errorMessage }
+  }
 }
 
 export interface SendVerificationEmailParams {
@@ -44,11 +91,10 @@ export interface EmailResult {
   error?: string
 }
 
-export const sendVerificationEmail = async ({
-  to,
-  code,
-  name
-}: SendVerificationEmailParams): Promise<EmailResult> => {
+export const sendVerificationEmail = async (
+  { to, code, name }: SendVerificationEmailParams,
+  env?: RuntimeEmailEnv
+): Promise<EmailResult> => {
   const subject = `${code} é o seu código de verificação — Dinheirizz`
   const html = getWelcomeEmailTemplate({ name, code })
 
@@ -61,28 +107,10 @@ export const sendVerificationEmail = async ({
     timestamp: new Date()
   })
 
-  const resend = getResendClient()
-  if (!resend) {
-    return { success: true, id: `mock-${Date.now()}` }
-  }
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: getSenderEmail(),
-      to,
-      subject,
-      html
-    })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, id: data?.id }
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Falha ao enviar e-mail de verificação'
-    return { success: false, error: errorMessage }
-  }
+  return sendWithResend(
+    { to, subject, html, fallbackError: 'Falha ao enviar e-mail de verificação' },
+    env
+  )
 }
 
 export interface SendPasswordResetEmailParams {
@@ -91,11 +119,10 @@ export interface SendPasswordResetEmailParams {
   name?: string
 }
 
-export const sendPasswordResetEmail = async ({
-  to,
-  code,
-  name
-}: SendPasswordResetEmailParams): Promise<EmailResult> => {
+export const sendPasswordResetEmail = async (
+  { to, code, name }: SendPasswordResetEmailParams,
+  env?: RuntimeEmailEnv
+): Promise<EmailResult> => {
   const subject = `${code} é o seu código de recuperação de senha — Dinheirizz`
   const html = getPasswordResetEmailTemplate({ name, code })
 
@@ -108,28 +135,10 @@ export const sendPasswordResetEmail = async ({
     timestamp: new Date()
   })
 
-  const resend = getResendClient()
-  if (!resend) {
-    return { success: true, id: `mock-${Date.now()}` }
-  }
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: getSenderEmail(),
-      to,
-      subject,
-      html
-    })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, id: data?.id }
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Falha ao enviar e-mail de recuperação'
-    return { success: false, error: errorMessage }
-  }
+  return sendWithResend(
+    { to, subject, html, fallbackError: 'Falha ao enviar e-mail de recuperação' },
+    env
+  )
 }
 
 export interface SendSecurityAlertEmailParams {
@@ -139,12 +148,10 @@ export interface SendSecurityAlertEmailParams {
   name?: string
 }
 
-export const sendSecurityAlertEmail = async ({
-  to,
-  alertType,
-  details,
-  name
-}: SendSecurityAlertEmailParams): Promise<EmailResult> => {
+export const sendSecurityAlertEmail = async (
+  { to, alertType, details, name }: SendSecurityAlertEmailParams,
+  env?: RuntimeEmailEnv
+): Promise<EmailResult> => {
   const subject = `Alerta de Segurança: ${alertType} — Dinheirizz`
   const html = getSecurityAlertEmailTemplate({ name, alertType, details })
 
@@ -156,26 +163,8 @@ export const sendSecurityAlertEmail = async ({
     timestamp: new Date()
   })
 
-  const resend = getResendClient()
-  if (!resend) {
-    return { success: true, id: `mock-${Date.now()}` }
-  }
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: getSenderEmail(),
-      to,
-      subject,
-      html
-    })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, id: data?.id }
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Falha ao enviar alerta de segurança'
-    return { success: false, error: errorMessage }
-  }
+  return sendWithResend(
+    { to, subject, html, fallbackError: 'Falha ao enviar alerta de segurança' },
+    env
+  )
 }

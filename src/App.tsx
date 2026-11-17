@@ -961,7 +961,8 @@ const MainApp = () => {
   }
 
   return (
-    <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom">
+    <>
+      <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom no-print">
       {/* Background Orbs */}
       <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-40" />
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-25" />
@@ -1341,18 +1342,21 @@ const MainApp = () => {
           />
         </React.Suspense>
       )}
+    </div>
 
-      {/* Container de Impressão Oficial (@media print) */}
-      {printData && (
-        <div className="print-only">
-          <ReportPrintView data={printData} />
-        </div>
-      )}
+    {/* Container de Impressão Oficial (@media print) */}
+    {printData && (
+      <div className="print-only">
+        <ReportPrintView data={printData} />
+      </div>
+    )}
 
-      {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+    {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+    <div className="no-print">
       <Toaster position="bottom-right" richColors theme={resolvedTheme} />
     </div>
-  )
+  </>
+)
 }
 
 const App = () => {

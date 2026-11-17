@@ -9,7 +9,7 @@ import {
   Building2,
   CheckCircle2,
   ListFilter,
-  Sparkles,
+  BarChart3,
   ArrowUpRight,
   ArrowDownLeft
 } from 'lucide-react'
@@ -122,9 +122,9 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       aria-modal="true"
       aria-labelledby="export-modal-title"
     >
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-card border border-border rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-popover border border-border rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border bg-card/90">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border bg-popover/90 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
               <FileSpreadsheet className="w-5 h-5" />
@@ -360,7 +360,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
           <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <BarChart3 className="w-3.5 h-3.5 text-primary" />
                 Pré-visualização do Relatório
               </span>
               <span className="text-[11px] text-muted-foreground">
@@ -369,7 +369,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div className="p-2.5 rounded-lg bg-card/60 border border-border">
+              <div className="p-2.5 rounded-lg bg-background/80 border border-border">
                 <span className="text-[10px] text-muted-foreground uppercase block">Receitas</span>
                 <span
                   data-testid="export-preview-income"
@@ -379,7 +379,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-card/60 border border-border">
+              <div className="p-2.5 rounded-lg bg-background/80 border border-border">
                 <span className="text-[10px] text-muted-foreground uppercase block">Despesas</span>
                 <span
                   data-testid="export-preview-expense"
@@ -389,7 +389,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-card/60 border border-border">
+              <div className="p-2.5 rounded-lg bg-background/80 border border-border">
                 <span className="text-[10px] text-muted-foreground uppercase block">Saldo Líquido</span>
                 <span
                   data-testid="export-preview-net"
@@ -401,7 +401,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-card/60 border border-border">
+              <div className="p-2.5 rounded-lg bg-background/80 border border-border">
                 <span className="text-[10px] text-muted-foreground uppercase block">Lançamentos</span>
                 <span
                   data-testid="export-preview-count"
@@ -437,7 +437,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
         </div>
 
         {/* Rodapé e Ações */}
-        <div className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-border bg-card/90">
+        <div className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-border bg-popover/90 backdrop-blur-sm">
           <button
             type="button"
             data-testid="export-cancel-btn"

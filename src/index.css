@@ -250,19 +250,29 @@ html, body {
     margin: 12mm 15mm 12mm 15mm;
   }
 
-  body {
+  html, body {
     background: #ffffff;
     color: #0f172a;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .no-print {
+  .no-print,
+  #root > .no-print,
+  header,
+  nav,
+  main:not(.print-only),
+  aside,
+  footer,
+  [role="dialog"] {
     display: none;
   }
 
   .print-only {
     display: block;
+    width: 100%;
+    background: #ffffff;
+    color: #0f172a;
   }
 
   .break-inside-avoid {

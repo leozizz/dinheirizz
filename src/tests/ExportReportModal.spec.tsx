@@ -183,4 +183,30 @@ describe('ExportReportModal Component (TDD)', () => {
     fireEvent.click(screen.getByTestId('export-close-btn'))
     expect(mockOnClose).toHaveBeenCalledTimes(2)
   })
+
+  it('deve utilizar classes de tema bg-popover e não conter ícone genérico de IA (Sparkles) na pré-visualização', () => {
+    const { container } = render(
+      <ExportReportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        accounts={mockAccounts}
+      />,
+      { wrapper: createWrapper() }
+    )
+
+    const modalDialog = screen.getByTestId('export-report-modal')
+    expect(modalDialog).toBeInTheDocument()
+
+    // O container interno do modal deve usar bg-popover para evitar vazamento do backdrop no tema Claro Clean
+    const modalContent = modalDialog.querySelector('.bg-popover')
+    expect(modalContent).toBeInTheDocument()
+
+    // Não deve conter classes ou referências ao ícone lucide-sparkles
+    const sparklesIcon = container.querySelector('.lucide-sparkles')
+    expect(sparklesIcon).toBeNull()
+
+    // Deve conter o ícone de métricas financeiras lucide-bar-chart-3 ou lucide-chart-column
+    const barChartIcon = container.querySelector('.lucide-bar-chart-3, .lucide-chart-column, [class*="lucide-bar-chart"]')
+    expect(barChartIcon).toBeInTheDocument()
+  })
 })

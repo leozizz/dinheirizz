@@ -32,6 +32,29 @@ export interface PushNotificationHookReturn {
   refreshPermission: () => void
 }
 
+const DEMO_PREFERENCES_KEY = 'dinheirizz_demo_push_preferences'
+
+const DEFAULT_DEMO_PREFERENCES: NotificationPreferences = {
+  pushEnabled: true,
+  billsDueAlerts: true,
+  billsDueDaysBefore: 1,
+  budgetLimitAlerts: true,
+  budgetThresholdPercent: 85,
+  invoiceDueAlerts: true,
+  updatedAt: new Date().toISOString()
+}
+
+const getDemoPreferences = (): NotificationPreferences => {
+  if (typeof window === 'undefined') return DEFAULT_DEMO_PREFERENCES
+  try {
+    const raw = localStorage.getItem(DEMO_PREFERENCES_KEY)
+    if (raw) return JSON.parse(raw) as NotificationPreferences
+  } catch (_err) {
+    // ignore quota/parsing error
+  }
+  return DEFAULT_DEMO_PREFERENCES
+}
+
 const fallbackQueryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: false, gcTime: Infinity },
@@ -110,8 +133,11 @@ export const usePushNotifications = (): PushNotificationHookReturn => {
 
   // Query: Obter preferências de notificação
   const preferencesQuery = useQuery({
-    queryKey: ['push-preferences', session?.user?.id],
+    queryKey: ['push-preferences', session?.user?.id ?? 'demo'],
     queryFn: async (): Promise<NotificationPreferences> => {
+      if (!accessToken) {
+        return getDemoPreferences()
+      }
       const response = await fetch('/api/v1/push/preferences', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -124,12 +150,25 @@ export const usePushNotifications = (): PushNotificationHookReturn => {
       const data = (await response.json()) as { preferences: NotificationPreferences }
       return data.preferences
     },
-    enabled: Boolean(accessToken && clientInstance !== fallbackQueryClient)
+    enabled: Boolean(clientInstance !== fallbackQueryClient)
   }, clientInstance)
 
   // Mutation: Atualizar preferências de notificação
   const updatePreferencesMutation = useMutation({
     mutationFn: async (input: UpdateNotificationPreferencesInput): Promise<NotificationPreferences> => {
+      if (!accessToken) {
+        const updated: NotificationPreferences = {
+          ...getDemoPreferences(),
+          ...input,
+          updatedAt: new Date().toISOString()
+        }
+        try {
+          localStorage.setItem(DEMO_PREFERENCES_KEY, JSON.stringify(updated))
+        } catch (_err) {
+          // ignore error in private mode
+        }
+        return updated
+      }
       const response = await fetch('/api/v1/push/preferences', {
         method: 'PUT',
         headers: {
@@ -145,7 +184,7 @@ export const usePushNotifications = (): PushNotificationHookReturn => {
       return data.preferences
     },
     onSuccess: (updated) => {
-      clientInstance.setQueryData(['push-preferences', session?.user?.id], updated)
+      clientInstance.setQueryData(['push-preferences', session?.user?.id ?? 'demo'], updated)
     }
   }, clientInstance)
 
@@ -237,6 +276,12 @@ export const usePushNotifications = (): PushNotificationHookReturn => {
   // Mutation: Testar notificação
   const testMutation = useMutation({
     mutationFn: async (): Promise<{ success: boolean; message: string }> => {
+      if (!accessToken) {
+        return {
+          success: true,
+          message: 'Notificação de teste simulada com sucesso (Modo Demonstração)'
+        }
+      }
       const response = await fetch('/api/v1/push/test', {
         method: 'POST',
         headers: {

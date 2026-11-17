@@ -95,6 +95,31 @@ vi.mock('../contexts/AuthContext', () => ({
   })
 }))
 
+vi.mock('../hooks/usePushNotifications', () => ({
+  usePushNotifications: () => ({
+    preferences: {
+      pushEnabled: true,
+      billsDueAlerts: true,
+      billsDueDaysBefore: 1,
+      budgetLimitAlerts: true,
+      budgetThresholdPercent: 85,
+      invoiceDueAlerts: true
+    },
+    isSupported: true,
+    permission: 'granted',
+    isLoading: false,
+    isSubscribing: false,
+    isUpdatingPreferences: false,
+    isSendingTest: false,
+    hasActiveSubscription: true,
+    subscribeToPush: vi.fn(),
+    unsubscribeFromPush: vi.fn(),
+    updatePreferences: vi.fn(),
+    sendTestNotification: vi.fn(),
+    refreshPermission: vi.fn()
+  })
+}))
+
 describe('ProfileModal Component (TDD)', () => {
   beforeEach(() => {
     vi.clearAllMocks()

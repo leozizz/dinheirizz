@@ -1002,6 +1002,9 @@ const MainApp = () => {
             </button>
 
             <button
+              type="button"
+              onClick={() => setIsProfileModalOpen(true)}
+              data-testid="header-notifications-btn"
               aria-label="Notificações"
               className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer"
             >

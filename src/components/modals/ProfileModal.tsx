@@ -38,6 +38,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import { ThemeContext } from '../../contexts/ThemeContext'
 import type { ThemeMode } from '../../types/theme'
+import { PushNotificationSettings } from '../settings/PushNotificationSettings'
 
 export interface ProfileModalProps {
   isOpen: boolean
@@ -279,6 +280,7 @@ export const ProfileModal = ({
 
         {/* Modal Card */}
         <motion.div
+          data-testid="profile-modal"
           initial={{ scale: 0.95, opacity: 0, y: 15 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -292,6 +294,7 @@ export const ProfileModal = ({
           {/* Close button */}
           <button
             onClick={onClose}
+            data-testid="profile-modal-close-btn"
             aria-label="Fechar"
             className="absolute top-4 right-4 sm:top-5 sm:right-5 w-9 h-9 rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
           >
@@ -522,6 +525,9 @@ export const ProfileModal = ({
               </button>
             </div>
           </div>
+
+          {/* Seção Notificações Pró-Ativas (Web Push) */}
+          <PushNotificationSettings />
 
           {/* Seção Inteligência Artificial & BYOK */}
           <div className="mt-6 pt-5 border-t border-border">

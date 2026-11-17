@@ -9,6 +9,7 @@ import { ForecastCard } from './ForecastCard'
 import { FinancialCalendar } from './FinancialCalendar'
 import { BudgetProgressWidget } from './BudgetProgressWidget'
 import { CreditCardWidget } from '../cards/CreditCardWidget'
+import { PushNotificationBanner } from './PushNotificationBanner'
 import type { BudgetProgressItem } from '../../hooks/useBudgets'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
@@ -321,6 +322,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
+      {/* Banner de Notificações Pró-Ativas Web Push */}
+      <PushNotificationBanner />
 
       {/* Saldo Principal Card */}
       <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border shadow-2xl">

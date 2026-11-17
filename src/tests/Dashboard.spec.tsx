@@ -3,6 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { Dashboard } from '../components/dashboard/Dashboard'
 import { QuickActions } from '../components/dashboard/QuickActions'
 
+vi.mock('../components/dashboard/PushNotificationBanner', () => ({
+  PushNotificationBanner: () => <div data-testid="push-notification-banner" />
+}))
+
 const mockTransactions = [
   {
     id: 'tx-1',
@@ -586,6 +590,20 @@ describe('Dashboard & QuickActions (TDD)', () => {
 
     fireEvent.click(exportBtn)
     expect(handleExport).toHaveBeenCalledTimes(1)
+  })
+
+  it('deve renderizar o PushNotificationBanner no topo do Dashboard', () => {
+    render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('push-notification-banner')).toBeInTheDocument()
   })
 })
 

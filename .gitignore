@@ -181,6 +181,7 @@ dist/
 playwright-report/
 test-results/
 e2e-screenshots/
+screenshots/
 
 # Agent Standards review outputs
 REVIEW_REPORT.md

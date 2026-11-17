@@ -220,6 +220,43 @@ export const verificationTokens = pgTable(
   ]
 )
 
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('push_subscriptions_user_id_idx').on(table.userId),
+    index('push_subscriptions_endpoint_idx').on(table.endpoint)
+  ]
+)
+
+export const notificationPreferences = pgTable(
+  'notification_preferences',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+    pushEnabled: boolean('push_enabled').default(true).notNull(),
+    billsDueAlerts: boolean('bills_due_alerts').default(true).notNull(),
+    billsDueDaysBefore: integer('bills_due_days_before').default(1).notNull(),
+    budgetLimitAlerts: boolean('budget_limit_alerts').default(true).notNull(),
+    budgetThresholdPercent: integer('budget_threshold_percent').default(85).notNull(),
+    invoiceDueAlerts: boolean('invoice_due_alerts').default(true).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('notification_preferences_user_id_idx').on(table.userId)
+  ]
+)
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -252,5 +289,11 @@ export type NewInvoice = typeof invoices.$inferInsert
 
 export type VerificationToken = typeof verificationTokens.$inferSelect
 export type NewVerificationToken = typeof verificationTokens.$inferInsert
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect
+export type NewNotificationPreference = typeof notificationPreferences.$inferInsert
 
 

@@ -177,6 +177,10 @@ dist/
 # Drizzle migrations / cache
 .drizzle/
 
+# Playwright test artifacts
+playwright-report/
+test-results/
+
 # Agent Standards review outputs
 REVIEW_REPORT.md
 review-fixes.patch

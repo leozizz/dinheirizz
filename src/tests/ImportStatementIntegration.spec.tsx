@@ -45,16 +45,16 @@ describe('Import Statement Full Integration (TDD)', () => {
     render(<App />, { wrapper: createWrapper() })
 
     // No modo inicial não autenticado, clica em Explorar Demonstração
-    const exploreBtn = screen.getByTestId('welcome-demo-btn')
+    const exploreBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(exploreBtn)
 
     // Botão de Importar Extrato nas Ações Rápidas
-    const quickImportBtn = screen.getByTestId('import-statement-btn')
+    const quickImportBtn = await screen.findByTestId('import-statement-btn')
     expect(quickImportBtn).toBeInTheDocument()
 
     // Clica para abrir modal
     fireEvent.click(quickImportBtn)
-    expect(screen.getByTestId('import-statement-modal')).toBeInTheDocument()
+    expect(await screen.findByTestId('import-statement-modal')).toBeInTheDocument()
 
     // Fecha o modal
     const closeBtn = screen.getByTestId('close-import-modal-btn')
@@ -68,15 +68,15 @@ describe('Import Statement Full Integration (TDD)', () => {
   it('deve realizar importação no Modo Demonstração sem autenticação e persistir no estado', async () => {
     render(<App />, { wrapper: createWrapper() })
 
-    const exploreBtn = screen.getByTestId('welcome-demo-btn')
+    const exploreBtn = await screen.findByTestId('welcome-demo-btn')
     fireEvent.click(exploreBtn)
 
-    const quickImportBtn = screen.getByTestId('import-statement-btn')
+    const quickImportBtn = await screen.findByTestId('import-statement-btn')
     fireEvent.click(quickImportBtn)
 
     const csvContent = '10/10/2026;Venda Produto Demo;1200,00'
     const file = new File([csvContent], 'extrato.csv', { type: 'text/csv' })
-    const fileInput = screen.getByTestId('statement-file-input')
+    const fileInput = await screen.findByTestId('statement-file-input')
 
     fireEvent.change(fileInput, { target: { files: [file] } })
 

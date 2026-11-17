@@ -67,6 +67,7 @@ export interface DashboardProps {
   totalExpense: number
   transactions: TransactionItem[]
   onActionClick: (action: ActionType) => void
+  onActionHover?: (action: ActionType) => void
   isLoading?: boolean
   accounts?: AccountItem[]
   selectedAccountId?: string | null
@@ -124,6 +125,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   totalExpense,
   transactions,
   onActionClick,
+  onActionHover,
   isLoading = false,
   accounts = [],
   selectedAccountId = null,
@@ -510,7 +512,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2 px-1">
           Ações Rápidas
         </h3>
-        <QuickActions onAction={onActionClick} />
+        <QuickActions onAction={onActionClick} onHover={onActionHover} />
       </div>
 
       {/* Consultor Financeiro com IA (Fase 4) */}

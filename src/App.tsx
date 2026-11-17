@@ -7,17 +7,42 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { useTheme } from './hooks/useTheme'
 import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
 import { ActionType } from './components/dashboard/QuickActions'
-import { TransactionModal, TransactionMode } from './components/modals/TransactionModal'
-import { PixWalletModal, PixKeyItem } from './components/modals/PixWalletModal'
-import { AccountModal } from './components/modals/AccountModal'
-import { LogoutConfirmModal } from './components/modals/LogoutConfirmModal'
-import { ProfileModal } from './components/modals/ProfileModal'
-import { DangerZoneModal } from './components/modals/DangerZoneModal'
-import { BudgetModal } from './components/modals/BudgetModal'
-import { ImportStatementModal } from './components/modals/ImportStatementModal'
+import type { TransactionMode } from './components/modals/TransactionModal'
+import type { PixKeyItem } from './components/modals/PixWalletModal'
 import type { ParsedTransactionCandidate } from './types/import'
-import { LoginScreen } from './components/auth/LoginScreen'
-import { WelcomeScreen } from './components/auth/WelcomeScreen'
+import { ModalSuspenseFallback } from './components/ui/ModalSuspenseFallback'
+
+// Dynamic Imports para Code-Splitting e otimização de bundle
+const TransactionModal = React.lazy(() =>
+  import('./components/modals/TransactionModal').then((m) => ({ default: m.TransactionModal }))
+)
+const BudgetModal = React.lazy(() =>
+  import('./components/modals/BudgetModal').then((m) => ({ default: m.BudgetModal }))
+)
+const ImportStatementModal = React.lazy(() =>
+  import('./components/modals/ImportStatementModal').then((m) => ({ default: m.ImportStatementModal }))
+)
+const PixWalletModal = React.lazy(() =>
+  import('./components/modals/PixWalletModal').then((m) => ({ default: m.PixWalletModal }))
+)
+const AccountModal = React.lazy(() =>
+  import('./components/modals/AccountModal').then((m) => ({ default: m.AccountModal }))
+)
+const ProfileModal = React.lazy(() =>
+  import('./components/modals/ProfileModal').then((m) => ({ default: m.ProfileModal }))
+)
+const DangerZoneModal = React.lazy(() =>
+  import('./components/modals/DangerZoneModal').then((m) => ({ default: m.DangerZoneModal }))
+)
+const LogoutConfirmModal = React.lazy(() =>
+  import('./components/modals/LogoutConfirmModal').then((m) => ({ default: m.LogoutConfirmModal }))
+)
+const LoginScreen = React.lazy(() =>
+  import('./components/auth/LoginScreen').then((m) => ({ default: m.LoginScreen }))
+)
+const WelcomeScreen = React.lazy(() =>
+  import('./components/auth/WelcomeScreen').then((m) => ({ default: m.WelcomeScreen }))
+)
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
 import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
 import { useTransferTransaction } from './hooks/useTransfer'
@@ -308,6 +333,16 @@ const MainApp = () => {
       setTxMode(action as TransactionMode)
       setIsTxModalOcrInitial(false)
       setIsTxModalOpen(true)
+    }
+  }
+
+  const handleActionHover = (action: ActionType) => {
+    if (['income', 'expense', 'transfer', 'scan'].includes(action)) {
+      import('./components/modals/TransactionModal')
+    } else if (action === 'pix') {
+      import('./components/modals/PixWalletModal')
+    } else if (action === 'import') {
+      import('./components/modals/ImportStatementModal')
     }
   }
 
@@ -724,23 +759,27 @@ const MainApp = () => {
   if (!user && unauthView !== 'demo') {
     if (unauthView === 'login') {
       return (
-        <div className="relative">
-          <button
-            onClick={() => setUnauthView('welcome')}
-            className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-card/80 hover:bg-card text-foreground text-xs font-semibold backdrop-blur-md border border-border cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
-          >
-            ← Voltar
-          </button>
-          <LoginScreen />
-        </div>
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando tela de login..." />}>
+          <div className="relative">
+            <button
+              onClick={() => setUnauthView('welcome')}
+              className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-card/80 hover:bg-card text-foreground text-xs font-semibold backdrop-blur-md border border-border cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+            >
+              ← Voltar
+            </button>
+            <LoginScreen />
+          </div>
+        </React.Suspense>
       )
     }
 
     return (
-      <WelcomeScreen
-        onGoToLogin={() => setUnauthView('login')}
-        onExploreDemo={() => setUnauthView('demo')}
-      />
+      <React.Suspense fallback={<ModalSuspenseFallback message="Iniciando Dinheirizz..." />}>
+        <WelcomeScreen
+          onGoToLogin={() => setUnauthView('login')}
+          onExploreDemo={() => setUnauthView('demo')}
+        />
+      </React.Suspense>
     )
   }
 
@@ -848,6 +887,7 @@ const MainApp = () => {
           totalExpense={activeExpense}
           transactions={activeTransactions}
           onActionClick={handleActionClick}
+          onActionHover={handleActionHover}
           isLoading={Boolean(
             user &&
             apiAccounts.length === 0 &&
@@ -876,83 +916,115 @@ const MainApp = () => {
       </main>
 
       {/* Modal de Transações (Receita / Despesa / Transferência) */}
-      <TransactionModal
-        isOpen={isTxModalOpen}
-        mode={txMode}
-        categories={activeCategories}
-        accounts={activeAccounts}
-        defaultAccountId={selectedAccountId || undefined}
-        initialOpenOcr={isTxModalOcrInitial}
-        onClose={() => setIsTxModalOpen(false)}
-        onOpenAiSettings={() => setIsProfileModalOpen(true)}
-        onSubmit={handleCreateTransaction}
-      />
+      {isTxModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando transações..." />}>
+          <TransactionModal
+            isOpen={isTxModalOpen}
+            mode={txMode}
+            categories={activeCategories}
+            accounts={activeAccounts}
+            defaultAccountId={selectedAccountId || undefined}
+            initialOpenOcr={isTxModalOcrInitial}
+            onClose={() => setIsTxModalOpen(false)}
+            onOpenAiSettings={() => setIsProfileModalOpen(true)}
+            onSubmit={handleCreateTransaction}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Orçamentos Mensais por Categoria */}
-      <BudgetModal
-        isOpen={isBudgetModalOpen}
-        onClose={() => setIsBudgetModalOpen(false)}
-        categories={activeCategories}
-        budgets={activeBudgets}
-        onSaveBudget={handleSaveBudget}
-        onDeleteBudget={handleDeleteBudget}
-        isLoading={Boolean(
-          user && (createBudgetMutation.isPending || updateBudgetMutation.isPending || deleteBudgetMutation.isPending)
-        )}
-      />
+      {isBudgetModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando orçamentos..." />}>
+          <BudgetModal
+            isOpen={isBudgetModalOpen}
+            onClose={() => setIsBudgetModalOpen(false)}
+            categories={activeCategories}
+            budgets={activeBudgets}
+            onSaveBudget={handleSaveBudget}
+            onDeleteBudget={handleDeleteBudget}
+            isLoading={Boolean(
+              user && (createBudgetMutation.isPending || updateBudgetMutation.isPending || deleteBudgetMutation.isPending)
+            )}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Importação Inteligente de Extratos Bancários */}
-      <ImportStatementModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        accounts={activeAccounts}
-        categories={activeCategories}
-        existingTransactions={activeTransactions}
-        onDemoImport={handleDemoImport}
-      />
+      {isImportModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando importação..." />}>
+          <ImportStatementModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            accounts={activeAccounts}
+            categories={activeCategories}
+            existingTransactions={activeTransactions}
+            onDemoImport={handleDemoImport}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Carteira Pix */}
-      <PixWalletModal
-        isOpen={isPixModalOpen}
-        pixKeys={activePixKeys}
-        onClose={() => setIsPixModalOpen(false)}
-        onCreatePixKey={handleCreatePixKey}
-        onDeletePixKey={handleDeletePixKey}
-      />
+      {isPixModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando chaves Pix..." />}>
+          <PixWalletModal
+            isOpen={isPixModalOpen}
+            pixKeys={activePixKeys}
+            onClose={() => setIsPixModalOpen(false)}
+            onCreatePixKey={handleCreatePixKey}
+            onDeletePixKey={handleDeletePixKey}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Criação de Conta */}
-      <AccountModal
-        isOpen={isAccountModalOpen}
-        onClose={() => setIsAccountModalOpen(false)}
-        onSubmit={handleCreateAccount}
-      />
+      {isAccountModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando formulário de conta..." />}>
+          <AccountModal
+            isOpen={isAccountModalOpen}
+            onClose={() => setIsAccountModalOpen(false)}
+            onSubmit={handleCreateAccount}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Perfil e Configurações */}
-      <ProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        onOpenLogoutConfirm={() => setIsLogoutModalOpen(true)}
-        onOpenDangerZone={() => setIsDangerZoneOpen(true)}
-      />
+      {isProfileModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando perfil..." />}>
+          <ProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            onOpenLogoutConfirm={() => setIsLogoutModalOpen(true)}
+            onOpenDangerZone={() => setIsDangerZoneOpen(true)}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Gestão de Dados e Zona de Perigo */}
-      <DangerZoneModal
-        isOpen={isDangerZoneOpen}
-        onClose={() => setIsDangerZoneOpen(false)}
-        onSuccessNotification={(msg) => toast.success(msg)}
-        onDeleteTransactions={user ? undefined : handleDeleteTransactionsDemo}
-        onDeletePixKeys={user ? undefined : handleDeletePixKeysDemo}
-        onDeleteAccounts={user ? undefined : handleDeleteAccountsDemo}
-        onResetAllData={user ? undefined : handleResetAllDemo}
-      />
+      {isDangerZoneOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando zona de perigo..." />}>
+          <DangerZoneModal
+            isOpen={isDangerZoneOpen}
+            onClose={() => setIsDangerZoneOpen(false)}
+            onSuccessNotification={(msg) => toast.success(msg)}
+            onDeleteTransactions={user ? undefined : handleDeleteTransactionsDemo}
+            onDeletePixKeys={user ? undefined : handleDeletePixKeysDemo}
+            onDeleteAccounts={user ? undefined : handleDeleteAccountsDemo}
+            onResetAllData={user ? undefined : handleResetAllDemo}
+          />
+        </React.Suspense>
+      )}
 
       {/* Modal de Confirmação de Logout */}
-      <LogoutConfirmModal
-        isOpen={isLogoutModalOpen}
-        onClose={() => setIsLogoutModalOpen(false)}
-        onConfirm={handleConfirmLogout}
-        isLoading={isLoggingOut}
-      />
+      {isLogoutModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando confirmação..." />}>
+          <LogoutConfirmModal
+            isOpen={isLogoutModalOpen}
+            onClose={() => setIsLogoutModalOpen(false)}
+            onConfirm={handleConfirmLogout}
+            isLoading={isLoggingOut}
+          />
+        </React.Suspense>
+      )}
 
       {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
       <Toaster position="bottom-right" richColors theme={resolvedTheme} />

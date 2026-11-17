@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // Plugin para executar o BFF HonoJS diretamente no Vite Dev Server
-function honoDevServerPlugin(): Plugin {
+const honoDevServerPlugin = (): Plugin => {
   return {
     name: 'hono-dev-server',
     configureServer(server) {
@@ -80,42 +80,113 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-  plugins: [
-    honoDevServerPlugin(),
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'Dinheirizz 2.0',
-        short_name: 'Dinheirizz',
-        description: 'Controle Financeiro PWA Inteligente e Elegante',
-        theme_color: '#1a1625',
-        background_color: '#1a1625',
-        display: 'standalone',
-        orientation: 'portrait',
-        icons: [
-          {
-            src: '/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+    plugins: [
+      honoDevServerPlugin(),
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+        manifest: {
+          name: 'Dinheirizz 2.0',
+          short_name: 'Dinheirizz',
+          description: 'Controle Financeiro PWA Inteligente e Elegante',
+          theme_color: '#1a1625',
+          background_color: '#1a1625',
+          display: 'standalone',
+          orientation: 'portrait',
+          icons: [
+            {
+              src: '/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: '/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        }
+      })
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './')
       }
-    })
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './')
+    },
+    build: {
+      chunkSizeWarningLimit: 400,
+      rollupOptions: {
+        output: {
+          manualChunks: (id: string) => {
+            const normalizedId = id.replace(/\\/g, '/')
+            if (!normalizedId.includes('/node_modules/')) {
+              return undefined
+            }
+
+            if (
+              normalizedId.includes('/react/') ||
+              normalizedId.includes('/react-dom/') ||
+              normalizedId.includes('/scheduler/')
+            ) {
+              return 'vendor-react'
+            }
+
+            if (normalizedId.includes('/@tanstack/react-query/')) {
+              return 'vendor-query'
+            }
+
+            if (normalizedId.includes('/@supabase/')) {
+              return 'vendor-supabase'
+            }
+
+            if (
+              normalizedId.includes('/@radix-ui/') ||
+              normalizedId.includes('/framer-motion/') ||
+              normalizedId.includes('/vaul/') ||
+              normalizedId.includes('/cmdk/') ||
+              normalizedId.includes('/sonner/')
+            ) {
+              return 'vendor-ui'
+            }
+
+            if (normalizedId.includes('/lucide-react/')) {
+              return 'vendor-icons'
+            }
+
+            if (
+              normalizedId.includes('/react-hook-form/') ||
+              normalizedId.includes('/@hookform/') ||
+              normalizedId.includes('/zod/')
+            ) {
+              return 'vendor-forms'
+            }
+
+            if (
+              normalizedId.includes('/date-fns/') ||
+              normalizedId.includes('/react-day-picker/') ||
+              normalizedId.includes('/clsx/') ||
+              normalizedId.includes('/tailwind-merge/') ||
+              normalizedId.includes('/class-variance-authority/')
+            ) {
+              return 'vendor-utils'
+            }
+
+            if (
+              normalizedId.includes('/recharts/') ||
+              normalizedId.includes('/d3-') ||
+              normalizedId.includes('/victory-vendor/')
+            ) {
+              return 'vendor-charts'
+            }
+
+            return 'vendor-core'
+          }
+        }
+      }
+    },
+    server: {
+      port: 3000
     }
-  },
-  server: {
-    port: 3000
   }
-}
 })

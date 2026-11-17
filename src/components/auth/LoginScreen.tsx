@@ -18,7 +18,7 @@ import { EmailVerificationModal } from './EmailVerificationModal'
 import { toast, Toaster } from 'sonner'
 
 export const LoginScreen = () => {
-  const { signInWithPassword, signUp, signInWithOAuth } = useAuth()
+  const { signInWithPassword, signUp } = useAuth()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
@@ -118,16 +118,6 @@ export const LoginScreen = () => {
       toast.error(msg)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleOAuth = async (provider: 'google' | 'apple') => {
-    setErrorMessage(null)
-    const { error } = await signInWithOAuth(provider)
-    if (error) {
-      const msg = `Erro ao iniciar autenticação com ${provider}: ${error.message}`
-      setErrorMessage(msg)
-      toast.error(msg)
     }
   }
 
@@ -352,11 +342,12 @@ export const LoginScreen = () => {
           <button
             type="button"
             data-testid="oauth-google-btn"
-            onClick={() => handleOAuth('google')}
-            aria-label="Entrar com conta Google"
-            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-muted/50 hover:bg-muted active:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
+            disabled
+            aria-disabled="true"
+            aria-label="Entrar com conta Google — Em breve"
+            className="min-h-[44px] py-2 px-2.5 sm:px-3.5 rounded-xl bg-muted/40 border border-border text-muted-foreground text-xs sm:text-sm font-medium flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 opacity-75 cursor-not-allowed select-none"
           >
-            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 flex-shrink-0 opacity-70" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#EA4335"
                 d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
@@ -374,20 +365,27 @@ export const LoginScreen = () => {
                 d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
               />
             </svg>
-            <span className="truncate">Google</span>
+            <span>Google</span>
+            <span className="inline-flex items-center rounded-md bg-background/60 border border-border px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground whitespace-nowrap">
+              Em breve
+            </span>
           </button>
 
           <button
             type="button"
             data-testid="oauth-apple-btn"
-            onClick={() => handleOAuth('apple')}
-            aria-label="Entrar com conta Apple"
-            className="min-h-[44px] py-2 px-3 sm:px-4 rounded-xl bg-muted/50 hover:bg-muted active:bg-muted/80 border border-border text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
+            disabled
+            aria-disabled="true"
+            aria-label="Entrar com conta Apple — Em breve"
+            className="min-h-[44px] py-2 px-2.5 sm:px-3.5 rounded-xl bg-muted/40 border border-border text-muted-foreground text-xs sm:text-sm font-medium flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 opacity-75 cursor-not-allowed select-none"
           >
-            <svg className="w-3.5 h-3.5 flex-shrink-0 fill-current text-foreground" viewBox="0 0 170 170">
+            <svg className="w-3.5 h-3.5 flex-shrink-0 fill-current text-muted-foreground opacity-70" viewBox="0 0 170 170" aria-hidden="true">
               <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.93-12.04-14.54-6.08-9.28-10.87-19.98-14.34-32.09-3.48-12.11-5.22-23.49-5.22-34.14 0-15.02 3.8-27.42 11.41-37.21 7.61-9.79 17.06-14.79 28.34-15 4.35 0 9.28 1.16 14.79 3.48 5.51 2.32 9.4 3.52 11.66 3.6 2.03 0 5.92-1.22 11.66-3.66 5.74-2.44 10.47-3.56 14.21-3.35 10.57.51 19.34 4.35 26.29 11.51 6.95 7.16 11.21 16.03 12.79 26.6-9.51 5.74-14.18 13.93-14.01 24.58.17 8.35 3.35 15.35 9.53 21 6.18 5.65 13.43 9.09 21.75 10.32-2.12 6.55-4.72 13.06-7.8 19.53zm-28.71-105.7c0 7.15-2.61 13.9-7.83 20.25-5.22 6.35-11.64 10.4-19.26 12.15-.52-1.39-.78-2.78-.78-4.17 0-6.95 2.78-13.68 8.34-20.19 5.56-6.51 12.06-10.46 19.53-11.85 0 1.28 0 2.55 0 3.81z" />
             </svg>
-            <span className="truncate">Apple</span>
+            <span>Apple</span>
+            <span className="inline-flex items-center rounded-md bg-background/60 border border-border px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground whitespace-nowrap">
+              Em breve
+            </span>
           </button>
         </div>
       </div>

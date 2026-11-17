@@ -1,5 +1,5 @@
 /**
- * Adaptador de armazenamento seguro e criptografado para o Supabase Auth.
+ * Adaptador de armazenamento seguro e criptografado para sessão e credenciais no cliente.
  * Utiliza WebCrypto AES-GCM nativo para garantir que nenhum token, PII, e-mail
  * ou metadados de perfil fiquem legíveis em texto plano no LocalStorage do navegador.
  */

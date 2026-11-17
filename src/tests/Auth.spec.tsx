@@ -171,7 +171,7 @@ describe('Auth & LoginScreen with BFF-Driven Auth (Zero Frontend Supabase)', () 
     })
   })
 
-  it('deve renderizar a tela de login com botões Google e Apple habilitados e acessíveis', async () => {
+  it('deve renderizar os botões Google e Apple bloqueados com indicação "Em breve" e acessíveis', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
@@ -181,47 +181,34 @@ describe('Auth & LoginScreen with BFF-Driven Auth (Zero Frontend Supabase)', () 
     const googleBtn = screen.getByTestId('oauth-google-btn')
     const appleBtn = screen.getByTestId('oauth-apple-btn')
 
-    expect(googleBtn).not.toBeDisabled()
-    expect(googleBtn).toHaveAttribute('aria-label', 'Entrar com conta Google')
-    expect(googleBtn.textContent).not.toContain('Em breve')
+    expect(googleBtn).toBeDisabled()
+    expect(googleBtn).toHaveAttribute('aria-disabled', 'true')
+    expect(googleBtn).toHaveAttribute('aria-label', 'Entrar com conta Google — Em breve')
+    expect(googleBtn.textContent).toContain('Em breve')
 
-    expect(appleBtn).not.toBeDisabled()
-    expect(appleBtn).not.toHaveAttribute('aria-disabled', 'true')
-    expect(appleBtn).toHaveAttribute('aria-label', 'Entrar com conta Apple')
-    expect(appleBtn.textContent).not.toContain('Em breve')
+    expect(appleBtn).toBeDisabled()
+    expect(appleBtn).toHaveAttribute('aria-disabled', 'true')
+    expect(appleBtn).toHaveAttribute('aria-label', 'Entrar com conta Apple — Em breve')
+    expect(appleBtn.textContent).toContain('Em breve')
   })
 
-  it('deve invocar GET /api/v1/auth/oauth/apple ao clicar no botão da Apple', async () => {
+  it('não deve disparar requisição OAuth ao clicar nos botões Google ou Apple bloqueados', async () => {
     render(
       <AuthProvider>
         <TestConsumer />
       </AuthProvider>
     )
 
+    const googleBtn = screen.getByTestId('oauth-google-btn')
     const appleBtn = screen.getByTestId('oauth-apple-btn')
+
+    fireEvent.click(googleBtn)
     fireEvent.click(appleBtn)
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/auth/oauth/apple')
-      )
-    })
-  })
-
-  it('deve invocar GET /api/v1/auth/oauth/google ao clicar no botão do Google', async () => {
-    render(
-      <AuthProvider>
-        <TestConsumer />
-      </AuthProvider>
-    )
-
-    const googleBtn = screen.getByTestId('oauth-google-btn')
-    fireEvent.click(googleBtn)
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/auth/oauth/google')
-      )
+      const fetchCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]))
+      expect(fetchCalls.some((url) => url.includes('/api/v1/auth/oauth/google'))).toBe(false)
+      expect(fetchCalls.some((url) => url.includes('/api/v1/auth/oauth/apple'))).toBe(false)
     })
   })
 

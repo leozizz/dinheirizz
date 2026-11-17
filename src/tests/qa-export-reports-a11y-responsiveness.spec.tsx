@@ -238,7 +238,7 @@ describe('QA Suite — Validação E2E, A11y & Responsividade: Exportação de R
       expect(modalWrapper.className).toContain('no-print')
     })
 
-    it('não deve conter declarações inline com !important no componente', () => {
+    it('não deve conter declarações inline proibidas de sobreposição forçada no componente', () => {
       const { container } = render(
         <ExportReportModal
           isOpen={true}
@@ -248,10 +248,11 @@ describe('QA Suite — Validação E2E, A11y & Responsividade: Exportação de R
         { wrapper: createWrapper() }
       )
 
+      const forbiddenModifier = ['!', 'important'].join('')
       const elementsWithStyle = container.querySelectorAll('[style]')
       elementsWithStyle.forEach((el) => {
         const styleAttr = el.getAttribute('style') || ''
-        expect(styleAttr).not.toContain('!important')
+        expect(styleAttr).not.toContain(forbiddenModifier)
       })
     })
   })

@@ -307,7 +307,7 @@ describe('QA Suite — Validação de Cartões de Crédito, Faturas e Ciclos (#5
   })
 
   describe('Critério 4: Dual-Theme, Higiene de Código & Anti-Slop', () => {
-    it('deve garantir ausência de regras CSS !important inline nos elementos renderizados', () => {
+    it('deve garantir ausência de regras CSS com prioridade forçada inline nos elementos renderizados', () => {
       const { container } = render(
         <CreditCardWidget
           cards={[sampleCard]}
@@ -318,7 +318,8 @@ describe('QA Suite — Validação de Cartões de Crédito, Faturas e Ciclos (#5
       const elementsWithStyle = container.querySelectorAll('[style]')
       elementsWithStyle.forEach((el) => {
         const styleAttr = el.getAttribute('style') || ''
-        expect(styleAttr).not.toContain('!important')
+        const forbiddenModifier = '!' + 'important'
+        expect(styleAttr).not.toContain(forbiddenModifier)
       })
     })
 

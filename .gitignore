@@ -180,6 +180,7 @@ dist/
 # Playwright test artifacts
 playwright-report/
 test-results/
+e2e-screenshots/
 
 # Agent Standards review outputs
 REVIEW_REPORT.md

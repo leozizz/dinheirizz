@@ -38,6 +38,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import { ThemeContext } from '../../contexts/ThemeContext'
 import type { ThemeMode } from '../../types/theme'
+import { PushNotificationSettings } from '../settings/PushNotificationSettings'
 
 export interface ProfileModalProps {
   isOpen: boolean
@@ -522,6 +523,9 @@ export const ProfileModal = ({
               </button>
             </div>
           </div>
+
+          {/* Seção Notificações Pró-Ativas (Web Push) */}
+          <PushNotificationSettings />
 
           {/* Seção Inteligência Artificial & BYOK */}
           <div className="mt-6 pt-5 border-t border-border">

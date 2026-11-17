@@ -86,6 +86,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+        workbox: {
+          importScripts: ['/sw-push.js']
+        },
         manifest: {
           name: 'Dinheirizz 2.0',
           short_name: 'Dinheirizz',

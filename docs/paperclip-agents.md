@@ -9,7 +9,7 @@
 
 ## 1. Matriz de Agentes Ativos (7 Especialistas)
 
-Todos os agentes executam sob `adapterType: "antigravity_local"`, `model: "gemini-3.8-flash-medium"`, `instructionsBundleMode: "external"`, `wakeOnDemand: true`, `wakeOnAssignment: true`, `wakeOnAutomation: true`, e possuem sua própria pasta isolada em `.agents/<persona>/` contendo cópias de `AGENTS.md`, `STANDARDS.md` e o prompt específico `<persona>.md`.
+Todos os agentes executam sob `adapterType: "antigravity_local"`, `model: "gemini-4-hydrogen-medium"`, `instructionsBundleMode: "external"`, `wakeOnDemand: true`, `wakeOnAssignment: true`, `wakeOnAutomation: true`, e possuem sua própria pasta isolada em `.agents/<persona>/` contendo cópias de `AGENTS.md`, `STANDARDS.md` e o prompt específico `<persona>.md`.
 
 | Persona | Agent Name | Role / Icon | UUID Real (Paperclip) | Reports To | `instructionsRootPath` |
 | :--- | :--- | :--- | :--- | :--- | :--- |

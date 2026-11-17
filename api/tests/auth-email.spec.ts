@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import app from '../index'
-import { getSentEmails, clearSentEmails } from '../src/services/email'
+import { getSentEmails, clearSentEmails, sendVerificationEmail } from '../src/services/email'
 
 describe('Email Verification & Transactional Notifications (/api/v1/auth/*)', () => {
   const uniqueId = Date.now()
@@ -211,5 +211,96 @@ describe('Email Verification & Transactional Notifications (/api/v1/auth/*)', ()
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toBe('Este e-mail já foi verificado.')
+  })
+
+  it('deve retornar erro (sem mock falso positivo) quando ENVIRONMENT=production e RESEND_API_KEY ausente', async () => {
+    const result = await sendVerificationEmail(
+      { to: 'prod@dinheirizz.com', code: '654321', name: 'Prod User' },
+      { ENVIRONMENT: 'production' }
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.id).toBeUndefined()
+    expect(result.error).toContain('RESEND_API_KEY')
+  })
+
+  it('deve ler RESEND_API_KEY e EMAIL_FROM a partir de env (c.env) mesmo sem process.env', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 'resend_email_999' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    )
+
+    const result = await sendVerificationEmail(
+      { to: 'cenv@dinheirizz.com', code: '112233', name: 'CEnv User' },
+      {
+        ENVIRONMENT: 'production',
+        RESEND_API_KEY: 're_from_c_env_123',
+        EMAIL_FROM: 'Dinheirizz <contato@dinheirizz.com>'
+      }
+    )
+
+    expect(result).toEqual({ success: true, id: 'resend_email_999' })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchSpy.mock.calls[0]
+    expect(String(url)).toContain('resend.com/emails')
+    const headers = init?.headers as Record<string, string> | Headers
+    const authHeader = headers instanceof Headers ? headers.get('Authorization') : headers?.Authorization || headers?.authorization
+    expect(authHeader).toBe('Bearer re_from_c_env_123')
+    expect(String(init?.body)).toContain('contato@dinheirizz.com')
+
+    fetchSpy.mockRestore()
+  })
+
+  it('deve retornar 502 no /signup quando envio de e-mail falhar em produção', async () => {
+    const prodEmail = `prod_fail_${Date.now()}@dinheirizz.com`
+    const res = await app.request(
+      '/api/v1/auth/signup',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: prodEmail,
+          password: testPassword,
+          fullName: 'Prod Fail'
+        })
+      },
+      { ENVIRONMENT: 'production' }
+    )
+
+    expect(res.status).toBe(502)
+    const data = await res.json()
+    expect(data.error).toBeDefined()
+  })
+
+  it('deve retornar 502 no /resend-verification quando envio de e-mail falhar em produção', async () => {
+    const resendEmail = `prod_resend_${Date.now()}@dinheirizz.com`
+    await app.request('/api/v1/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: resendEmail,
+        password: testPassword,
+        fullName: 'Resend Prod'
+      })
+    })
+
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(Date.now() + 65 * 1000))
+
+    const res = await app.request(
+      '/api/v1/auth/resend-verification',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendEmail })
+      },
+      { ENVIRONMENT: 'production' }
+    )
+
+    expect(res.status).toBe(502)
+    const data = await res.json()
+    expect(data.error).toBeDefined()
   })
 })

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import app from '../index'
 
 describe('BFF-Driven Auth Endpoints (/api/v1/auth/*)', () => {
@@ -132,5 +132,98 @@ describe('BFF-Driven Auth Endpoints (/api/v1/auth/*)', () => {
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.success).toBe(true)
+  })
+
+  describe('Production Environment & c.env Guards', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('deve retornar 500 no /login em produção quando SUPABASE_URL/SUPABASE_ANON_KEY estiverem ausentes com banco ativo', async () => {
+      const res = await app.request(
+        '/api/v1/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'prod@dinheirizz.com',
+            password: 'Password123!'
+          })
+        },
+        {
+          ENVIRONMENT: 'production',
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/dinheirizz',
+          JWT_SECRET: 'prod-jwt-secret-test'
+        }
+      )
+
+      expect(res.status).toBe(500)
+      const data = await res.json()
+      expect(data.error).toContain('não configurado')
+    })
+
+    it('deve retornar 401 no /login em produção quando Supabase Auth rejeitar credenciais', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'invalid_grant' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+
+      const res = await app.request(
+        '/api/v1/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'prod@dinheirizz.com',
+            password: 'WrongPassword!'
+          })
+        },
+        {
+          ENVIRONMENT: 'production',
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/dinheirizz',
+          JWT_SECRET: 'prod-jwt-secret-test',
+          SUPABASE_URL: 'https://example.supabase.co',
+          SUPABASE_ANON_KEY: 'anon-key-test'
+        }
+      )
+
+      expect(res.status).toBe(401)
+      const data = await res.json()
+      expect(data.error).toBe('E-mail ou senha incorretos')
+    })
+
+    it('deve retornar 502 no /login em produção quando Supabase Auth retornar 5xx', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Internal Server Error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+
+      const res = await app.request(
+        '/api/v1/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'prod@dinheirizz.com',
+            password: 'Password123!'
+          })
+        },
+        {
+          ENVIRONMENT: 'production',
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/dinheirizz',
+          JWT_SECRET: 'prod-jwt-secret-test',
+          SUPABASE_URL: 'https://example.supabase.co',
+          SUPABASE_ANON_KEY: 'anon-key-test'
+        }
+      )
+
+      expect(res.status).toBe(502)
+      const data = await res.json()
+      expect(data.error).toContain('indisponível')
+    })
   })
 })

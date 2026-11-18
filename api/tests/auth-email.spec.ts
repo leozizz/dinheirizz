@@ -303,4 +303,48 @@ describe('Email Verification & Transactional Notifications (/api/v1/auth/*)', ()
     const data = await res.json()
     expect(data.error).toBeDefined()
   })
+
+  it('deve reenviar OTP em /resend-verification exclusivamente via Resend sem nenhuma chamada ao Supabase Auth', async () => {
+    const resendOnlyEmail = `resend_only_${Date.now()}@dinheirizz.com`
+    await app.request('/api/v1/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: resendOnlyEmail,
+        password: testPassword,
+        fullName: 'Resend Only'
+      })
+    })
+
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(Date.now() + 65 * 1000))
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 'resend_only_123' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    )
+
+    const res = await app.request(
+      '/api/v1/auth/resend-verification',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendOnlyEmail })
+      },
+      {
+        ENVIRONMENT: 'production',
+        RESEND_API_KEY: 're_test_only_123'
+      }
+    )
+
+    expect(res.status).toBe(200)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    const calledUrls = fetchSpy.mock.calls.map(([u]) => String(u))
+    expect(calledUrls.some((u) => u.includes('/auth/v1/'))).toBe(false)
+    expect(calledUrls[0]).toContain('resend.com/emails')
+
+    fetchSpy.mockRestore()
+  })
 })

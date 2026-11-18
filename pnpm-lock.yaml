@@ -216,6 +216,9 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.2.7(@types/node@22.19.11)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(terser@5.51.2)
+      workbox-window:
+        specifier: ^7.4.1
+        version: 7.4.1
       wrangler:
         specifier: ^3.109.1
         version: 3.114.17(@cloudflare/workers-types@4.20260702.1)

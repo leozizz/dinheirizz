@@ -17,3 +17,12 @@ global.fetch = vi.fn().mockImplementation(async (url: string | URL | Request) =>
     json: async () => ({})
   } as Response
 })
+
+// Mock padrão de virtual:pwa-register/react para testes unitários/integração no jsdom
+vi.mock('virtual:pwa-register/react', () => ({
+  useRegisterSW: () => ({
+    needRefresh: [false, vi.fn()],
+    offlineReady: [false, vi.fn()],
+    updateServiceWorker: vi.fn().mockResolvedValue(undefined)
+  })
+}))

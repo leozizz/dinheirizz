@@ -147,6 +147,7 @@ export const DangerZoneModal = ({
           role="dialog"
           aria-modal="true"
           aria-labelledby="danger-zone-modal-title"
+          data-testid="danger-zone-modal"
           className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
         >
           <motion.div
@@ -176,7 +177,8 @@ export const DangerZoneModal = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="p-1.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                data-testid="danger-zone-close-btn"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -184,8 +186,12 @@ export const DangerZoneModal = ({
 
             {/* Feedback Message */}
             {feedbackMessage && (
-              <div className="mb-5 p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div
+                data-testid="danger-zone-feedback"
+                role="status"
+                className="mb-5 p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm flex items-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
                 <span>{feedbackMessage}</span>
               </div>
             )}
@@ -208,7 +214,8 @@ export const DangerZoneModal = ({
                 <button
                   type="button"
                   onClick={() => setActiveAction('transactions')}
-                  className="w-full sm:w-auto min-h-[38px] px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer shrink-0"
+                  data-testid="danger-zone-transactions-btn"
+                  className="w-full sm:w-auto min-h-[44px] px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-300 hover:text-rose-700 dark:hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer shrink-0"
                 >
                   Apagar Transações
                 </button>
@@ -230,7 +237,8 @@ export const DangerZoneModal = ({
                 <button
                   type="button"
                   onClick={() => setActiveAction('pix-keys')}
-                  className="w-full sm:w-auto min-h-[38px] px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer shrink-0"
+                  data-testid="danger-zone-pix-keys-btn"
+                  className="w-full sm:w-auto min-h-[44px] px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-300 hover:text-rose-700 dark:hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer shrink-0"
                 >
                   Apagar Chaves Pix
                 </button>
@@ -245,7 +253,7 @@ export const DangerZoneModal = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="text-xs sm:text-sm font-semibold text-foreground">Excluir Contas Financeiras</h4>
-                      <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.2 rounded border border-rose-500/30 font-medium">
+                      <span className="text-[10px] bg-rose-500/20 text-rose-600 dark:text-rose-300 px-1.5 py-0.2 rounded border border-rose-500/30 font-medium">
                         Cascata
                       </span>
                     </div>
@@ -257,20 +265,21 @@ export const DangerZoneModal = ({
                 <button
                   type="button"
                   onClick={() => setActiveAction('accounts')}
-                  className="w-full sm:w-auto min-h-[38px] px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer shrink-0"
+                  data-testid="danger-zone-accounts-btn"
+                  className="w-full sm:w-auto min-h-[44px] px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-300 hover:text-rose-700 dark:hover:text-rose-200 text-xs font-semibold transition-all cursor-pointer shrink-0"
                 >
                   Apagar Contas
                 </button>
               </div>
 
               {/* Card 4: Reset Geral */}
-              <div className="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-rose-500/10 dark:bg-rose-950/20 border border-rose-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-300 shrink-0 mt-0.5 sm:mt-0">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-600 dark:text-rose-300 shrink-0 mt-0.5 sm:mt-0">
                     <RefreshCw className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-rose-200">Reset Geral de Dados</h4>
+                    <h4 className="text-xs sm:text-sm font-semibold text-rose-700 dark:text-rose-200">Reset Geral de Dados</h4>
                     <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
                       Limpa todas as contas, transações e chaves Pix. Restaura a conta ao estado original de fábrica.
                     </p>
@@ -279,7 +288,8 @@ export const DangerZoneModal = ({
                 <button
                   type="button"
                   onClick={() => setActiveAction('reset-all')}
-                  className="w-full sm:w-auto min-h-[38px] px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-md shadow-rose-950/60 shrink-0"
+                  data-testid="danger-zone-reset-all-btn"
+                  className="w-full sm:w-auto min-h-[44px] px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-md shadow-rose-950/30 shrink-0"
                 >
                   Resetar Tudo
                 </button>

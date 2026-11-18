@@ -1,6 +1,97 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest'
 import { sign } from 'hono/jwt'
+
+interface MockSqlClient {
+  id: number
+  end: ReturnType<typeof vi.fn>
+}
+
+const {
+  createdSqlClients,
+  mockPostgresFactory,
+  mockTxDelete,
+  mockTxUpdate,
+  mockTxInsert,
+  mockTxInsertReturning,
+  mockDbTransaction,
+  mockDbDelete,
+  mockDbUpdate,
+  mockDbInsert
+} = vi.hoisted(() => {
+  const createdSqlClients: MockSqlClient[] = []
+  const mockPostgresFactory = vi.fn(() => {
+    const client: MockSqlClient = {
+      id: createdSqlClients.length + 1,
+      end: vi.fn().mockResolvedValue(undefined)
+    }
+    createdSqlClients.push(client)
+    return client
+  })
+
+  const mockTxDeleteWhere = vi.fn().mockResolvedValue(undefined)
+  const mockTxDelete = vi.fn(() => ({ where: mockTxDeleteWhere }))
+  const mockTxUpdateWhere = vi.fn().mockResolvedValue(undefined)
+  const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }))
+  const mockTxUpdate = vi.fn(() => ({ set: mockTxUpdateSet }))
+  const mockTxInsertReturning = vi.fn().mockResolvedValue([{ id: 'acc-default-tx-1' }])
+  const mockTxInsertValues = vi.fn(() => ({ returning: mockTxInsertReturning }))
+  const mockTxInsert = vi.fn(() => ({ values: mockTxInsertValues }))
+
+  const mockDbTransaction = vi.fn(
+    async (
+      callback: (tx: {
+        delete: typeof mockTxDelete
+        update: typeof mockTxUpdate
+        insert: typeof mockTxInsert
+      }) => Promise<unknown>
+    ) => {
+      return callback({
+        delete: mockTxDelete,
+        update: mockTxUpdate,
+        insert: mockTxInsert
+      })
+    }
+  )
+
+  const mockDbDeleteWhere = vi.fn().mockResolvedValue(undefined)
+  const mockDbDelete = vi.fn(() => ({ where: mockDbDeleteWhere }))
+  const mockDbUpdateWhere = vi.fn().mockResolvedValue(undefined)
+  const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }))
+  const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }))
+  const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'acc-default-direct-1' }])
+  const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }))
+  const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }))
+
+  return {
+    createdSqlClients,
+    mockPostgresFactory,
+    mockTxDelete,
+    mockTxUpdate,
+    mockTxInsert,
+    mockTxInsertReturning,
+    mockDbTransaction,
+    mockDbDelete,
+    mockDbUpdate,
+    mockDbInsert
+  }
+})
+
+vi.mock('postgres', () => ({
+  default: mockPostgresFactory
+}))
+
+vi.mock('drizzle-orm/postgres-js', () => ({
+  drizzle: vi.fn(() => ({
+    transaction: mockDbTransaction,
+    delete: mockDbDelete,
+    update: mockDbUpdate,
+    insert: mockDbInsert
+  }))
+}))
+
 import app from '../index'
+import { getDb } from '../src/db/client'
+import { runWithRuntimeEnv } from '../src/lib/env'
 import { mockTransactionsStore } from '../src/routes/transactions'
 import { mockAccountsStore } from '../src/routes/accounts'
 import { mockPixKeysStore } from '../src/routes/pix'
@@ -212,6 +303,139 @@ describe('BFF User Data API - Gestão de Dados e Exclusão Destrutiva (Danger Zo
       expect(mockAccountsStore.has('acc-u2-1')).toBe(true)
       expect(mockTransactionsStore.has('tx-u2-1')).toBe(true)
       expect(mockPixKeysStore.has('pix-u2-1')).toBe(true)
+    })
+  })
+
+  describe('Isolamento de I/O entre requisições e Atomicidade (Cloudflare Workers)', () => {
+    const TEST_DATABASE_URL = 'postgres://postgres:postgres@localhost:5432/dinheirizz_test'
+
+    beforeEach(() => {
+      createdSqlClients.length = 0
+      vi.clearAllMocks()
+      mockTxInsertReturning.mockResolvedValue([{ id: 'acc-default-tx-1' }])
+      mockDbTransaction.mockImplementation(
+        async (
+          callback: (tx: {
+            delete: typeof mockTxDelete
+            update: typeof mockTxUpdate
+            insert: typeof mockTxInsert
+          }) => Promise<unknown>
+        ) => {
+          return callback({
+            delete: mockTxDelete,
+            update: mockTxUpdate,
+            insert: mockTxInsert
+          })
+        }
+      )
+    })
+
+    afterEach(() => {
+      delete process.env.DATABASE_URL
+    })
+
+    it('deve criar e encerrar um novo client Postgres por requisição sem reutilizar I/O entre requests sequenciais', async () => {
+      const endpoints = [
+        '/api/v1/user-data/transactions',
+        '/api/v1/user-data/pix-keys',
+        '/api/v1/user-data/accounts',
+        '/api/v1/user-data/reset-all'
+      ]
+
+      for (const endpoint of endpoints) {
+        const res = await app.request(
+          endpoint,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${authTokenUser1}` }
+          },
+          { DATABASE_URL: TEST_DATABASE_URL }
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('success', true)
+      }
+
+      expect(mockPostgresFactory).toHaveBeenCalledTimes(4)
+      expect(createdSqlClients).toHaveLength(4)
+
+      for (const client of createdSqlClients) {
+        expect(client.end).toHaveBeenCalledTimes(1)
+      }
+    })
+
+    it('deve reutilizar o mesmo client Postgres em múltiplas chamadas a getDb() dentro da mesma requisição', async () => {
+      await runWithRuntimeEnv({ DATABASE_URL: TEST_DATABASE_URL }, async () => {
+        const db1 = getDb()
+        const db2 = getDb()
+
+        expect(db1).not.toBeNull()
+        expect(db2).not.toBeNull()
+        expect(mockPostgresFactory).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('deve executar operações compostas (/transactions, /accounts, /reset-all) dentro de db.transaction', async () => {
+      const resTx = await app.request(
+        '/api/v1/user-data/transactions',
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authTokenUser1}` }
+        },
+        { DATABASE_URL: TEST_DATABASE_URL }
+      )
+      expect(resTx.status).toBe(200)
+      expect(mockDbTransaction).toHaveBeenCalledTimes(1)
+      expect(mockTxDelete).toHaveBeenCalledTimes(1)
+      expect(mockTxUpdate).toHaveBeenCalledTimes(1)
+
+      vi.clearAllMocks()
+
+      const resAcc = await app.request(
+        '/api/v1/user-data/accounts',
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authTokenUser1}` }
+        },
+        { DATABASE_URL: TEST_DATABASE_URL }
+      )
+      expect(resAcc.status).toBe(200)
+      expect(mockDbTransaction).toHaveBeenCalledTimes(1)
+      expect(mockTxDelete).toHaveBeenCalledTimes(2)
+      expect(mockTxInsert).toHaveBeenCalledTimes(1)
+
+      vi.clearAllMocks()
+
+      const resReset = await app.request(
+        '/api/v1/user-data/reset-all',
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authTokenUser1}` }
+        },
+        { DATABASE_URL: TEST_DATABASE_URL }
+      )
+      expect(resReset.status).toBe(200)
+      expect(mockDbTransaction).toHaveBeenCalledTimes(1)
+      expect(mockTxDelete).toHaveBeenCalledTimes(3)
+      expect(mockTxInsert).toHaveBeenCalledTimes(1)
+    })
+
+    it('deve encerrar o client Postgres no finally mesmo quando a transação falha com erro 500', async () => {
+      mockDbTransaction.mockRejectedValueOnce(new Error('Falha simulada na transação'))
+
+      const res = await app.request(
+        '/api/v1/user-data/reset-all',
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authTokenUser1}` }
+        },
+        { DATABASE_URL: TEST_DATABASE_URL }
+      )
+
+      expect(res.status).toBe(500)
+      expect(createdSqlClients).toHaveLength(1)
+      expect(createdSqlClients[0].end).toHaveBeenCalledTimes(1)
     })
   })
 })

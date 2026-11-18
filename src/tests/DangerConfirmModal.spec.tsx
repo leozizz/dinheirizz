@@ -91,4 +91,32 @@ describe('DangerConfirmModal Component (TDD - Dupla Confirmação Destrutiva)', 
     fireEvent.click(closeBtn)
     expect(onCloseMock).toHaveBeenCalledTimes(2)
   })
+
+  it('deve expor data-testid e exibir danger-confirm-error quando onConfirm rejeitar', async () => {
+    const onConfirmMock = vi.fn().mockRejectedValue(new Error('Erro 500 simulado'))
+    const onCloseMock = vi.fn()
+
+    render(
+      <DangerConfirmModal
+        {...defaultProps}
+        onConfirm={onConfirmMock}
+        onClose={onCloseMock}
+      />
+    )
+
+    expect(screen.getByTestId('danger-confirm-modal')).toBeInTheDocument()
+    expect(screen.getByTestId('danger-confirm-close-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('danger-confirm-phrase-copy')).toBeInTheDocument()
+
+    const input = screen.getByTestId('danger-confirm-phrase-input')
+    fireEvent.change(input, { target: { value: 'apagar todas as minhas transações' } })
+    fireEvent.click(screen.getByTestId('danger-confirm-submit-btn'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('danger-confirm-error')).toHaveTextContent('Erro 500 simulado')
+    })
+
+    expect(onCloseMock).not.toHaveBeenCalled()
+    expect(screen.getByTestId('danger-confirm-submit-btn')).not.toBeDisabled()
+  })
 })

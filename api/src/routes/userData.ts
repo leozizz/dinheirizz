@@ -39,8 +39,10 @@ userDataRouter.delete('/transactions', async (c) => {
   }
 
   try {
-    await db.delete(transactions).where(eq(transactions.userId, userId))
-    await db.update(accounts).set({ balance: '0.00' }).where(eq(accounts.userId, userId))
+    await db.transaction(async (tx) => {
+      await tx.delete(transactions).where(eq(transactions.userId, userId))
+      await tx.update(accounts).set({ balance: '0.00' }).where(eq(accounts.userId, userId))
+    })
 
     return c.json({
       success: true,
@@ -138,18 +140,22 @@ userDataRouter.delete('/accounts', async (c) => {
   }
 
   try {
-    await db.delete(transactions).where(eq(transactions.userId, userId))
-    await db.delete(accounts).where(eq(accounts.userId, userId))
+    const newAcc = await db.transaction(async (tx) => {
+      await tx.delete(transactions).where(eq(transactions.userId, userId))
+      await tx.delete(accounts).where(eq(accounts.userId, userId))
 
-    const [newAcc] = await db
-      .insert(accounts)
-      .values({
-        userId,
-        name: 'Conta Principal',
-        type: 'checking',
-        balance: '0.00'
-      })
-      .returning()
+      const [created] = await tx
+        .insert(accounts)
+        .values({
+          userId,
+          name: 'Conta Principal',
+          type: 'checking',
+          balance: '0.00'
+        })
+        .returning()
+
+      return created
+    })
 
     return c.json({
       success: true,
@@ -216,19 +222,23 @@ userDataRouter.delete('/reset-all', async (c) => {
   }
 
   try {
-    await db.delete(pixKeys).where(eq(pixKeys.userId, userId))
-    await db.delete(transactions).where(eq(transactions.userId, userId))
-    await db.delete(accounts).where(eq(accounts.userId, userId))
+    const newAcc = await db.transaction(async (tx) => {
+      await tx.delete(pixKeys).where(eq(pixKeys.userId, userId))
+      await tx.delete(transactions).where(eq(transactions.userId, userId))
+      await tx.delete(accounts).where(eq(accounts.userId, userId))
 
-    const [newAcc] = await db
-      .insert(accounts)
-      .values({
-        userId,
-        name: 'Conta Principal',
-        type: 'checking',
-        balance: '0.00'
-      })
-      .returning()
+      const [created] = await tx
+        .insert(accounts)
+        .values({
+          userId,
+          name: 'Conta Principal',
+          type: 'checking',
+          balance: '0.00'
+        })
+        .returning()
+
+      return created
+    })
 
     return c.json({
       success: true,

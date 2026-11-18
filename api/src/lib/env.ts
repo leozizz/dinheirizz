@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
+import type postgres from 'postgres'
 
 export interface RuntimeEnv {
   DATABASE_URL?: string
@@ -15,17 +16,43 @@ export interface RuntimeEnv {
   NODE_ENV?: string
 }
 
-const runtimeEnvStorage = new AsyncLocalStorage<RuntimeEnv>()
+export interface RequestContextStore {
+  env: RuntimeEnv
+  dbClient?: postgres.Sql
+  dbClientUrl?: string
+}
+
+const runtimeEnvStorage = new AsyncLocalStorage<RequestContextStore>()
 
 export const runWithRuntimeEnv = <T>(
   env: RuntimeEnv | undefined,
   fn: () => Promise<T>
 ): Promise<T> => {
-  return runtimeEnvStorage.run(env ?? {}, fn)
+  return runtimeEnvStorage.run({ env: env ?? {} }, fn)
 }
 
 export const getRuntimeEnv = (): RuntimeEnv | undefined => {
+  return runtimeEnvStorage.getStore()?.env
+}
+
+export const getRequestDbStore = (): RequestContextStore | undefined => {
   return runtimeEnvStorage.getStore()
+}
+
+export const setRequestDbClient = (client: postgres.Sql, url: string): void => {
+  const store = runtimeEnvStorage.getStore()
+  if (store) {
+    store.dbClient = client
+    store.dbClientUrl = url
+  }
+}
+
+export const clearRequestDbClient = (): void => {
+  const store = runtimeEnvStorage.getStore()
+  if (store) {
+    store.dbClient = undefined
+    store.dbClientUrl = undefined
+  }
 }
 
 export const isProductionEnv = (env?: Partial<RuntimeEnv>): boolean => {

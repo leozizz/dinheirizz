@@ -73,6 +73,7 @@ export const DangerConfirmModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="danger-confirm-title"
+        data-testid="danger-confirm-modal"
         className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
       >
         <motion.div
@@ -85,7 +86,7 @@ export const DangerConfirmModal = ({
           {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+              <div className="w-10 h-10 shrink-0 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
                 <AlertTriangle className="w-5 h-5 text-rose-400" />
               </div>
               <div>
@@ -104,7 +105,8 @@ export const DangerConfirmModal = ({
               onClick={onClose}
               disabled={isPending}
               aria-label="Fechar"
-              className="p-1.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
+              data-testid="danger-confirm-close-btn"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50 shrink-0"
             >
               <X className="w-5 h-5" />
             </button>
@@ -116,8 +118,8 @@ export const DangerConfirmModal = ({
           </p>
 
           {cascadeWarning && (
-            <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="leading-snug">{cascadeWarning}</p>
             </div>
           )}
@@ -133,15 +135,17 @@ export const DangerConfirmModal = ({
                 <span
                   onClick={handleCopy}
                   title="Clique para copiar"
-                  className="font-mono text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/30 cursor-pointer inline-flex items-center gap-1 hover:border-rose-400 transition-colors select-all"
+                  data-testid="danger-confirm-phrase-copy"
+                  className="font-mono text-rose-700 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/30 cursor-pointer inline-flex items-center gap-1 hover:border-rose-400 transition-colors select-all"
                 >
                   {expectedPhrase}
-                  {copied ? <Check className="w-3 h-3 text-emerald-400" /> : null}
+                  {copied ? <Check className="w-3 h-3 text-emerald-500 dark:text-emerald-400" /> : null}
                 </span>
               </label>
 
               <input
                 id="danger-confirm-phrase-input"
+                data-testid="danger-confirm-phrase-input"
                 type="text"
                 autoComplete="off"
                 spellCheck="false"
@@ -154,17 +158,22 @@ export const DangerConfirmModal = ({
             </div>
 
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
+              <div
+                data-testid="danger-confirm-error"
+                role="alert"
+                className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs"
+              >
                 {errorMessage}
               </div>
             )}
 
             {/* Actions */}
-            <div className="pt-2 flex flex-col-reverse sm:flex-row items-center gap-3">
+            <div className="pt-2 flex flex-col-reverse sm:flex-row items-center sm:items-stretch gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isPending}
+                data-testid="danger-confirm-cancel-btn"
                 className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-muted/50 hover:bg-muted text-foreground font-medium text-xs sm:text-sm transition-all border border-border cursor-pointer disabled:opacity-50"
               >
                 Cancelar
@@ -173,7 +182,8 @@ export const DangerConfirmModal = ({
               <button
                 type="submit"
                 disabled={!isMatch || isPending}
-                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:bg-muted disabled:border-border text-white disabled:text-muted-foreground font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-rose-950/50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 disabled:active:scale-100"
+                data-testid="danger-confirm-submit-btn"
+                className="w-full sm:w-1/2 min-h-[44px] py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:bg-muted disabled:border-border text-white disabled:text-muted-foreground font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-rose-950/30 disabled:shadow-none flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 disabled:active:scale-100"
               >
                 {isPending ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

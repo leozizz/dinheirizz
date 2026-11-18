@@ -23,12 +23,19 @@ import { reportsRouter } from './src/routes/reports'
 import { pushRouter } from './src/routes/push'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 import { runWithRuntimeEnv, type RuntimeEnv } from './src/lib/env'
+import { closeRequestDb } from './src/db/client'
 
 export const app = new Hono<AuthEnv>().basePath('/api')
 
 // Propaga c.env do runtime (Cloudflare Pages / Workers) para o contexto da requisição
 app.use('*', async (c, next) => {
-  await runWithRuntimeEnv(c.env as RuntimeEnv | undefined, next)
+  await runWithRuntimeEnv(c.env as RuntimeEnv | undefined, async () => {
+    try {
+      await next()
+    } finally {
+      await closeRequestDb()
+    }
+  })
 })
 
 // Global Middlewares (CORS e Headers de Segurança)

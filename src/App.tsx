@@ -11,6 +11,7 @@ import type { TransactionMode } from './components/modals/TransactionModal'
 import type { PixKeyItem } from './components/modals/PixWalletModal'
 import type { ParsedTransactionCandidate } from './types/import'
 import { ModalSuspenseFallback } from './components/ui/ModalSuspenseFallback'
+import { PwaUpdatePrompt } from './components/pwa/PwaUpdatePrompt'
 
 // Dynamic Imports para Code-Splitting e otimização de bundle
 const TransactionModal = React.lazy(() =>
@@ -1354,9 +1355,10 @@ const MainApp = () => {
       </div>
     )}
 
-    {/* Toaster Glassmorphism com suporte dinâmico ao Dual-Theme */}
+    {/* Toaster Glassmorphism e Notificação de Atualização PWA com suporte ao Dual-Theme */}
     <div className="no-print">
       <Toaster position="bottom-right" richColors theme={resolvedTheme} />
+      <PwaUpdatePrompt />
     </div>
   </>
 )

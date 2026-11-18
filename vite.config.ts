@@ -84,29 +84,49 @@ export default defineConfig(({ mode }) => {
       honoDevServerPlugin(),
       react(),
       VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+        registerType: 'prompt',
+        includeAssets: [
+          'icon.svg',
+          'apple-touch-icon.png',
+          'icon-dark-32x32.png',
+          'icon-light-32x32.png'
+        ],
         workbox: {
-          importScripts: ['/sw-push.js']
+          importScripts: ['/sw-push.js'],
+          cleanupOutdatedCaches: true,
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//]
         },
         manifest: {
-          name: 'Dinheirizz 2.0',
+          name: 'Dinheirizz',
           short_name: 'Dinheirizz',
           description: 'Controle Financeiro PWA Inteligente e Elegante',
-          theme_color: '#1a1625',
-          background_color: '#1a1625',
+          id: '/',
+          start_url: '/',
+          scope: '/',
           display: 'standalone',
           orientation: 'portrait',
+          lang: 'pt-BR',
+          theme_color: '#0d0e12',
+          background_color: '#0d0e12',
           icons: [
             {
-              src: '/icon-192.png',
+              src: '/icon-192x192.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
-              src: '/icon-512.png',
+              src: '/icon-512x512.png',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: '/icon-maskable-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
         }

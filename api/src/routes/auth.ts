@@ -59,7 +59,9 @@ const getJwtSecret = (c: Context<AuthEnv>): string => {
   return secret || 'dinheirizz-jwt-secret-dev-2026'
 }
 
-const getSupabaseConfig = (c: Context<AuthEnv>): { url: string; anonKey: string } => {
+const getSupabaseConfig = (
+  c: Context<AuthEnv>
+): { url: string; anonKey: string; serviceRoleKey: string } => {
   const env = c.env
   const url =
     env?.SUPABASE_URL ||
@@ -73,7 +75,50 @@ const getSupabaseConfig = (c: Context<AuthEnv>): { url: string; anonKey: string 
     process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     ''
-  return { url: url.replace(/\/$/, ''), anonKey }
+  const serviceRoleKey =
+    env?.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    ''
+  return { url: url.replace(/\/$/, ''), anonKey, serviceRoleKey }
+}
+
+interface SupabaseAdminResponse {
+  ok: boolean
+  status: number
+  data: {
+    id?: UUIDString
+    msg?: string
+    error_description?: string
+    message?: string
+    error?: string
+  }
+}
+
+const requestSupabaseAdmin = async (params: {
+  supabaseUrl: string
+  serviceRoleKey: string
+  path: string
+  method: 'POST' | 'PUT'
+  body: Record<string, unknown>
+}): Promise<SupabaseAdminResponse> => {
+  try {
+    const res = await fetch(`${params.supabaseUrl}${params.path}`, {
+      method: params.method,
+      headers: {
+        apikey: params.serviceRoleKey,
+        Authorization: `Bearer ${params.serviceRoleKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params.body)
+    })
+
+    const data = (await res.json().catch(() => ({}))) as SupabaseAdminResponse['data']
+    return { ok: res.ok, status: res.status, data }
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : 'Erro de comunicação com o provedor de autenticação'
+    return { ok: false, status: 502, data: { message } }
+  }
 }
 
 // POST /api/v1/auth/signup
@@ -171,13 +216,22 @@ authRouter.post('/signup', async (c) => {
   }
 
   try {
-    const { url: supabaseUrl, anonKey } = getSupabaseConfig(c)
+    const { url: supabaseUrl, serviceRoleKey } = getSupabaseConfig(c)
+    const resendApiKey = c.env?.RESEND_API_KEY || process.env.RESEND_API_KEY || ''
 
-    if (isProductionEnv(c.env) && (!supabaseUrl || !anonKey)) {
-      return c.json(
-        { error: 'Serviço de autenticação não configurado no ambiente de produção.' },
-        500
-      )
+    if (isProductionEnv(c.env)) {
+      if (!supabaseUrl || !serviceRoleKey) {
+        return c.json(
+          { error: 'Serviço de autenticação não configurado no ambiente de produção.' },
+          500
+        )
+      }
+      if (!resendApiKey) {
+        return c.json(
+          { error: 'Serviço de e-mail não configurado no ambiente de produção (RESEND_API_KEY ausente).' },
+          500
+        )
+      }
     }
 
     // Verifica email duplicado em public.users
@@ -206,49 +260,49 @@ authRouter.post('/signup', async (c) => {
       return c.json({ error: 'Este e-mail já está cadastrado.' }, 409)
     }
 
-    // 2. Criação do usuário no Supabase Auth via REST server-to-server
+    // 2. Criação do usuário no Supabase Auth via Admin API (suprime envio de link pelo Supabase)
     let createdUserId: UUIDString = crypto.randomUUID() as UUIDString
 
-    if (supabaseUrl && anonKey) {
-      const supaRes = await fetch(`${supabaseUrl}/auth/v1/signup`, {
+    if (supabaseUrl && serviceRoleKey) {
+      const supaRes = await requestSupabaseAdmin({
+        supabaseUrl,
+        serviceRoleKey,
+        path: '/auth/v1/admin/users',
         method: 'POST',
-        headers: {
-          apikey: anonKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+        body: {
           email,
           password,
-          data: {
+          email_confirm: false,
+          user_metadata: {
             full_name: fullName,
             username
           }
-        })
+        }
       })
 
-      const supaData = (await supaRes.json().catch(() => ({}))) as {
-        msg?: string
-        error_description?: string
-        message?: string
-        identities?: unknown[]
-        id?: UUIDString
-      }
-
       if (!supaRes.ok) {
-        const errorMsg = supaData.msg || supaData.error_description || supaData.message || 'Erro ao cadastrar usuário'
-        if (errorMsg.toLowerCase().includes('already registered')) {
+        const errorMsg =
+          supaRes.data.msg ||
+          supaRes.data.error_description ||
+          supaRes.data.message ||
+          supaRes.data.error ||
+          'Erro ao cadastrar usuário'
+        const normalizedError = errorMsg.toLowerCase()
+        if (
+          supaRes.status === 422 ||
+          normalizedError.includes('already registered') ||
+          normalizedError.includes('already exists')
+        ) {
           return c.json({ error: 'Este e-mail já está cadastrado.' }, 409)
+        }
+        if (supaRes.status >= 500) {
+          return c.json({ error: 'Serviço de autenticação indisponível no momento.' }, 502)
         }
         return c.json({ error: errorMsg }, 400)
       }
 
-      // Se identities for vazio, o Supabase já possuía o e-mail cadastrado
-      if (supaData.identities && Array.isArray(supaData.identities) && supaData.identities.length === 0) {
-        return c.json({ error: 'Este e-mail já está cadastrado.' }, 409)
-      }
-
-      if (supaData.id) {
-        createdUserId = supaData.id
+      if (supaRes.data.id) {
+        createdUserId = supaRes.data.id
       }
     }
 
@@ -388,6 +442,38 @@ authRouter.post('/verify-email', async (c) => {
       latestToken.token !== token
     ) {
       return c.json({ error: 'Código de verificação inválido ou expirado.' }, 400)
+    }
+
+    const { url: supabaseUrl, serviceRoleKey } = getSupabaseConfig(c)
+
+    if (isProductionEnv(c.env) && (!supabaseUrl || !serviceRoleKey)) {
+      return c.json(
+        { error: 'Serviço de autenticação não configurado no ambiente de produção.' },
+        500
+      )
+    }
+
+    const existingUsers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
+
+    if (supabaseUrl && serviceRoleKey && existingUsers.length > 0) {
+      const supaRes = await requestSupabaseAdmin({
+        supabaseUrl,
+        serviceRoleKey,
+        path: `/auth/v1/admin/users/${existingUsers[0].id}`,
+        method: 'PUT',
+        body: { email_confirm: true }
+      })
+
+      if (!supaRes.ok) {
+        return c.json(
+          { error: 'Falha ao confirmar e-mail no provedor de autenticação.' },
+          502
+        )
+      }
     }
 
     await db

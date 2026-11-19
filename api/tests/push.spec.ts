@@ -8,6 +8,7 @@ import {
 import { mockTransactionsStore } from '../src/routes/transactions'
 import { mockBudgetsStore } from '../src/routes/budgets'
 import { mockInvoicesStore } from '../src/routes/creditCards'
+import * as webPushService from '../src/services/webPush'
 
 describe('BFF Push Notifications API (TDD)', () => {
   let authToken: string
@@ -211,6 +212,7 @@ describe('BFF Push Notifications API (TDD)', () => {
         })
       })
 
+      const sendSpy = vi.spyOn(webPushService, 'sendWebPushNotification')
       vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
         new Response(null, { status: 201 })
       )
@@ -225,6 +227,11 @@ describe('BFF Push Notifications API (TDD)', () => {
       expect(res.status).toBe(200)
       const data = await res.json()
       expect(data.sentCount).toBe(1)
+      expect(sendSpy).toHaveBeenCalledTimes(1)
+      expect(sendSpy.mock.calls[0][1]).toMatchObject({
+        icon: '/dinheirizz-dark/android-chrome-192x192.png',
+        badge: '/dinheirizz-dark/favicon-32x32.png'
+      })
     })
   })
 
@@ -263,6 +270,34 @@ describe('BFF Push Notifications API (TDD)', () => {
         createdAt: new Date().toISOString()
       })
 
+      mockInvoicesStore.set('inv-open-1', {
+        id: 'inv-open-1',
+        userId: testUserId,
+        creditCardId: 'card-1',
+        period: tomorrowStr.substring(0, 7),
+        closingDate: tomorrowStr,
+        dueDate: tomorrowStr,
+        amount: '450.00',
+        status: 'open',
+        paidAmount: '0.00',
+        paidAt: null,
+        paymentAccountId: null,
+        paymentTransactionId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      })
+
+      mockBudgetsStore.set('budget-1', {
+        id: 'budget-1',
+        userId: testUserId,
+        categoryId: 'cat-1',
+        amountLimit: '100.00',
+        period: tomorrowStr.substring(0, 7),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+
+      const sendSpy = vi.spyOn(webPushService, 'sendWebPushNotification')
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(
         new Response(null, { status: 201 })
       )
@@ -277,7 +312,14 @@ describe('BFF Push Notifications API (TDD)', () => {
       expect(res.status).toBe(200)
       const data = await res.json()
       expect(data.success).toBe(true)
-      expect(data.dispatchedAlerts).toBeGreaterThanOrEqual(1)
+      expect(data.dispatchedAlerts).toBeGreaterThanOrEqual(3)
+      expect(sendSpy).toHaveBeenCalledTimes(3)
+      for (const call of sendSpy.mock.calls) {
+        expect(call[1]).toMatchObject({
+          icon: '/dinheirizz-dark/android-chrome-192x192.png',
+          badge: '/dinheirizz-dark/favicon-32x32.png'
+        })
+      }
     })
   })
 })

@@ -51,6 +51,9 @@ export interface MockNotificationPreference {
 export const mockPushSubscriptionsStore = new Map<string, MockPushSubscription>()
 export const mockNotificationPreferencesStore = new Map<string, MockNotificationPreference>()
 
+const DEFAULT_PUSH_ICON = '/dinheirizz-dark/android-chrome-192x192.png'
+const DEFAULT_PUSH_BADGE = '/dinheirizz-dark/favicon-32x32.png'
+
 export const pushRouter = new Hono<AuthEnv>()
 
 // GET /api/v1/push/public-key (Obter chave pública VAPID)
@@ -361,8 +364,8 @@ pushRouter.post('/test', async (c) => {
   const testPayload: WebPushPayload = {
     title: 'Dinheirizz — Teste de Notificação',
     body: 'Suas notificações pró-ativas estão configuradas e funcionando!',
-    icon: '/icon-192.png',
-    badge: '/icon-light-32x32.png',
+    icon: DEFAULT_PUSH_ICON,
+    badge: DEFAULT_PUSH_BADGE,
     data: { url: '/?open=notifications', type: 'test' }
   }
 
@@ -510,8 +513,8 @@ pushRouter.post('/dispatch-alerts', async (c) => {
           pendingAlerts.push({
             title: `Conta a vencer ${daysText}!`,
             body: `${tx.description} no valor de R$ ${parseFloat(tx.amount).toFixed(2).replace('.', ',')} vence ${daysText}.`,
-            icon: '/icon-192.png',
-            badge: '/icon-light-32x32.png',
+            icon: DEFAULT_PUSH_ICON,
+            badge: DEFAULT_PUSH_BADGE,
             data: { url: '/?open=transactions&status=pending', type: 'bill_due' }
           })
         }
@@ -542,8 +545,8 @@ pushRouter.post('/dispatch-alerts', async (c) => {
               pendingAlerts.push({
                 title: 'Alerta de Orçamento!',
                 body: `Você atingiu ${Math.round(percent)}% do limite planejado na categoria.`,
-                icon: '/icon-192.png',
-                badge: '/icon-light-32x32.png',
+                icon: DEFAULT_PUSH_ICON,
+                badge: DEFAULT_PUSH_BADGE,
                 data: { url: '/?open=budgets', type: 'budget_limit' }
               })
             }
@@ -565,8 +568,8 @@ pushRouter.post('/dispatch-alerts', async (c) => {
           pendingAlerts.push({
             title: 'Fatura de Cartão Próxima do Vencimento',
             body: `Fatura no valor de R$ ${parseFloat(inv.amount || '0').toFixed(2).replace('.', ',')} com vencimento em ${inv.dueDate}.`,
-            icon: '/icon-192.png',
-            badge: '/icon-light-32x32.png',
+            icon: DEFAULT_PUSH_ICON,
+            badge: DEFAULT_PUSH_BADGE,
             data: { url: '/?open=credit-cards', type: 'invoice_due' }
           })
         }

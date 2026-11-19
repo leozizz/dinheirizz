@@ -86,10 +86,14 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'prompt',
         includeAssets: [
-          'icon.svg',
-          'apple-touch-icon.png',
-          'icon-dark-32x32.png',
-          'icon-light-32x32.png'
+          'dinheirizz-dark/favicon.ico',
+          'dinheirizz-dark/favicon-16x16.png',
+          'dinheirizz-dark/favicon-32x32.png',
+          'dinheirizz-dark/apple-touch-icon.png',
+          'dinheirizz-light/favicon.ico',
+          'dinheirizz-light/favicon-16x16.png',
+          'dinheirizz-light/favicon-32x32.png',
+          'dinheirizz-light/apple-touch-icon.png'
         ],
         workbox: {
           importScripts: ['/sw-push.js'],
@@ -111,19 +115,19 @@ export default defineConfig(({ mode }) => {
           background_color: '#0d0e12',
           icons: [
             {
-              src: '/icon-192x192.png',
+              src: '/dinheirizz-dark/android-chrome-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/icon-512x512.png',
+              src: '/dinheirizz-dark/android-chrome-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: '/icon-maskable-512x512.png',
+              src: '/dinheirizz-dark/android-chrome-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable'

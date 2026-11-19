@@ -60,11 +60,14 @@ describe('Dual-Theme System (TDD - ThemeContext & useTheme)', () => {
     document.documentElement.className = ''
     document.documentElement.removeAttribute('data-theme')
 
-    // Remove qualquer meta theme-color prévia
+    // Remove qualquer meta theme-color prévia e links de ícone gerenciados
     const existingMeta = document.querySelector('meta[name="theme-color"]')
     if (existingMeta) {
       existingMeta.remove()
     }
+    document.head
+      .querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')
+      .forEach((link) => link.remove())
 
     matchMediaMatches = false
     matchMediaListeners.length = 0
@@ -410,6 +413,93 @@ describe('Dual-Theme System (TDD - ThemeContext & useTheme)', () => {
       expect(systemBtn).toHaveAttribute('aria-pressed', 'true')
       expect(lightBtn).toHaveAttribute('aria-pressed', 'false')
     })
+  })
+
+  it('11. Deve sincronizar dinamicamente os favicons e apple-touch-icon no document.head ao alternar entre dark, light e system', async () => {
+    // Simula links iniciais com prefers-color-scheme como no index.html
+    const seedLinks = [
+      { rel: 'icon', href: '/dinheirizz-dark/favicon.ico', media: '(prefers-color-scheme: dark)' },
+      { rel: 'icon', href: '/dinheirizz-light/favicon.ico', media: '(prefers-color-scheme: light)' },
+      { rel: 'icon', sizes: '16x16', type: 'image/png', href: '/dinheirizz-dark/favicon-16x16.png', media: '(prefers-color-scheme: dark)' },
+      { rel: 'icon', sizes: '16x16', type: 'image/png', href: '/dinheirizz-light/favicon-16x16.png', media: '(prefers-color-scheme: light)' },
+      { rel: 'icon', sizes: '32x32', type: 'image/png', href: '/dinheirizz-dark/favicon-32x32.png', media: '(prefers-color-scheme: dark)' },
+      { rel: 'icon', sizes: '32x32', type: 'image/png', href: '/dinheirizz-light/favicon-32x32.png', media: '(prefers-color-scheme: light)' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: '/dinheirizz-dark/apple-touch-icon.png', media: '(prefers-color-scheme: dark)' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: '/dinheirizz-light/apple-touch-icon.png', media: '(prefers-color-scheme: light)' }
+    ]
+
+    seedLinks.forEach((attrs) => {
+      const link = document.createElement('link')
+      Object.entries(attrs).forEach(([key, val]) => link.setAttribute(key, val))
+      document.head.appendChild(link)
+    })
+
+    render(
+      <ThemeProvider>
+        <ThemeConsumerTest />
+      </ThemeProvider>
+    )
+
+    // Inicialmente em dark
+    await waitFor(() => {
+      expect(screen.getByTestId('resolved-theme').textContent).toBe('dark')
+    })
+
+    const assertIconsForTheme = (expectedTheme: 'dark' | 'light') => {
+      const expectedPrefix = `/dinheirizz-${expectedTheme}/`
+      const iconLinks = Array.from(document.head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]'))
+      expect(iconLinks.length).toBeGreaterThanOrEqual(4)
+
+      iconLinks.forEach((link) => {
+        expect(link.getAttribute('href')?.startsWith(expectedPrefix)).toBe(true)
+        expect(link.hasAttribute('media')).toBe(false)
+      })
+
+      expect(document.head.querySelector(`link[rel="icon"][href="${expectedPrefix}favicon.ico"]`)).not.toBeNull()
+      expect(document.head.querySelector(`link[rel="icon"][sizes="16x16"][href="${expectedPrefix}favicon-16x16.png"]`)).not.toBeNull()
+      expect(document.head.querySelector(`link[rel="icon"][sizes="32x32"][href="${expectedPrefix}favicon-32x32.png"]`)).not.toBeNull()
+      expect(document.head.querySelector(`link[rel="apple-touch-icon"][href="${expectedPrefix}apple-touch-icon.png"]`)).not.toBeNull()
+    }
+
+    assertIconsForTheme('dark')
+
+    // Troca manual para light (mesmo se SO estiver em dark)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('btn-set-light'))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('resolved-theme').textContent).toBe('light')
+    })
+    assertIconsForTheme('light')
+
+    // Troca para system com SO em dark
+    matchMediaMatches = true
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('btn-set-system'))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('resolved-theme').textContent).toBe('dark')
+    })
+    assertIconsForTheme('dark')
+  })
+
+  it('12. Deve criar os links de ícone de forma idempotente caso document.head esteja vazio (JSDOM/testes)', async () => {
+    render(
+      <ThemeProvider defaultTheme="light">
+        <ThemeConsumerTest />
+      </ThemeProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('resolved-theme').textContent).toBe('light')
+    })
+
+    expect(document.head.querySelector('link[rel="icon"][href="/dinheirizz-light/favicon.ico"]')).not.toBeNull()
+    expect(document.head.querySelector('link[rel="icon"][sizes="16x16"][href="/dinheirizz-light/favicon-16x16.png"]')).not.toBeNull()
+    expect(document.head.querySelector('link[rel="icon"][sizes="32x32"][href="/dinheirizz-light/favicon-32x32.png"]')).not.toBeNull()
+    expect(document.head.querySelector('link[rel="apple-touch-icon"][href="/dinheirizz-light/apple-touch-icon.png"]')).not.toBeNull()
   })
 })
 

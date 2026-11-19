@@ -18,8 +18,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'Dinheirizz'
   const options = {
     body: payload.body || 'Você possui um novo alerta financeiro.',
-    icon: payload.icon || '/icon-light-32x32.png',
-    badge: payload.badge || '/icon-light-32x32.png',
+    icon: payload.icon || '/dinheirizz-dark/android-chrome-192x192.png',
+    badge: payload.badge || '/dinheirizz-dark/favicon-32x32.png',
     data: payload.data || { url: '/' },
     vibrate: [100, 50, 100]
   }

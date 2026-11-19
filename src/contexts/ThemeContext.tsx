@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { ThemeMode, ResolvedTheme, ThemeContextType } from '../types/theme'
 import { encryptedStorageAdapter } from '../lib/encryptedStorage'
+import { syncThemeIconsToDOM } from '../lib/themeIcons'
 
 const THEME_STORAGE_KEY = 'dinheirizz:theme_mode'
 
@@ -36,6 +37,8 @@ const applyThemeToDOM = (resolved: ResolvedTheme): void => {
     document.head.appendChild(meta)
   }
   meta.setAttribute('content', resolved === 'dark' ? '#0d0e12' : '#f8fafc')
+
+  syncThemeIconsToDOM(resolved)
 }
 
 export interface ThemeProviderProps {

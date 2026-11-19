@@ -1,5 +1,19 @@
-import React from 'react'
-import { Sparkles, ArrowRight, Eye, Download, ShieldCheck, TrendingUp, Cpu } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import {
+  Sparkles,
+  ArrowRight,
+  Eye,
+  Download,
+  CheckCircle2,
+  Share,
+  PlusSquare,
+  X,
+  ShieldCheck,
+  TrendingUp,
+  Cpu,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { usePwaInstall } from '../../hooks/usePwaInstall'
 
 export interface HeroSectionProps {
   onGoToLogin: () => void
@@ -7,6 +21,56 @@ export interface HeroSectionProps {
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExploreDemo }) => {
+  const { isInstalled, isInstalling, triggerInstall } = usePwaInstall()
+  const [isIosGuideOpen, setIsIosGuideOpen] = useState<boolean>(false)
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null)
+  const pwaBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  const closeIosGuide = (): void => {
+    setIsIosGuideOpen(false)
+    pwaBtnRef.current?.focus()
+  }
+
+  useEffect(() => {
+    if (!isIosGuideOpen) {
+      return
+    }
+
+    closeBtnRef.current?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        closeIosGuide()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isIosGuideOpen])
+
+  const handlePwaInstallClick = async (): Promise<void> => {
+    const outcome = await triggerInstall()
+    if (outcome === 'accepted') {
+      toast.success('Dinheirizz instalado com sucesso!')
+      return
+    }
+    if (outcome === 'dismissed') {
+      toast.info('Instalação cancelada. Você pode instalar quando quiser.')
+      return
+    }
+    if (outcome === 'ios-guide') {
+      setIsIosGuideOpen(true)
+      return
+    }
+    if (outcome === 'unsupported') {
+      toast.info(
+        'Instalação automática indisponível neste navegador. Use o menu do navegador para adicionar à tela inicial ou acesse pelo Chrome/Edge.',
+      )
+    }
+  }
+
   return (
     <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 lg:pt-20 lg:pb-32 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,15 +118,30 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
               )}
 
               <button
+                ref={pwaBtnRef}
                 type="button"
                 data-testid="welcome-pwa-btn"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('dinheirizz:install-pwa'))
-                }}
-                className="min-h-[44px] h-11 px-4 rounded-2xl bg-muted/30 hover:bg-muted/60 border border-border text-muted-foreground hover:text-foreground font-medium text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                disabled={isInstalled || isInstalling}
+                aria-label={
+                  isInstalled
+                    ? 'Aplicativo Dinheirizz já instalado'
+                    : 'Instalar aplicativo Dinheirizz (PWA)'
+                }
+                onClick={() => void handlePwaInstallClick()}
+                className="min-h-[44px] h-11 px-4 rounded-2xl bg-muted/30 hover:bg-muted/60 border border-border text-muted-foreground hover:text-foreground font-medium text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-default disabled:opacity-75"
               >
-                <Download className="w-3.5 h-3.5 text-accent" />
-                <span>Instalar App (PWA)</span>
+                {isInstalled ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+                )}
+                <span>
+                  {isInstalled
+                    ? 'App já instalado'
+                    : isInstalling
+                      ? 'Instalando...'
+                      : 'Instalar App (PWA)'}
+                </span>
               </button>
             </div>
 
@@ -149,6 +228,85 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGoToLogin, onExplore
           </div>
         </div>
       </div>
+
+      {isIosGuideOpen && (
+        <div
+          data-testid="pwa-ios-install-guide"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pwa-ios-install-title"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeIosGuide()
+            }
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-popover text-popover-foreground p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <h2
+                  id="pwa-ios-install-title"
+                  className="text-base font-bold text-foreground font-display"
+                >
+                  Instalar Dinheirizz no iOS
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Siga os 2 passos abaixo no Safari para adicionar o app à sua tela inicial:
+                </p>
+              </div>
+              <button
+                ref={closeBtnRef}
+                type="button"
+                data-testid="pwa-ios-guide-close-btn"
+                aria-label="Fechar instruções de instalação"
+                onClick={closeIosGuide}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <ol className="space-y-3">
+              <li className="flex items-start gap-3 rounded-xl border border-border bg-card p-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-bold text-primary">
+                  1
+                </span>
+                <div className="space-y-0.5 text-xs text-foreground leading-relaxed">
+                  <p className="font-medium flex items-center gap-1.5">
+                    <Share className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+                    <span>
+                      Toque no ícone de <strong>Compartilhar</strong> na barra inferior ou superior do Safari.
+                    </span>
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 rounded-xl border border-border bg-card p-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-bold text-primary">
+                  2
+                </span>
+                <div className="space-y-0.5 text-xs text-foreground leading-relaxed">
+                  <p className="font-medium flex items-center gap-1.5">
+                    <PlusSquare className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+                    <span>
+                      Selecione <strong>Adicionar à Tela de Início</strong> e toque em <strong>Adicionar</strong>.
+                    </span>
+                  </p>
+                </div>
+              </li>
+            </ol>
+
+            <button
+              type="button"
+              data-testid="pwa-ios-guide-confirm-btn"
+              onClick={closeIosGuide}
+              className="w-full min-h-[44px] rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

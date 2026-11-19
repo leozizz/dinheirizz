@@ -933,37 +933,38 @@ const MainApp = () => {
     }
   }
 
-  // Usuário não autenticado: tela inicial é Boas-Vindas ou Login (não o dashboard privado)
-  if (!user && unauthView !== 'demo') {
-    if (unauthView === 'login') {
+  const renderMainView = (): React.ReactNode => {
+    // Usuário não autenticado: tela inicial é Boas-Vindas ou Login (não o dashboard privado)
+    if (!user && unauthView !== 'demo') {
+      if (unauthView === 'login') {
+        return (
+          <React.Suspense fallback={<ModalSuspenseFallback message="Carregando tela de login..." />}>
+            <div className="relative">
+              <button
+                onClick={() => setUnauthView('welcome')}
+                className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-card/80 hover:bg-card text-foreground text-xs font-semibold backdrop-blur-md border border-border cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+              >
+                ← Voltar
+              </button>
+              <LoginScreen />
+            </div>
+          </React.Suspense>
+        )
+      }
+
       return (
-        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando tela de login..." />}>
-          <div className="relative">
-            <button
-              onClick={() => setUnauthView('welcome')}
-              className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 min-h-[40px] px-3.5 py-2.5 rounded-xl bg-card/80 hover:bg-card text-foreground text-xs font-semibold backdrop-blur-md border border-border cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
-            >
-              ← Voltar
-            </button>
-            <LoginScreen />
-          </div>
+        <React.Suspense fallback={<ModalSuspenseFallback message="Iniciando Dinheirizz..." />}>
+          <WelcomeScreen
+            onGoToLogin={() => setUnauthView('login')}
+            onExploreDemo={() => setUnauthView('demo')}
+          />
         </React.Suspense>
       )
     }
 
     return (
-      <React.Suspense fallback={<ModalSuspenseFallback message="Iniciando Dinheirizz..." />}>
-        <WelcomeScreen
-          onGoToLogin={() => setUnauthView('login')}
-          onExploreDemo={() => setUnauthView('demo')}
-        />
-      </React.Suspense>
-    )
-  }
-
-  return (
-    <>
-      <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom no-print">
+      <>
+        <div className="relative min-h-dvh bg-[var(--background)] text-foreground overflow-x-hidden pb-20 pt-safe-top pb-safe-bottom no-print">
       {/* Background Orbs */}
       <div className="fixed -top-24 -left-24 w-96 h-96 rounded-full gradient-orb-primary pointer-events-none opacity-40" />
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-25" />
@@ -1348,20 +1349,27 @@ const MainApp = () => {
       )}
     </div>
 
-    {/* Container de Impressão Oficial (@media print) */}
-    {printData && (
-      <div className="print-only">
-        <ReportPrintView data={printData} />
-      </div>
-    )}
+      {/* Container de Impressão Oficial (@media print) */}
+      {printData && (
+        <div className="print-only">
+          <ReportPrintView data={printData} />
+        </div>
+      )}
+    </>
+    )
+  }
 
-    {/* Toaster Glassmorphism e Notificação de Atualização PWA com suporte ao Dual-Theme */}
-    <div className="no-print">
-      <Toaster position="bottom-right" richColors theme={resolvedTheme} />
-      <PwaUpdatePrompt />
-    </div>
-  </>
-)
+  return (
+    <>
+      {renderMainView()}
+
+      {/* Toaster Glassmorphism e Notificação de Atualização PWA com suporte ao Dual-Theme */}
+      <div className="no-print">
+        <Toaster position="bottom-right" richColors theme={resolvedTheme} />
+        <PwaUpdatePrompt />
+      </div>
+    </>
+  )
 }
 
 const App = () => {

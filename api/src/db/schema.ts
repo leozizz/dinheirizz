@@ -257,6 +257,20 @@ export const notificationPreferences = pgTable(
   ]
 )
 
+export const subscriptionIgnores = pgTable(
+  'subscription_ignores',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    normalizedKey: text('normalized_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('subscription_ignores_user_id_idx').on(table.userId),
+    uniqueIndex('subscription_ignores_user_key_unique').on(table.userId, table.normalizedKey)
+  ]
+)
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -295,5 +309,8 @@ export type NewPushSubscription = typeof pushSubscriptions.$inferInsert
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect
 export type NewNotificationPreference = typeof notificationPreferences.$inferInsert
+
+export type SubscriptionIgnore = typeof subscriptionIgnores.$inferSelect
+export type NewSubscriptionIgnore = typeof subscriptionIgnores.$inferInsert
 
 

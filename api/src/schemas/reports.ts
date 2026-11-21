@@ -10,6 +10,13 @@ export const reportFilterSchema = z
       message: 'Formato de período inválido. Use YYYY-MM para mensal ou YYYY para anual.'
     }),
     accountId: z.string().uuid('ID de conta inválido').optional(),
+    profileId: z
+      .string()
+      .refine(
+        (v) => v === 'all' || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v),
+        { message: 'ID de perfil inválido' }
+      )
+      .optional(),
     status: z.enum(['all', 'completed', 'pending']).default('completed')
   })
   .refine(

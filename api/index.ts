@@ -21,6 +21,8 @@ import { creditCardsRouter } from './src/routes/creditCards'
 import { invoicesRouter } from './src/routes/invoices'
 import { reportsRouter } from './src/routes/reports'
 import { pushRouter } from './src/routes/push'
+import { workspacesRouter } from './src/routes/workspaces'
+import { goalsRouter } from './src/routes/goals'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 import { runWithRuntimeEnv, type RuntimeEnv } from './src/lib/env'
 import { closeRequestDb } from './src/db/client'
@@ -123,6 +125,14 @@ app.route('/v1/reports', reportsRouter)
 app.use('/v1/push/*', authMiddleware)
 app.use('/v1/push', authMiddleware)
 app.route('/v1/push', pushRouter)
+
+app.use('/v1/workspaces/*', authMiddleware)
+app.use('/v1/workspaces', authMiddleware)
+app.route('/v1/workspaces', workspacesRouter)
+
+app.use('/v1/goals/*', authMiddleware)
+app.use('/v1/goals', authMiddleware)
+app.route('/v1/goals', goalsRouter)
 
 export default app
 

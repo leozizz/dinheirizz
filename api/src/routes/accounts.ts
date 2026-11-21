@@ -4,16 +4,19 @@ import { getDb } from '../db/client'
 import { accounts, users } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import type { AuthEnv } from '../middlewares/auth'
+import { parseProfileIdQuery, resolveUserProfileId } from '../lib/profileFilter'
 
 export const createAccountSchema = z.object({
   name: z.string({ required_error: 'Nome da conta é obrigatório' }).min(1, 'Nome não pode ser vazio').max(100),
   type: z.enum(['checking', 'savings', 'investment', 'cash']).optional().default('checking'),
-  balance: z.number().optional().default(0)
+  balance: z.number().optional().default(0),
+  profileId: z.string().uuid('ID de perfil inválido').optional().nullable()
 })
 
 export interface MockAccount {
   id: string
   userId: string
+  profileId?: string | null
   name: string
   type: string
   balance: string
@@ -39,20 +42,31 @@ export const accountsRouter = new Hono<AuthEnv>()
 
 accountsRouter.get('/', async (c) => {
   const userId = c.get('userId')
+  const parsedProfile = parseProfileIdQuery(c.req.query('profileId'))
+  if (!parsedProfile.valid) {
+    return c.json({ error: 'Parâmetro profileId inválido' }, 400)
+  }
+
   const db = getDb()
 
   if (!db) {
     const list = Array.from(mockAccountsStore.values()).filter(
-      (a) => a.userId === userId || a.userId === '00000000-0000-0000-0000-000000000000'
+      (a) =>
+        (a.userId === userId || a.userId === '00000000-0000-0000-0000-000000000000') &&
+        (!parsedProfile.profileId || a.profileId === parsedProfile.profileId)
     )
     return c.json({ data: list, total: list.length })
   }
 
   try {
-    const list = await db.select().from(accounts).where(eq(accounts.userId, userId))
+    const whereClause = parsedProfile.profileId
+      ? and(eq(accounts.userId, userId), eq(accounts.profileId, parsedProfile.profileId))
+      : eq(accounts.userId, userId)
+    const list = await db.select().from(accounts).where(whereClause)
     return c.json({ data: list, total: list.length })
-  } catch (error: any) {
-    return c.json({ error: 'Falha ao buscar contas', details: error?.message }, 500)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro desconhecido'
+    return c.json({ error: 'Falha ao buscar contas', details: message }, 500)
   }
 })
 
@@ -76,11 +90,17 @@ accountsRouter.post('/', async (c) => {
   const userId = c.get('userId')
   const db = getDb()
 
+  const profileRes = await resolveUserProfileId(db, userId, data.profileId)
+  if (!profileRes.ok) {
+    return c.json({ error: profileRes.error }, profileRes.status)
+  }
+
   if (!db) {
     const id = crypto.randomUUID()
     const newAcc: MockAccount = {
       id,
       userId,
+      profileId: profileRes.profileId,
       name: data.name,
       type: data.type,
       balance: data.balance.toFixed(2),
@@ -98,8 +118,8 @@ accountsRouter.post('/', async (c) => {
       await db.insert(users).values({
         id: userId,
         email: authUser?.email || `${userId}@dinheirizz.com`,
-        fullName: (authUser?.user_metadata as any)?.full_name || null,
-        username: (authUser?.user_metadata as any)?.username || null,
+        fullName: (authUser?.user_metadata as Record<string, unknown> | undefined)?.full_name as string | null ?? null,
+        username: (authUser?.user_metadata as Record<string, unknown> | undefined)?.username as string | null ?? null,
         provider: 'email',
         providers: ['email'],
         createdAt: new Date(),
@@ -109,14 +129,16 @@ accountsRouter.post('/', async (c) => {
 
     const inserted = await db.insert(accounts).values({
       userId,
+      profileId: profileRes.profileId,
       name: data.name,
       type: data.type,
       balance: data.balance.toFixed(2)
     }).returning()
 
     return c.json(inserted[0], 201)
-  } catch (error: any) {
-    return c.json({ error: 'Erro ao criar conta', details: error?.message }, 500)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro desconhecido'
+    return c.json({ error: 'Erro ao criar conta', details: message }, 500)
   }
 })
 

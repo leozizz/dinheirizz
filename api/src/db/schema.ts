@@ -18,18 +18,58 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 })
 
+export const financialProfiles = pgTable(
+  'financial_profiles',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    type: text('type').default('personal').notNull(), // 'personal' | 'business'
+    currency: text('currency').default('BRL').notNull(),
+    isDefault: boolean('is_default').default(false).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('financial_profiles_user_id_idx').on(table.userId)
+  ]
+)
+
+export const savingsGoals = pgTable(
+  'savings_goals',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    profileId: uuid('profile_id').references(() => financialProfiles.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    targetAmount: numeric('target_amount', { precision: 12, scale: 2 }).notNull(),
+    currentAmount: numeric('current_amount', { precision: 12, scale: 2 }).default('0.00').notNull(),
+    deadline: timestamp('deadline', { withTimezone: true }),
+    icon: text('icon').default('piggy-bank'),
+    color: text('color').default('#7bc816'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('savings_goals_user_id_idx').on(table.userId),
+    index('savings_goals_profile_id_idx').on(table.profileId)
+  ]
+)
+
 export const accounts = pgTable(
   'accounts',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    profileId: uuid('profile_id').references(() => financialProfiles.id, { onDelete: 'set null' }),
     name: text('name').notNull(),
     type: text('type').default('checking').notNull(),
     balance: numeric('balance', { precision: 12, scale: 2 }).default('0.00').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
   },
   (table) => [
-    index('accounts_user_id_idx').on(table.userId)
+    index('accounts_user_id_idx').on(table.userId),
+    index('accounts_profile_id_idx').on(table.profileId)
   ]
 )
 
@@ -54,6 +94,7 @@ export const creditCards = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    profileId: uuid('profile_id').references(() => financialProfiles.id, { onDelete: 'set null' }),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     brand: text('brand').default('mastercard').notNull(),
@@ -68,6 +109,7 @@ export const creditCards = pgTable(
   },
   (table) => [
     index('credit_cards_user_id_idx').on(table.userId),
+    index('credit_cards_profile_id_idx').on(table.profileId),
     index('credit_cards_account_id_idx').on(table.accountId)
   ]
 )
@@ -77,6 +119,7 @@ export const transactions = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    profileId: uuid('profile_id').references(() => financialProfiles.id, { onDelete: 'set null' }),
     accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
     creditCardId: uuid('credit_card_id').references(() => creditCards.id, { onDelete: 'set null' }),
@@ -99,6 +142,7 @@ export const transactions = pgTable(
   },
   (table) => [
     index('transactions_user_id_idx').on(table.userId),
+    index('transactions_profile_id_idx').on(table.profileId),
     index('transactions_account_id_idx').on(table.accountId),
     index('transactions_category_id_idx').on(table.categoryId),
     index('transactions_credit_card_id_idx').on(table.creditCardId),
@@ -191,6 +235,7 @@ export const budgets = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    profileId: uuid('profile_id').references(() => financialProfiles.id, { onDelete: 'set null' }),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
     amountLimit: numeric('amount_limit', { precision: 12, scale: 2 }).notNull(),
     period: text('period').default('monthly').notNull(), // 'YYYY-MM' ou 'monthly'
@@ -199,7 +244,8 @@ export const budgets = pgTable(
   },
   (table) => [
     index('budgets_user_id_idx').on(table.userId),
-    uniqueIndex('budgets_user_category_period_idx').on(table.userId, table.categoryId, table.period)
+    index('budgets_profile_id_idx').on(table.profileId),
+    uniqueIndex('budgets_user_category_period_idx').on(table.userId, table.profileId, table.categoryId, table.period)
   ]
 )
 
@@ -312,5 +358,11 @@ export type NewNotificationPreference = typeof notificationPreferences.$inferIns
 
 export type SubscriptionIgnore = typeof subscriptionIgnores.$inferSelect
 export type NewSubscriptionIgnore = typeof subscriptionIgnores.$inferInsert
+
+export type FinancialProfile = typeof financialProfiles.$inferSelect
+export type NewFinancialProfile = typeof financialProfiles.$inferInsert
+
+export type SavingsGoal = typeof savingsGoals.$inferSelect
+export type NewSavingsGoal = typeof savingsGoals.$inferInsert
 
 

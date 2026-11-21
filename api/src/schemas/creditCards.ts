@@ -40,7 +40,8 @@ export const createCreditCardSchema = z.object({
     .string()
     .regex(/^\d{4}$/, 'Informe exatamente 4 dígitos numéricos')
     .optional()
-    .nullable()
+    .nullable(),
+  profileId: z.string().uuid('ID de perfil inválido').optional().nullable()
 })
 
 export const updateCreditCardSchema = createCreditCardSchema.partial()

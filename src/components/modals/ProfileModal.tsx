@@ -39,6 +39,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { ThemeContext } from '../../contexts/ThemeContext'
 import type { ThemeMode } from '../../types/theme'
 import { PushNotificationSettings } from '../settings/PushNotificationSettings'
+import { OpenFinanceSettings } from '../settings/OpenFinanceSettings'
 import {
   Select,
   SelectContent,
@@ -535,6 +536,9 @@ export const ProfileModal = ({
 
           {/* Seção Notificações Pró-Ativas (Web Push) */}
           <PushNotificationSettings />
+
+          {/* Seção Conexões Bancárias (Open Finance Brasil) */}
+          <OpenFinanceSettings />
 
           {/* Seção Inteligência Artificial & BYOK */}
           <div className="mt-6 pt-5 border-t border-border">

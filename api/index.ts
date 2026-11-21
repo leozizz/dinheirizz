@@ -17,6 +17,7 @@ import { forecastRouter } from './src/routes/forecast'
 import { budgetsRouter } from './src/routes/budgets'
 import { importRouter } from './src/routes/import'
 import { aiReceiptRouter } from './src/routes/aiReceipt'
+import { aiChatRouter } from './src/routes/aiChat'
 import { creditCardsRouter } from './src/routes/creditCards'
 import { invoicesRouter } from './src/routes/invoices'
 import { reportsRouter } from './src/routes/reports'
@@ -109,6 +110,7 @@ app.route('/v1/import', importRouter)
 app.use('/v1/ai/*', authMiddleware)
 app.use('/v1/ai', authMiddleware)
 app.route('/v1/ai', aiReceiptRouter)
+app.route('/v1/ai', aiChatRouter)
 
 app.use('/v1/credit-cards/*', authMiddleware)
 app.use('/v1/credit-cards', authMiddleware)

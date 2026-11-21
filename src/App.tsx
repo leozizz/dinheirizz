@@ -1049,7 +1049,7 @@ const MainApp = () => {
 
       {/* Top Bar with Floating Capsule and Safe Area Support */}
       <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-3.5 sm:px-6 transition-all">
-        <div className="max-w-4xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
@@ -1154,7 +1154,7 @@ const MainApp = () => {
       )}
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6">
+      <main className="px-3.5 sm:px-6 py-4 sm:py-6">
         <Dashboard
           totalBalance={activeBalance}
           totalIncome={activeIncome}

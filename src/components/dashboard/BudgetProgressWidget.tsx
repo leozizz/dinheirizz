@@ -124,27 +124,27 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
           const catColor = b.categoryColor || '#10b981'
           let barBg = 'bg-emerald-500'
           let badgeText = `${b.percentageUsed}%`
-          let badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          let badgeClass = 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25 font-medium'
 
           if (b.status === 'exceeded') {
             barBg = 'bg-rose-500'
             const excess = b.spentAmount - b.amountLimit
             badgeText = `${b.percentageUsed}% • Estourado (+${formatBRL(excess)})`
-            badgeClass = 'bg-rose-500/15 text-rose-300 border-rose-500/30 animate-pulse font-bold'
+            badgeClass = 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30 font-bold'
           } else if (b.status === 'warning') {
             barBg = 'bg-amber-500'
             badgeText = `${b.percentageUsed}% (Atenção)`
-            badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30 font-medium'
+            badgeClass = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 font-semibold'
           }
 
           return (
             <div
               key={b.id}
               data-testid={`budget-envelope-${b.categoryId}`}
-              className="p-3 rounded-2xl bg-card border border-border space-y-2 hover:border-primary/30 transition-colors"
+              className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5 hover:border-primary/30 transition-colors"
             >
               {/* Topo do Envelope */}
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <span
                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -155,11 +155,11 @@ export const BudgetProgressWidget: React.FC<BudgetProgressWidgetProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] border ${badgeClass}`}>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap border ${badgeClass}`}>
                     {badgeText}
                   </span>
-                  <span className="text-xs font-bold text-foreground tabular-nums">
+                  <span className="text-xs font-bold text-foreground tabular-nums whitespace-nowrap">
                     {formatBRL(b.spentAmount)} / <span className="text-muted-foreground font-normal">{formatBRL(b.amountLimit)}</span>
                   </span>
                 </div>

@@ -8,6 +8,7 @@ export interface CategoryDonutChartProps {
   transactions: TransactionItem[]
   mode?: 'expense' | 'income'
   onModeChange?: (mode: 'expense' | 'income') => void
+  className?: string
 }
 
 interface CategorySlice {
@@ -39,11 +40,12 @@ const DEFAULT_INCOME_COLORS = [
   '#64748b'  // Slate
 ]
 
-export function CategoryDonutChart({
+export const CategoryDonutChart = ({
   transactions,
   mode: controlledMode,
-  onModeChange
-}: CategoryDonutChartProps) {
+  onModeChange,
+  className = ''
+}: CategoryDonutChartProps) => {
   const [internalMode, setInternalMode] = useState<'expense' | 'income'>('expense')
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
 
@@ -103,9 +105,9 @@ export function CategoryDonutChart({
   let accumulatedOffset = 0
 
   return (
-    <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border">
+    <div className={`glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border flex flex-col gap-5 ${className}`}>
       {/* Cabeçalho com Título e Toggle Deslizante */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-muted border border-border flex items-center justify-center text-primary">
             <PieChart className="w-4 h-4" />
@@ -128,7 +130,7 @@ export function CategoryDonutChart({
             onClick={() => handleModeToggle('expense')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
               activeMode === 'expense'
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm font-semibold'
+                ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 shadow-sm font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -153,7 +155,7 @@ export function CategoryDonutChart({
 
       {/* Conteúdo: Donut e Legenda */}
       {totalAmount === 0 ? (
-        <div className="py-10 flex flex-col items-center justify-center text-center">
+        <div className="py-10 flex flex-col items-center justify-center text-center my-auto">
           <div className="relative w-44 h-44 flex items-center justify-center mb-3">
             <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
               <circle
@@ -167,11 +169,11 @@ export function CategoryDonutChart({
                 className="text-muted/30"
               />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-              <span className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide leading-tight max-w-[104px] mb-0.5">
                 {activeMode === 'expense' ? 'Total Despesas' : 'Total Receitas'}
               </span>
-              <span data-testid="donut-center-total" className="text-lg font-bold text-foreground font-display tabular-nums">
+              <span data-testid="donut-center-total" className="text-base font-bold text-foreground font-display tabular-nums">
                 R$ 0,00
               </span>
             </div>
@@ -179,10 +181,10 @@ export function CategoryDonutChart({
           <p className="text-xs text-muted-foreground">Sem lançamentos no período</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <div className="flex flex-col gap-5 items-center my-auto w-full">
           {/* Gráfico Donut em Círculo / Aro */}
-          <div className="md:col-span-5 flex justify-center">
-            <div className="relative w-48 h-48 sm:w-52 sm:h-52">
+          <div className="flex justify-center w-full">
+            <div className="relative w-44 h-44 sm:w-48 sm:h-48">
               <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
                 {/* Trilha de fundo */}
                 <circle
@@ -230,8 +232,8 @@ export function CategoryDonutChart({
               </svg>
 
               {/* Centro do Aro com Total e Informações Contextuais */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
-                <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate max-w-[130px]">
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 pointer-events-none">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground leading-tight max-w-[104px]">
                   {activeHoveredSlice
                     ? activeHoveredSlice.name
                     : activeMode === 'expense'
@@ -240,14 +242,14 @@ export function CategoryDonutChart({
                 </span>
                 <span
                   data-testid="donut-center-total"
-                  className="text-base sm:text-lg font-bold text-foreground font-display tabular-nums tracking-tight mt-0.5"
+                  className="text-sm sm:text-base font-bold text-foreground font-display tabular-nums tracking-tight mt-0.5"
                 >
                   <AnimatedNumber
                     value={activeHoveredSlice ? activeHoveredSlice.amount : totalAmount}
                     formatter={formatBRL}
                   />
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5">
+                <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
                   {activeHoveredSlice
                     ? `${activeHoveredSlice.percentage.toFixed(1)}% do total`
                     : `${slices.length} categoria${slices.length > 1 ? 's' : ''}`}
@@ -256,8 +258,8 @@ export function CategoryDonutChart({
             </div>
           </div>
 
-          {/* Legenda Lateral / Inferior com Cores, Porcentagens e Valores */}
-          <div className="md:col-span-7 flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+          {/* Legenda Completa com Cores, Porcentagens e Valores */}
+          <div className="w-full flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
             {slices.map((slice) => {
               const isHovered = hoveredCategory === slice.name
 

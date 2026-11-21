@@ -295,14 +295,14 @@ export const CreditCardWidget = ({
                 </div>
 
                 {/* Botões de Ação Rápida */}
-                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/50">
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
                   <button
                     type="button"
                     data-testid={`open-invoice-details-btn-${card.id}`}
                     onClick={() => onOpenInvoiceDetails?.(card)}
-                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 text-xs font-medium rounded-xl bg-secondary/80 hover:bg-secondary text-secondary-foreground transition-colors min-h-[44px]"
+                    className="flex-1 min-w-fit inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-medium whitespace-nowrap rounded-xl bg-secondary/80 hover:bg-secondary text-secondary-foreground transition-colors min-h-[44px] cursor-pointer"
                   >
-                    <Receipt className="w-3.5 h-3.5" />
+                    <Receipt className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>Ver Fatura</span>
                   </button>
 
@@ -310,9 +310,9 @@ export const CreditCardWidget = ({
                     type="button"
                     data-testid={`open-pay-invoice-btn-${card.id}`}
                     onClick={() => onOpenPayInvoice?.(card)}
-                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 text-xs font-semibold rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 transition-colors min-h-[44px]"
+                    className="flex-1 min-w-fit inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-semibold whitespace-nowrap rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 transition-colors min-h-[44px] cursor-pointer"
                   >
-                    <CheckCircle className="w-3.5 h-3.5" />
+                    <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>Pagar</span>
                   </button>
 
@@ -320,9 +320,9 @@ export const CreditCardWidget = ({
                     type="button"
                     data-testid={`open-anticipate-btn-${card.id}`}
                     onClick={() => onOpenAnticipate?.(card)}
-                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 text-xs font-medium rounded-xl bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
+                    className="flex-1 min-w-fit inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-medium whitespace-nowrap rounded-xl bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors min-h-[44px] cursor-pointer"
                   >
-                    <Zap className="w-3.5 h-3.5" />
+                    <Zap className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>Antecipar</span>
                   </button>
                 </div>

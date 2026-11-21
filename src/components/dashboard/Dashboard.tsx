@@ -326,125 +326,75 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
-        {/* Skeleton Saldo Principal */}
-        <div className="glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border animate-pulse">
-          <div className="w-32 h-4 bg-muted rounded mb-4" />
-          <div className="w-64 h-12 bg-muted rounded-xl mb-6" />
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 pt-4 border-t border-border">
-            <div className="h-12 bg-muted/50 rounded-xl" />
-            <div className="h-12 bg-muted/50 rounded-xl" />
+      <div className="w-full max-w-7xl mx-auto animate-fade-in pb-12">
+        <div
+          data-testid="dashboard-skeleton-grid"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-5"
+        >
+          {/* Linha 1: Skeleton Saldo Principal (7) + Visão Geral & Ações Rápidas (5) */}
+          <div className="lg:col-span-7 glass-card p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border animate-pulse flex flex-col justify-between min-h-[260px]">
+            <div>
+              <div className="w-32 h-4 bg-muted rounded mb-4" />
+              <div className="w-64 max-w-full h-12 bg-muted rounded-xl mb-6" />
+            </div>
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 pt-4 border-t border-border">
+              <div className="h-14 bg-muted/50 rounded-xl" />
+              <div className="h-14 bg-muted/50 rounded-xl" />
+            </div>
           </div>
-        </div>
 
-        {/* Skeleton Ações Rápidas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 glass-card rounded-2xl border border-border animate-pulse" />
-          ))}
-        </div>
+          <div className="lg:col-span-5 flex flex-col gap-5">
+            <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border animate-pulse space-y-3">
+              <div className="w-28 h-4 bg-muted rounded" />
+              <div className="grid grid-cols-2 gap-2.5">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-20 bg-muted/50 rounded-2xl" />
+                ))}
+              </div>
+            </div>
 
-        {/* Skeleton Extrato */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4">
-          <div className="w-40 h-5 bg-muted rounded" />
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 bg-muted/50 rounded-xl animate-pulse" />
-          ))}
+            <div className="glass-card p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-border animate-pulse">
+              <div className="w-28 h-3.5 bg-muted rounded mb-3" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-20 bg-muted/50 rounded-2xl" />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Linha 2: Skeleton Forecast (7) + Donut (5) */}
+          <div className="lg:col-span-7 glass-card p-5 rounded-2xl sm:rounded-3xl border border-border animate-pulse h-64" />
+          <div className="lg:col-span-5 glass-card p-5 rounded-2xl sm:rounded-3xl border border-border animate-pulse h-64" />
+
+          {/* Linha 3: Skeleton Contas/Cartões (6) + Orçamentos/IA (6) */}
+          <div className="lg:col-span-6 glass-card p-5 rounded-2xl sm:rounded-3xl border border-border animate-pulse h-44" />
+          <div className="lg:col-span-6 glass-card p-5 rounded-2xl sm:rounded-3xl border border-border animate-pulse h-44" />
+
+          {/* Linha 4: Skeleton Extrato (12) */}
+          <div className="lg:col-span-12 glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-4">
+            <div className="w-40 h-5 bg-muted rounded" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 bg-muted/50 rounded-xl animate-pulse" />
+            ))}
+          </div>
         </div>
       </div>
     )
   }
 
+  const hasAccountsWidget = Boolean(accounts.length > 0 && onSelectAccount && onNewAccount)
+  const hasCreditCardsWidget = creditCards !== undefined || onOpenCreateCreditCard !== undefined
+  const hasLeftRow3 = hasAccountsWidget || hasCreditCardsWidget
+
+  const hasBudgetsWidget = budgets !== undefined || onOpenBudgetModal !== undefined
+  const hasAiWidget = Boolean(insight || isAiLoading)
+  const hasRightRow3 = hasBudgetsWidget || hasAiWidget
+
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in pb-12">
+    <div className="w-full max-w-7xl mx-auto space-y-5 animate-fade-in pb-12">
       {/* Banner de Notificações Pró-Ativas Web Push */}
       <PushNotificationBanner />
-
-      {/* Saldo Principal Card */}
-      <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border shadow-2xl">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary">
-              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </div>
-            <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {displayTitle}
-            </span>
-          </div>
-          <span className="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            <TrendingUp className="w-3 h-3" />
-            Ativo
-          </span>
-        </div>
-
-        {/* Valor de Destaque */}
-        <div className="mb-4 sm:mb-6">
-          <h2
-            data-testid="main-balance-value"
-            className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-display break-words"
-          >
-            <AnimatedNumber value={displayBalance} formatter={formatBRL} />
-          </h2>
-
-          {/* Saldo Previsto (com impacto das pendências do mês) */}
-          <div className="mt-2.5 flex items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-muted/50 border border-border text-xs">
-              <span className="text-muted-foreground font-medium">Saldo Previsto:</span>
-              <span
-                data-testid="projected-balance-value"
-                className="font-bold text-foreground tabular-nums font-display"
-              >
-                <AnimatedNumber value={projectedBalance} formatter={formatBRL} />
-              </span>
-            </div>
-            {projectedBalance !== displayBalance && (
-              <span className="text-[11px] text-muted-foreground font-medium">
-                {projectedBalance >= displayBalance
-                  ? `(+${formatBRL(projectedBalance - displayBalance)} com pendências)`
-                  : `(-${formatBRL(displayBalance - projectedBalance)} a liquidar)`}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 sm:pt-4 border-t border-border">
-          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary flex-shrink-0">
-              <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Receitas do Mês</span>
-              <span className="text-xs sm:text-base font-semibold text-primary block truncate tabular-nums">
-                <AnimatedNumber value={displayIncome} formatter={formatBRL} />
-              </span>
-              {pendingIncome > 0 && (
-                <span className="text-[10px] text-primary/80 block truncate font-medium">
-                  +{formatBRL(pendingIncome)} a receber
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
-              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Despesas do Mês</span>
-              <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
-                <AnimatedNumber value={displayExpense} formatter={formatBRL} />
-              </span>
-              {pendingExpense > 0 && (
-                <span className="text-[10px] text-rose-400/80 block truncate font-medium">
-                  {formatBRL(pendingExpense)} a pagar
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Onboarding Guiado para Contas Novas */}
       {shouldShowOnboarding && (
@@ -458,226 +408,390 @@ export const Dashboard: React.FC<DashboardProps> = ({
         />
       )}
 
-      {/* Bloco de Visão Geral (Compromissos, Cartões e Balanços) */}
-      <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-muted border border-border flex items-center justify-center text-primary">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
+      {/* Bento Grid 12 Colunas (Desktop lg: >= 1024px) */}
+      <div
+        data-testid="dashboard-bento-grid"
+        className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch"
+      >
+        {/* Linha 1 — Esquerda (7/12): Saldo Principal Card */}
+        <div data-testid="bento-slot-hero" className="lg:col-span-7">
+          <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl border border-border shadow-2xl h-full flex flex-col justify-between gap-5">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Visão Geral</h3>
-              <p className="text-[11px] text-muted-foreground">Compromissos e movimentações do período</p>
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary">
+                    <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                  <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {displayTitle}
+                  </span>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <TrendingUp className="w-3 h-3" />
+                  Ativo
+                </span>
+              </div>
+
+              {/* Valor de Destaque */}
+              <div className="mb-4">
+                <h2
+                  data-testid="main-balance-value"
+                  className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-display break-words"
+                >
+                  <AnimatedNumber value={displayBalance} formatter={formatBRL} />
+                </h2>
+
+                {/* Saldo Previsto (com impacto das pendências do mês) */}
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-muted/50 border border-border text-xs">
+                    <span className="text-muted-foreground font-medium">Saldo Previsto:</span>
+                    <span
+                      data-testid="projected-balance-value"
+                      className="font-bold text-foreground tabular-nums font-display"
+                    >
+                      <AnimatedNumber value={projectedBalance} formatter={formatBRL} />
+                    </span>
+                  </div>
+                  {projectedBalance !== displayBalance && (
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      {projectedBalance >= displayBalance
+                        ? `(+${formatBRL(projectedBalance - displayBalance)} com pendências)`
+                        : `(-${formatBRL(displayBalance - projectedBalance)} a liquidar)`}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Balanço do Período (Proporção Receitas vs Despesas) */}
+            <div className="p-3.5 rounded-2xl bg-card/70 border border-border space-y-2.5">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="text-muted-foreground font-medium">Resultado líquido do mês</span>
+                <span
+                  data-testid="hero-net-result"
+                  className={`font-bold tabular-nums ${
+                    displayIncome - displayExpense >= 0 ? 'text-primary' : 'text-rose-500 dark:text-rose-400'
+                  }`}
+                >
+                  {displayIncome - displayExpense >= 0 ? '+' : ''}
+                  {formatBRL(displayIncome - displayExpense)}
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden flex">
+                {displayIncome + displayExpense > 0 ? (
+                  <>
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{
+                        width: `${Math.round((displayIncome / (displayIncome + displayExpense)) * 100)}%`
+                      }}
+                    />
+                    <div
+                      className="h-full bg-rose-500 transition-all duration-500"
+                      style={{
+                        width: `${Math.round((displayExpense / (displayIncome + displayExpense)) * 100)}%`
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="h-full w-full bg-muted" />
+                )}
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>
+                  {displayIncome > 0
+                    ? `${Math.max(0, Math.round(((displayIncome - displayExpense) / displayIncome) * 100))}% de margem livre`
+                    : 'Sem receitas registradas'}
+                </span>
+                <span className="tabular-nums">
+                  {accounts.length > 0
+                    ? `${accounts.length} conta${accounts.length > 1 ? 's' : ''} ativa${accounts.length > 1 ? 's' : ''}`
+                    : 'Conta consolidada'}
+                </span>
+              </div>
+            </div>
+
+            {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 border-t border-border">
+              <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary flex-shrink-0">
+                  <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Receitas do Mês</span>
+                  <span className="text-xs sm:text-base font-semibold text-primary block truncate tabular-nums">
+                    <AnimatedNumber value={displayIncome} formatter={formatBRL} />
+                  </span>
+                  {pendingIncome > 0 && (
+                    <span className="text-[10px] text-primary/80 block truncate font-medium">
+                      +{formatBRL(pendingIncome)} a receber
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 flex-shrink-0">
+                  <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Despesas do Mês</span>
+                  <span className="text-xs sm:text-base font-semibold text-rose-500 dark:text-rose-400 block truncate tabular-nums">
+                    <AnimatedNumber value={displayExpense} formatter={formatBRL} />
+                  </span>
+                  {pendingExpense > 0 && (
+                    <span className="text-[10px] text-rose-500/80 dark:text-rose-400/80 block truncate font-medium">
+                      {formatBRL(pendingExpense)} a pagar
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-          {/* A Pagar (Despesas Pendentes) */}
-          <div data-testid="overview-card-payable" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-muted-foreground font-medium">A Pagar</span>
-              <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                <AlertCircle className="w-3 h-3" />
-              </span>
+        {/* Linha 1 — Direita (5/12): Visão Geral + Ações Rápidas */}
+        <div data-testid="bento-slot-overview" className="lg:col-span-5 flex flex-col gap-4 h-full">
+          {/* Bloco de Visão Geral (Compromissos, Cartões e Balanços) */}
+          <div className="glass-card p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-muted border border-border flex items-center justify-center text-primary">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Visão Geral</h3>
+                  <p className="text-[11px] text-muted-foreground">Compromissos e movimentações do período</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <span className="text-sm sm:text-base font-bold text-rose-400 block tabular-nums">
-                <AnimatedNumber value={pendingExpense} formatter={formatBRL} />
-              </span>
-              <span className="text-[10px] text-muted-foreground block truncate">
-                {pendingExpenseCount} conta{pendingExpenseCount !== 1 ? 's' : ''} a vencer
-              </span>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* A Pagar (Despesas Pendentes) */}
+              <div data-testid="overview-card-payable" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-muted-foreground font-medium truncate">A Pagar</span>
+                  <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
+                    <AlertCircle className="w-3 h-3" />
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm sm:text-base font-bold text-rose-400 block tabular-nums truncate">
+                    <AnimatedNumber value={pendingExpense} formatter={formatBRL} />
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    {pendingExpenseCount} conta{pendingExpenseCount !== 1 ? 's' : ''} a vencer
+                  </span>
+                </div>
+              </div>
+
+              {/* A Receber (Receitas Pendentes) */}
+              <div data-testid="overview-card-receivable" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-muted-foreground font-medium truncate">A Receber</span>
+                  <span className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                    <ArrowDownLeft className="w-3 h-3" />
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm sm:text-base font-bold text-primary block tabular-nums truncate">
+                    <AnimatedNumber value={pendingIncome} formatter={formatBRL} />
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    {pendingIncomeCount} entrada{pendingIncomeCount !== 1 ? 's' : ''} prevista{pendingIncomeCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+
+              {/* Cartão de Crédito */}
+              <div data-testid="overview-card-credit-card" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-muted-foreground font-medium truncate">Cartão de Crédito</span>
+                  <span className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 flex-shrink-0">
+                    <CreditCard className="w-3 h-3" />
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm sm:text-base font-bold text-foreground block tabular-nums truncate">
+                    <AnimatedNumber value={creditCardTotal} formatter={formatBRL} />
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    {totalLinkedCards > 0
+                      ? totalLinkedCards === 1
+                        ? '1 cartão vinculado'
+                        : `${totalLinkedCards} cartões vinculados`
+                      : 'Sem faturas em aberto'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Balanço de Transferências */}
+              <div data-testid="overview-card-transfers" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-muted-foreground font-medium truncate">Transferências</span>
+                  <span className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+                    <ArrowLeftRight className="w-3 h-3" />
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm sm:text-base font-bold text-blue-400 block tabular-nums truncate">
+                    <AnimatedNumber value={transferTotal} formatter={formatBRL} />
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    {transferCount === 1 ? '1 transferência' : `${transferCount} transferências`}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* A Receber (Receitas Pendentes) */}
-          <div data-testid="overview-card-receivable" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-muted-foreground font-medium">A Receber</span>
-              <span className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <ArrowDownLeft className="w-3 h-3" />
-              </span>
-            </div>
-            <div>
-              <span className="text-sm sm:text-base font-bold text-primary block tabular-nums">
-                <AnimatedNumber value={pendingIncome} formatter={formatBRL} />
-              </span>
-              <span className="text-[10px] text-muted-foreground block truncate">
-                {pendingIncomeCount} entrada{pendingIncomeCount !== 1 ? 's' : ''} prevista{pendingIncomeCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </div>
-
-          {/* Cartão de Crédito */}
-          <div data-testid="overview-card-credit-card" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-muted-foreground font-medium">Cartão de Crédito</span>
-              <span className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                <CreditCard className="w-3 h-3" />
-              </span>
-            </div>
-            <div>
-              <span className="text-sm sm:text-base font-bold text-foreground block tabular-nums">
-                <AnimatedNumber value={creditCardTotal} formatter={formatBRL} />
-              </span>
-              <span className="text-[10px] text-muted-foreground block truncate">
-                {totalLinkedCards > 0
-                  ? totalLinkedCards === 1
-                    ? '1 cartão vinculado'
-                    : `${totalLinkedCards} cartões vinculados`
-                  : 'Sem faturas em aberto'}
-              </span>
-            </div>
-          </div>
-
-          {/* Balanço de Transferências */}
-          <div data-testid="overview-card-transfers" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-muted-foreground font-medium">Transferências</span>
-              <span className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <ArrowLeftRight className="w-3 h-3" />
-              </span>
-            </div>
-            <div>
-              <span className="text-sm sm:text-base font-bold text-blue-400 block tabular-nums">
-                <AnimatedNumber value={transferTotal} formatter={formatBRL} />
-              </span>
-              <span className="text-[10px] text-muted-foreground block truncate">
-                {transferCount === 1 ? '1 transferência' : `${transferCount} transferências`}
-              </span>
-            </div>
+          {/* Ações Rápidas */}
+          <div className="glass-card p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-border flex-1 flex flex-col justify-center">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Ações Rápidas
+            </h3>
+            <QuickActions compact onAction={onActionClick} onHover={onActionHover} />
           </div>
         </div>
-      </div>
 
-      {/* Previsão de Saldo & Fluxo de Caixa (Forecast 30/60 dias - Issue #30) */}
-      <ForecastCard accountId={selectedAccountId} />
-
-      {/* Distribuição por Categoria (Gráfico em Aro / Donut - Pierre & Minhas Finanças benchmark) */}
-      <CategoryDonutChart transactions={filteredTransactions} />
-
-      {/* Orçamentos Mensais por Categoria (Budget Envelopes - Issue #31) */}
-      {(budgets !== undefined || onOpenBudgetModal) && (
-        <BudgetProgressWidget
-          budgets={budgets || []}
-          totalBudgetLimit={budgetSummary?.totalBudgetLimit || 0}
-          totalSpent={budgetSummary?.totalSpent || 0}
-          totalRemaining={budgetSummary?.totalRemaining || 0}
-          overallPercentageUsed={budgetSummary?.overallPercentageUsed || 0}
-          onOpenBudgetModal={onOpenBudgetModal || (() => {})}
-          isLoading={isBudgetsLoading}
-        />
-      )}
-
-      {/* Barra de Contas */}
-      {accounts.length > 0 && onSelectAccount && onNewAccount && (
-        <AccountsBar
-          accounts={accounts}
-          selectedAccountId={selectedAccountId}
-          onSelectAccount={onSelectAccount}
-          onNewAccount={onNewAccount}
-        />
-      )}
-
-      {/* Cartões de Crédito e Faturas (Issue #53) */}
-      {(creditCards !== undefined || onOpenCreateCreditCard !== undefined) && (
-        <CreditCardWidget
-          cards={creditCards || []}
-          isLoading={isCreditCardsLoading}
-          onOpenCreateCard={onOpenCreateCreditCard || (() => {})}
-          onOpenInvoiceDetails={onOpenInvoiceDetails}
-          onOpenPayInvoice={onOpenPayInvoice}
-          onOpenAnticipate={onOpenAnticipate}
-        />
-      )}
-
-      {/* Ações Rápidas */}
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
-          Ações Rápidas
-        </h3>
-        <QuickActions onAction={onActionClick} onHover={onActionHover} />
-      </div>
-
-      {/* Consultor Financeiro com IA (Fase 4) */}
-      {(insight || isAiLoading) && (
-        <AiInsightsCard
-          insight={insight}
-          isLoading={isAiLoading}
-          isGenerating={isAiGenerating}
-          onGenerate={onGenerateAiInsight}
-        />
-      )}
-
-      {/* Seletor de Modo de Visualização: Feed vs Calendário */}
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Movimentações
-          </h3>
-          {onImportStatement && (
-            <button
-              type="button"
-              data-testid="dashboard-import-btn"
-              onClick={onImportStatement}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
-            >
-              <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Importar Extrato</span>
-            </button>
-          )}
-          {onExportReport && (
-            <button
-              type="button"
-              data-testid="dashboard-export-report-btn"
-              onClick={onExportReport}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-primary" />
-              <span>Exportar Relatório</span>
-            </button>
-          )}
+        {/* Linha 2 — Esquerda (7/12): Previsão de Saldo & Fluxo de Caixa */}
+        <div data-testid="bento-slot-forecast" className="lg:col-span-7">
+          <ForecastCard accountId={selectedAccountId} className="h-full" />
         </div>
-        <div className="flex p-0.5 bg-muted/50 border border-border rounded-xl">
-          <button
-            type="button"
-            data-testid="view-feed-btn"
-            onClick={() => handleViewModeChange('feed')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              viewMode === 'feed'
-                ? 'bg-background text-foreground shadow-sm font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+
+        {/* Linha 2 — Direita (5/12): Distribuição por Categoria */}
+        <div data-testid="bento-slot-donut" className="lg:col-span-5">
+          <CategoryDonutChart transactions={filteredTransactions} className="h-full" />
+        </div>
+
+        {/* Linha 3 — Esquerda (6/12 ou 12/12): Contas + Cartões de Crédito */}
+        {hasLeftRow3 && (
+          <div
+            data-testid="bento-slot-accounts-cards"
+            className={`${hasRightRow3 ? 'lg:col-span-6' : 'lg:col-span-12'} flex flex-col gap-5`}
           >
-            <List className="w-3.5 h-3.5" />
-            <span>Feed</span>
-          </button>
-          <button
-            type="button"
-            data-testid="view-calendar-btn"
-            onClick={() => handleViewModeChange('calendar')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              viewMode === 'calendar'
-                ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Calendário</span>
-          </button>
-        </div>
-      </div>
+            {hasAccountsWidget && onSelectAccount && onNewAccount && (
+              <AccountsBar
+                accounts={accounts}
+                selectedAccountId={selectedAccountId}
+                onSelectAccount={onSelectAccount}
+                onNewAccount={onNewAccount}
+              />
+            )}
 
-      {viewMode === 'calendar' ? (
-        <FinancialCalendar
-          transactions={transactions}
-          currentBalance={displayBalance}
-          onPayTransaction={onPayTransaction}
-        />
-      ) : (
-        /* Extrato Recente */
-        <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border">
+            {hasCreditCardsWidget && (
+              <CreditCardWidget
+                cards={creditCards || []}
+                isLoading={isCreditCardsLoading}
+                onOpenCreateCard={onOpenCreateCreditCard || (() => {})}
+                onOpenInvoiceDetails={onOpenInvoiceDetails}
+                onOpenPayInvoice={onOpenPayInvoice}
+                onOpenAnticipate={onOpenAnticipate}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Linha 3 — Direita (6/12 ou 12/12): Orçamentos + Insights IA */}
+        {hasRightRow3 && (
+          <div
+            data-testid="bento-slot-budgets-ai"
+            className={`${hasLeftRow3 ? 'lg:col-span-6' : 'lg:col-span-12'} flex flex-col gap-5`}
+          >
+            {hasBudgetsWidget && (
+              <BudgetProgressWidget
+                budgets={budgets || []}
+                totalBudgetLimit={budgetSummary?.totalBudgetLimit || 0}
+                totalSpent={budgetSummary?.totalSpent || 0}
+                totalRemaining={budgetSummary?.totalRemaining || 0}
+                overallPercentageUsed={budgetSummary?.overallPercentageUsed || 0}
+                onOpenBudgetModal={onOpenBudgetModal || (() => {})}
+                isLoading={isBudgetsLoading}
+              />
+            )}
+
+            {hasAiWidget && (
+              <AiInsightsCard
+                insight={insight}
+                isLoading={isAiLoading}
+                isGenerating={isAiGenerating}
+                onGenerate={onGenerateAiInsight}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Linha 4 — Largura Total (12/12): Controle & Movimentações */}
+        <div data-testid="bento-slot-transactions" className="lg:col-span-12 space-y-4">
+          {/* Seletor de Modo de Visualização: Feed vs Calendário */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Movimentações
+              </h3>
+              {onImportStatement && (
+                <button
+                  type="button"
+                  data-testid="dashboard-import-btn"
+                  onClick={onImportStatement}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Importar Extrato</span>
+                </button>
+              )}
+              {onExportReport && (
+                <button
+                  type="button"
+                  data-testid="dashboard-export-report-btn"
+                  onClick={onExportReport}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-primary" />
+                  <span>Exportar Relatório</span>
+                </button>
+              )}
+            </div>
+            <div className="flex p-0.5 bg-muted/50 border border-border rounded-xl">
+              <button
+                type="button"
+                data-testid="view-feed-btn"
+                onClick={() => handleViewModeChange('feed')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'feed'
+                    ? 'bg-background text-foreground shadow-sm font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Feed</span>
+              </button>
+              <button
+                type="button"
+                data-testid="view-calendar-btn"
+                onClick={() => handleViewModeChange('calendar')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'calendar'
+                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Calendário</span>
+              </button>
+            </div>
+          </div>
+
+          {viewMode === 'calendar' ? (
+            <FinancialCalendar
+              transactions={transactions}
+              currentBalance={displayBalance}
+              onPayTransaction={onPayTransaction}
+            />
+          ) : (
+            /* Extrato Recente */
+            <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
@@ -902,6 +1016,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
       </div>
       )}
+        </div>
+      </div>
     </div>
   )
 }

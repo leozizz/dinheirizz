@@ -14,10 +14,12 @@ import {
   type CalculatedLimits
 } from '../services/creditCards'
 import { mockTransactionsStore } from './transactions'
+import { parseProfileIdQuery, resolveUserProfileId } from '../lib/profileFilter'
 
 export interface MockCreditCard {
   id: string
   userId: string
+  profileId?: string | null
   accountId: string
   name: string
   brand: string
@@ -75,11 +77,18 @@ export const creditCardsRouter = new Hono<AuthEnv>()
 // GET /api/v1/credit-cards
 creditCardsRouter.get('/', async (c) => {
   const userId = c.get('userId')
+  const parsedProfile = parseProfileIdQuery(c.req.query('profileId'))
+  if (!parsedProfile.valid) {
+    return c.json({ error: 'Parâmetro profileId inválido' }, 400)
+  }
   const db = getDb()
 
   if (!db) {
     const userCards = Array.from(mockCreditCardsStore.values()).filter(
-      (card) => card.userId === userId && !card.archived
+      (card) =>
+        card.userId === userId &&
+        !card.archived &&
+        (!parsedProfile.profileId || card.profileId === parsedProfile.profileId)
     )
 
     const data: CreditCardWithDetails[] = userCards.map((card) => {
@@ -122,10 +131,15 @@ creditCardsRouter.get('/', async (c) => {
   }
 
   try {
+    const cardConditions = [eq(creditCards.userId, userId), eq(creditCards.archived, false)]
+    if (parsedProfile.profileId) {
+      cardConditions.push(eq(creditCards.profileId, parsedProfile.profileId))
+    }
+
     const cardsList = await db
       .select()
       .from(creditCards)
-      .where(and(eq(creditCards.userId, userId), eq(creditCards.archived, false)))
+      .where(and(...cardConditions))
 
     const data: CreditCardWithDetails[] = []
     for (const card of cardsList) {
@@ -186,10 +200,15 @@ creditCardsRouter.post('/', async (c) => {
     return c.json({ error: 'Dados inválidos', details: result.error.format() }, 400)
   }
 
-  const { name, accountId, brand, limitAmount, closingDay, dueDay, color, lastFourDigits } =
+  const { name, accountId, brand, limitAmount, closingDay, dueDay, color, lastFourDigits, profileId: rawProfileId } =
     result.data
   const cycleDates = calculateBillingCycleDates(closingDay, dueDay)
   const db = getDb()
+
+  const profileRes = await resolveUserProfileId(db, userId, rawProfileId)
+  if (!profileRes.ok) {
+    return c.json({ error: profileRes.error }, profileRes.status)
+  }
 
   if (!db) {
     const cardId = crypto.randomUUID()
@@ -199,6 +218,7 @@ creditCardsRouter.post('/', async (c) => {
     const newCard: MockCreditCard = {
       id: cardId,
       userId,
+      profileId: profileRes.profileId,
       accountId,
       name,
       brand,
@@ -261,6 +281,7 @@ creditCardsRouter.post('/', async (c) => {
       .insert(creditCards)
       .values({
         userId,
+        profileId: profileRes.profileId,
         accountId,
         name,
         brand,

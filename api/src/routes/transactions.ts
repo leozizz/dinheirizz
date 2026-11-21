@@ -6,6 +6,7 @@ import { eq, desc, asc, sql, and, gte, lte } from 'drizzle-orm'
 import { mockAccountsStore } from './accounts'
 import type { AuthEnv } from '../middlewares/auth'
 import { calculateRecurringDueDate } from '../services/business-days'
+import { parseProfileIdQuery, resolveUserProfileId } from '../lib/profileFilter'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -28,7 +29,8 @@ export const createTransactionSchema = z.object({
   installmentTotal: z.number().int().positive().optional().nullable(),
   parentTransactionId: z.string().optional().nullable(),
   creditCardId: z.string().optional().nullable(),
-  invoiceId: z.string().optional().nullable()
+  invoiceId: z.string().optional().nullable(),
+  profileId: z.string().uuid('ID de perfil inválido').optional().nullable()
 })
 
 export const batchCreateTransactionItemSchema = z.object({
@@ -50,6 +52,7 @@ export const batchCreateTransactionsSchema = z.object({
 export interface MockTransaction {
   id: string
   userId: string
+  profileId?: string | null
   accountId: string
   categoryId: string | null
   amount: string
@@ -111,6 +114,10 @@ transactionsRouter.get('/', async (c) => {
   const dueDateEnd = c.req.query('dueDateEnd')
   const scope = c.req.query('scope') // 'current_month' | 'future' | 'all'
   const month = c.req.query('month') // 'YYYY-MM'
+  const parsedProfile = parseProfileIdQuery(c.req.query('profileId'))
+  if (!parsedProfile.valid) {
+    return c.json({ error: 'Parâmetro profileId inválido' }, 400)
+  }
 
   const now = new Date()
   const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
@@ -131,6 +138,9 @@ transactionsRouter.get('/', async (c) => {
         return false
       }
       if (accountId && t.accountId !== accountId) {
+        return false
+      }
+      if (parsedProfile.profileId && t.profileId !== parsedProfile.profileId) {
         return false
       }
       if (status && t.status !== status) {
@@ -218,6 +228,9 @@ transactionsRouter.get('/', async (c) => {
     }
     if (accountId) {
       conditions.push(eq(transactions.accountId, accountId))
+    }
+    if (parsedProfile.profileId) {
+      conditions.push(eq(transactions.profileId, parsedProfile.profileId))
     }
     if (status) {
       conditions.push(eq(transactions.status, status))
@@ -313,6 +326,11 @@ transactionsRouter.post('/', async (c) => {
   const data = result.data
   const userId = c.get('userId') || '00000000-0000-0000-0000-000000000000'
 
+  const profileRes = await resolveUserProfileId(db, userId, data.profileId)
+  if (!profileRes.ok) {
+    return c.json({ error: profileRes.error }, profileRes.status)
+  }
+
   // Determina o sinal matemático para o extrato
   let signedAmountNumber = data.amount
   if (data.type === 'expense') {
@@ -380,6 +398,7 @@ transactionsRouter.post('/', async (c) => {
       const newTx: MockTransaction = {
         id: mockId,
         userId,
+        profileId: profileRes.profileId,
         amount: formattedInstallmentAmount,
         description: itemDesc,
         paid: isPaid,
@@ -510,6 +529,7 @@ transactionsRouter.post('/', async (c) => {
 
       insertPayloads.push({
         userId,
+        profileId: profileRes.profileId,
         accountId: targetAccountId,
         categoryId: validCategoryId,
         amount: formattedInstallmentAmount,

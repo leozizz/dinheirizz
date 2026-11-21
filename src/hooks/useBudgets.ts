@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { appendProfileIdParam, getApiOrigin, normalizeProfileId } from '../lib/profileQuery'
 
 export interface BudgetProgressItem {
   id: string
@@ -28,6 +29,7 @@ export interface CreateBudgetInput {
   categoryId: string
   amountLimit: number
   period?: string
+  profileId?: string | null
 }
 
 export interface UpdateBudgetInput {
@@ -35,21 +37,15 @@ export interface UpdateBudgetInput {
   amountLimit: number
 }
 
-const getApiOrigin = (): string => {
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin
-  }
-  return 'http://localhost:3000'
-}
-
 export const BUDGETS_QUERY_KEY = ['budgets'] as const
 
-export const useBudgets = (period?: string) => {
+export const useBudgets = (period?: string, profileId?: string | null) => {
   const { session } = useAuth()
   const token = session?.access_token
+  const normalizedProfileId = normalizeProfileId(profileId)
 
   const query = useQuery({
-    queryKey: ['budgets', period || 'current'],
+    queryKey: ['budgets', period || 'current', normalizedProfileId || 'all'],
     enabled: Boolean(token),
     queryFn: async (): Promise<BudgetSummaryResponse> => {
       const origin = getApiOrigin()
@@ -57,9 +53,13 @@ export const useBudgets = (period?: string) => {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
       }
-      const url = period
-        ? `${origin}/api/v1/budgets?period=${encodeURIComponent(period)}`
-        : `${origin}/api/v1/budgets`
+      const params = new URLSearchParams()
+      if (period) {
+        params.set('period', period)
+      }
+      appendProfileIdParam(params, normalizedProfileId)
+      const qs = params.toString()
+      const url = qs ? `${origin}/api/v1/budgets?${qs}` : `${origin}/api/v1/budgets`
 
       const res = await fetch(url, { headers })
       if (!res.ok) {

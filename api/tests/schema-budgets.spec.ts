@@ -17,6 +17,7 @@ describe('Drizzle ORM Schema - budgets', () => {
     const mockBudget: Budget = {
       id: '00000000-0000-0000-0000-000000000001',
       userId: '00000000-0000-0000-0000-000000000000',
+      profileId: null,
       categoryId: '00000000-0000-0000-0000-000000000002',
       amountLimit: '1200.00',
       period: 'monthly',

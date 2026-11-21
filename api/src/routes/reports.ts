@@ -14,6 +14,7 @@ import { mockAccountsStore } from './accounts'
 import { mockCategoriesStore, DEFAULT_CATEGORIES } from './categories'
 import { mockCreditCardsStore } from './creditCards'
 import type { AuthEnv } from '../middlewares/auth'
+import { parseProfileIdQuery } from '../lib/profileFilter'
 
 export const reportsRouter = new Hono<AuthEnv>()
 
@@ -82,6 +83,7 @@ const fetchTransactionsData = async (
     periodType: 'monthly' | 'yearly'
     period: string
     accountId?: string
+    profileId?: string
     status: 'all' | 'completed' | 'pending'
   }
 ): Promise<{
@@ -94,6 +96,8 @@ const fetchTransactionsData = async (
   userEmail?: string
 }> => {
   const { startDate, endDate } = getPeriodBounds(filter.periodType, filter.period)
+  const parsedProfile = parseProfileIdQuery(filter.profileId)
+  const activeProfileId = parsedProfile.profileId
   const db = getDb()
 
   const accountsMap = new Map<string, string>()
@@ -131,6 +135,9 @@ const fetchTransactionsData = async (
 
     for (const tx of mockTransactionsStore.values()) {
       if (tx.userId !== userId && tx.userId !== '00000000-0000-0000-0000-000000000000') {
+        continue
+      }
+      if (activeProfileId && tx.profileId !== activeProfileId) {
         continue
       }
       if (filter.accountId && tx.accountId !== filter.accountId) {
@@ -217,6 +224,9 @@ const fetchTransactionsData = async (
 
     if (filter.accountId) {
       conditions.push(eq(transactions.accountId, filter.accountId))
+    }
+    if (activeProfileId) {
+      conditions.push(eq(transactions.profileId, activeProfileId))
     }
 
     if (filter.status === 'completed') {
@@ -508,6 +518,7 @@ reportsRouter.get('/summary', async (c) => {
     periodType: c.req.query('periodType') || 'monthly',
     period: c.req.query('period') || '',
     accountId: c.req.query('accountId') || undefined,
+    profileId: c.req.query('profileId') || undefined,
     status: c.req.query('status') || 'completed'
   }
 
@@ -559,6 +570,7 @@ reportsRouter.get('/export/csv', async (c) => {
     periodType: c.req.query('periodType') || 'monthly',
     period: c.req.query('period') || '',
     accountId: c.req.query('accountId') || undefined,
+    profileId: c.req.query('profileId') || undefined,
     status: c.req.query('status') || 'completed'
   }
 
@@ -666,6 +678,7 @@ reportsRouter.get('/export/pdf-data', async (c) => {
     periodType: c.req.query('periodType') || 'monthly',
     period: c.req.query('period') || '',
     accountId: c.req.query('accountId') || undefined,
+    profileId: c.req.query('profileId') || undefined,
     status: c.req.query('status') || 'completed'
   }
 

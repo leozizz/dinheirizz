@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
 import { AnimatedNumber } from '../ui/AnimatedNumber'
 import { QuickActions, ActionType } from './QuickActions'
@@ -8,11 +8,19 @@ import { CategoryDonutChart } from './CategoryDonutChart'
 import { ForecastCard } from './ForecastCard'
 import { FinancialCalendar } from './FinancialCalendar'
 import { BudgetProgressWidget } from './BudgetProgressWidget'
-import { SubscriptionsWidget } from './SubscriptionsWidget'
 import { CreditCardWidget } from '../cards/CreditCardWidget'
+
+const GoalsWidget = React.lazy(() =>
+  import('./GoalsWidget').then((m) => ({ default: m.GoalsWidget }))
+)
+const SubscriptionsWidget = React.lazy(() =>
+  import('./SubscriptionsWidget').then((m) => ({ default: m.SubscriptionsWidget }))
+)
 import { PushNotificationBanner } from './PushNotificationBanner'
 import { OnboardingChecklist } from './OnboardingChecklist'
 import type { BudgetProgressItem } from '../../hooks/useBudgets'
+import type { SavingsGoalItem, GoalsSummary } from '../../hooks/useGoals'
+import type { FinancialProfile } from '../../hooks/useWorkspaces'
 import type { DetectedSubscription, SubscriptionsSummary } from '../../hooks/useSubscriptions'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
@@ -128,6 +136,16 @@ export interface DashboardProps {
   onIgnoreSubscription?: (normalizedKey: string) => void | Promise<void>
   confirmingSubscriptionId?: string | null
   ignoringSubscriptionKey?: string | null
+  // Issue #82: Múltiplos Perfis Financeiros & Metas de Economia (Caixinhas)
+  goals?: SavingsGoalItem[]
+  goalsSummary?: GoalsSummary
+  isGoalsLoading?: boolean
+  profiles?: FinancialProfile[]
+  selectedProfileId?: string
+  onOpenCreateGoal?: () => void
+  onOpenEditGoal?: (goal: SavingsGoalItem) => void
+  onContributeGoal?: (goalId: string, amount: number) => Promise<void> | void
+  contributingGoalId?: string | null
 }
 
 const getDueStatus = (dueDateStr?: string | null) => {
@@ -195,7 +213,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onConfirmSubscription,
   onIgnoreSubscription,
   confirmingSubscriptionId = null,
-  ignoringSubscriptionKey = null
+  ignoringSubscriptionKey = null,
+  goals,
+  goalsSummary,
+  isGoalsLoading = false,
+  profiles = [],
+  selectedProfileId = 'all',
+  onOpenCreateGoal,
+  onOpenEditGoal,
+  onContributeGoal,
+  contributingGoalId = null
 }) => {
   const onboardingStorageKey = userId
     ? `dinheirizz_onboarding_dismissed_${userId}`
@@ -413,9 +440,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const hasLeftRow3 = hasAccountsWidget || hasCreditCardsWidget
 
   const hasBudgetsWidget = budgets !== undefined || onOpenBudgetModal !== undefined
+  const hasGoalsWidget = goals !== undefined || onOpenCreateGoal !== undefined
   const hasSubscriptionsWidget = subscriptions !== undefined || isSubscriptionsLoading
   const hasAiWidget = Boolean(insight || isAiLoading)
-  const hasRightRow3 = hasBudgetsWidget || hasSubscriptionsWidget || hasAiWidget
+  const hasRightRow3 = hasBudgetsWidget || hasGoalsWidget || hasSubscriptionsWidget || hasAiWidget
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-5 animate-fade-in pb-12">
@@ -737,23 +765,48 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             )}
 
-            {hasSubscriptionsWidget && (
-              <SubscriptionsWidget
-                subscriptions={subscriptions || []}
-                summary={
-                  subscriptionsSummary || {
-                    totalMonthlyCost: 0,
-                    totalAnnualCost: 0,
-                    activeCount: 0,
-                    alertsCount: 0
+            {hasGoalsWidget && (
+              <Suspense fallback={null}>
+                <GoalsWidget
+                  goals={goals || []}
+                  summary={
+                    goalsSummary || {
+                      totalSaved: 0,
+                      totalTarget: 0,
+                      activeCount: 0,
+                      completedCount: 0
+                    }
                   }
-                }
-                isLoading={isSubscriptionsLoading}
-                onConfirm={onConfirmSubscription}
-                onIgnore={onIgnoreSubscription}
-                confirmingId={confirmingSubscriptionId}
-                ignoringKey={ignoringSubscriptionKey}
-              />
+                  profiles={profiles}
+                  selectedProfileId={selectedProfileId}
+                  isLoading={isGoalsLoading}
+                  onOpenCreateGoal={onOpenCreateGoal || (() => {})}
+                  onOpenEditGoal={onOpenEditGoal || (() => {})}
+                  onContributeGoal={onContributeGoal || (() => {})}
+                  contributingGoalId={contributingGoalId}
+                />
+              </Suspense>
+            )}
+
+            {hasSubscriptionsWidget && (
+              <Suspense fallback={null}>
+                <SubscriptionsWidget
+                  subscriptions={subscriptions || []}
+                  summary={
+                    subscriptionsSummary || {
+                      totalMonthlyCost: 0,
+                      totalAnnualCost: 0,
+                      activeCount: 0,
+                      alertsCount: 0
+                    }
+                  }
+                  isLoading={isSubscriptionsLoading}
+                  onConfirm={onConfirmSubscription}
+                  onIgnore={onIgnoreSubscription}
+                  confirmingId={confirmingSubscriptionId}
+                  ignoringKey={ignoringSubscriptionKey}
+                />
+              </Suspense>
             )}
 
             {hasAiWidget && (

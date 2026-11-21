@@ -6,11 +6,13 @@ import { eq, and, desc } from 'drizzle-orm'
 import { mockCategoriesStore } from './categories'
 import { mockTransactionsStore } from './transactions'
 import type { AuthEnv } from '../middlewares/auth'
+import { parseProfileIdQuery, resolveUserProfileId } from '../lib/profileFilter'
 
 export const createBudgetSchema = z.object({
   categoryId: z.string().uuid('ID de categoria deve ser um UUID válido'),
   amountLimit: z.number().positive('O valor limite deve ser maior que zero'),
-  period: z.string().optional().default('monthly')
+  period: z.string().optional().default('monthly'),
+  profileId: z.string().uuid('ID de perfil inválido').optional().nullable()
 })
 
 export const updateBudgetSchema = z.object({
@@ -20,6 +22,7 @@ export const updateBudgetSchema = z.object({
 export interface MockBudgetRecord {
   id: string
   userId: string
+  profileId?: string | null
   categoryId: string
   amountLimit: string
   period: string
@@ -69,12 +72,17 @@ budgetsRouter.get('/', async (c) => {
   }
 
   const requestedPeriod = c.req.query('period') || getCurrentPeriod()
+  const parsedProfile = parseProfileIdQuery(c.req.query('profileId'))
+  if (!parsedProfile.valid) {
+    return c.json({ error: 'Parâmetro profileId inválido' }, 400)
+  }
   const db = getDb()
 
   // 1. Obter orçamentos
   let userBudgets: Array<{
     id: string
     userId: string
+    profileId?: string | null
     categoryId: string
     amountLimit: string
     period: string
@@ -82,21 +90,31 @@ budgetsRouter.get('/', async (c) => {
 
   if (!db) {
     userBudgets = Array.from(mockBudgetsStore.values()).filter(
-      (b) => b.userId === userId && (b.period === requestedPeriod || b.period === 'monthly')
+      (b) =>
+        b.userId === userId &&
+        (b.period === requestedPeriod || b.period === 'monthly') &&
+        (!parsedProfile.profileId || b.profileId === parsedProfile.profileId)
     )
   } else {
     try {
+      const budgetConditions = [eq(budgets.userId, userId)]
+      if (parsedProfile.profileId) {
+        budgetConditions.push(eq(budgets.profileId, parsedProfile.profileId))
+      }
       const rows = await db
         .select()
         .from(budgets)
-        .where(eq(budgets.userId, userId))
+        .where(and(...budgetConditions))
 
       userBudgets = rows.filter(
         (b) => b.period === requestedPeriod || b.period === 'monthly'
       )
     } catch {
       userBudgets = Array.from(mockBudgetsStore.values()).filter(
-        (b) => b.userId === userId && (b.period === requestedPeriod || b.period === 'monthly')
+        (b) =>
+          b.userId === userId &&
+          (b.period === requestedPeriod || b.period === 'monthly') &&
+          (!parsedProfile.profileId || b.profileId === parsedProfile.profileId)
       )
     }
   }
@@ -132,7 +150,11 @@ budgetsRouter.get('/', async (c) => {
 
   if (!db) {
     for (const tx of mockTransactionsStore.values()) {
-      if (tx.userId === userId && tx.categoryId) {
+      if (
+        tx.userId === userId &&
+        tx.categoryId &&
+        (!parsedProfile.profileId || tx.profileId === parsedProfile.profileId)
+      ) {
         const txDate = tx.occurredAt || tx.createdAt
         if (txDate.startsWith(requestedPeriod)) {
           const isExpense = tx.type === 'expense' || (!tx.type && parseFloat(tx.amount) < 0)
@@ -148,10 +170,14 @@ budgetsRouter.get('/', async (c) => {
     }
   } else {
     try {
+      const txConditions = [eq(transactions.userId, userId)]
+      if (parsedProfile.profileId) {
+        txConditions.push(eq(transactions.profileId, parsedProfile.profileId))
+      }
       const txRows = await db
         .select()
         .from(transactions)
-        .where(eq(transactions.userId, userId))
+        .where(and(...txConditions))
         .orderBy(desc(transactions.occurredAt))
 
       for (const r of txRows) {
@@ -269,14 +295,24 @@ budgetsRouter.post('/', async (c) => {
     )
   }
 
-  const { categoryId, amountLimit, period = 'monthly' } = parsed.data
+  const { categoryId, amountLimit, period = 'monthly', profileId: rawProfileId } = parsed.data
   const db = getDb()
+
+  const profileRes = await resolveUserProfileId(db, userId, rawProfileId)
+  if (!profileRes.ok) {
+    return c.json({ error: profileRes.error }, profileRes.status)
+  }
 
   if (!db) {
     // Verificar se já existe na mock store para upsert
     let existingId: string | null = null
     for (const [id, item] of mockBudgetsStore.entries()) {
-      if (item.userId === userId && item.categoryId === categoryId && item.period === period) {
+      if (
+        item.userId === userId &&
+        item.categoryId === categoryId &&
+        item.period === period &&
+        (item.profileId ?? null) === profileRes.profileId
+      ) {
         existingId = id
         break
       }
@@ -305,6 +341,7 @@ budgetsRouter.post('/', async (c) => {
     const newRecord: MockBudgetRecord = {
       id: newId,
       userId,
+      profileId: profileRes.profileId,
       categoryId,
       amountLimit: String(amountLimit),
       period,
@@ -326,16 +363,19 @@ budgetsRouter.post('/', async (c) => {
 
   try {
     // Verificar se existe para fazer upsert
+    const existingConditions = [
+      eq(budgets.userId, userId),
+      eq(budgets.categoryId, categoryId),
+      eq(budgets.period, period)
+    ]
+    if (profileRes.profileId) {
+      existingConditions.push(eq(budgets.profileId, profileRes.profileId))
+    }
+
     const existing = await db
       .select()
       .from(budgets)
-      .where(
-        and(
-          eq(budgets.userId, userId),
-          eq(budgets.categoryId, categoryId),
-          eq(budgets.period, period)
-        )
-      )
+      .where(and(...existingConditions))
       .limit(1)
 
     if (existing.length > 0) {
@@ -363,6 +403,7 @@ budgetsRouter.post('/', async (c) => {
       .insert(budgets)
       .values({
         userId,
+        profileId: profileRes.profileId,
         categoryId,
         amountLimit: String(amountLimit),
         period

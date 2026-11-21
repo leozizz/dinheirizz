@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { appendProfileIdParam, getApiOrigin, normalizeProfileId } from '../lib/profileQuery'
 import type {
   CreditCard,
   CreditCardBrand,
@@ -16,13 +17,6 @@ import type {
 
 export const CREDIT_CARDS_QUERY_KEY = ['credit-cards'] as const
 export const INVOICES_QUERY_KEY = ['invoices'] as const
-
-const getApiOrigin = (): string => {
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin
-  }
-  return 'http://localhost:3000'
-}
 
 interface RawCreditCardResponse {
   id: string
@@ -115,12 +109,13 @@ const mapCreditCard = (raw: RawCreditCardResponse): CreditCard => ({
   }))
 })
 
-export const useCreditCards = () => {
+export const useCreditCards = (profileId?: string | null) => {
   const { session } = useAuth()
   const token = session?.access_token
+  const normalizedProfileId = normalizeProfileId(profileId)
 
   const query = useQuery({
-    queryKey: CREDIT_CARDS_QUERY_KEY,
+    queryKey: [...CREDIT_CARDS_QUERY_KEY, normalizedProfileId || 'all'],
     enabled: Boolean(token),
     queryFn: async (): Promise<CreditCard[]> => {
       const origin = getApiOrigin()
@@ -129,7 +124,12 @@ export const useCreditCards = () => {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const res = await fetch(`${origin}/api/v1/credit-cards`, { headers })
+      const params = new URLSearchParams()
+      appendProfileIdParam(params, normalizedProfileId)
+      const qs = params.toString()
+      const url = qs ? `${origin}/api/v1/credit-cards?${qs}` : `${origin}/api/v1/credit-cards`
+
+      const res = await fetch(url, { headers })
       if (!res.ok) {
         throw new Error('Falha ao carregar cartões de crédito')
       }

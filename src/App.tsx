@@ -86,14 +86,23 @@ import { calculateRecurringDueDate } from './lib/businessDays'
 import { formatYMD } from './lib/calendar'
 import { Wallet, Bell, ShieldCheck, LogIn, LogOut, Sun, Moon } from 'lucide-react'
 
+const getCurrentMonthDateIso = (dayOffsetFromToday: number): string => {
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const clampedDay = Math.min(daysInMonth, Math.max(1, now.getDate() + dayOffsetFromToday))
+  return new Date(now.getFullYear(), now.getMonth(), clampedDay, 12, 0, 0).toISOString()
+}
+
 const initialTransactions: TransactionItem[] = [
   {
     id: 'tx-1',
     description: 'Salário Desenvolvimento',
     amount: 12000.0,
     paid: true,
-    occurred_at: new Date().toISOString(),
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(0),
     category: { name: 'Renda', color: '#10b981', icon: 'wallet' },
+    categoryId: 'cat-2',
     type: 'income',
     accountId: 'acc-1'
   },
@@ -102,8 +111,10 @@ const initialTransactions: TransactionItem[] = [
     description: 'Consultoria Frontend & BFF',
     amount: 6200.0,
     paid: true,
-    occurred_at: new Date(Date.now() - 86400000).toISOString(),
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(-1),
     category: { name: 'Serviços', color: '#3b82f6', icon: 'laptop' },
+    categoryId: 'cat-5',
     type: 'income',
     accountId: 'acc-1'
   },
@@ -112,8 +123,10 @@ const initialTransactions: TransactionItem[] = [
     description: 'Supermercado & Alimentação',
     amount: -1450.5,
     paid: true,
-    occurred_at: new Date(Date.now() - 172800000).toISOString(),
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(-2),
     category: { name: 'Alimentação', color: '#f59e0b', icon: 'utensils' },
+    categoryId: 'cat-1',
     type: 'expense',
     accountId: 'acc-1'
   },
@@ -122,8 +135,10 @@ const initialTransactions: TransactionItem[] = [
     description: 'Serviços de Nuvem & Infra',
     amount: -899.3,
     paid: true,
-    occurred_at: new Date(Date.now() - 259200000).toISOString(),
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(-3),
     category: { name: 'Infraestrutura', color: '#8b5cf6', icon: 'server' },
+    categoryId: 'cat-3',
     type: 'expense',
     accountId: 'acc-2'
   },
@@ -132,10 +147,73 @@ const initialTransactions: TransactionItem[] = [
     description: 'Assinaturas de Software',
     amount: -1000.0,
     paid: true,
-    occurred_at: new Date(Date.now() - 345600000).toISOString(),
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(-4),
     category: { name: 'Software', color: '#ec4899', icon: 'layers' },
     type: 'expense',
     accountId: 'acc-2'
+  },
+  {
+    id: 'tx-6',
+    description: 'Combustível & Mobilidade Urbana',
+    amount: -320.0,
+    paid: true,
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(-2),
+    category: { name: 'Transporte', color: '#3b82f6', icon: 'car' },
+    categoryId: 'cat-4',
+    type: 'expense',
+    accountId: 'acc-1'
+  },
+  {
+    id: 'tx-7',
+    description: 'Aluguel Escritório Coworking',
+    amount: -1850.0,
+    paid: false,
+    status: 'pending',
+    occurred_at: getCurrentMonthDateIso(0),
+    dueDate: getCurrentMonthDateIso(0),
+    category: { name: 'Infraestrutura', color: '#8b5cf6', icon: 'server' },
+    categoryId: 'cat-3',
+    type: 'expense',
+    accountId: 'acc-1'
+  },
+  {
+    id: 'tx-8',
+    description: 'Energia Elétrica & Internet Fibra',
+    amount: -380.0,
+    paid: false,
+    status: 'pending',
+    occurred_at: getCurrentMonthDateIso(0),
+    dueDate: getCurrentMonthDateIso(3),
+    category: { name: 'Infraestrutura', color: '#8b5cf6', icon: 'server' },
+    categoryId: 'cat-3',
+    type: 'expense',
+    accountId: 'acc-1'
+  },
+  {
+    id: 'tx-9',
+    description: 'Reembolso Projeto Design System',
+    amount: 2400.0,
+    paid: false,
+    status: 'pending',
+    occurred_at: getCurrentMonthDateIso(0),
+    dueDate: getCurrentMonthDateIso(4),
+    category: { name: 'Serviços', color: '#10b981', icon: 'laptop' },
+    categoryId: 'cat-5',
+    type: 'income',
+    accountId: 'acc-1'
+  },
+  {
+    id: 'tx-10',
+    description: 'Aporte Reserva de Emergência (Nubank → Itaú)',
+    amount: -1500.0,
+    paid: true,
+    status: 'completed',
+    occurred_at: getCurrentMonthDateIso(-1),
+    category: { name: 'Transferências', color: '#3b82f6', icon: 'arrow-left-right' },
+    type: 'transfer',
+    accountId: 'acc-1'
   }
 ]
 
@@ -1115,6 +1193,8 @@ const MainApp = () => {
           onOpenInvoiceDetails={handleOpenInvoiceDetails}
           onOpenPayInvoice={handleOpenPayInvoice}
           onOpenAnticipate={handleOpenAnticipate}
+          isAuthenticated={Boolean(user)}
+          userId={user?.id ?? null}
         />
       </main>
 

@@ -159,6 +159,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
               <button
                 type="button"
+                data-testid="goal-close-btn"
                 aria-label="Fechar modal"
                 onClick={onClose}
                 className="min-w-[44px] min-h-[44px] rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
@@ -343,6 +344,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 <div className="flex items-center gap-2.5">
                   <button
                     type="button"
+                    data-testid="goal-cancel-btn"
                     onClick={onClose}
                     className="flex-1 sm:flex-none min-h-[44px] px-4 py-2.5 rounded-xl bg-muted/50 hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
                   >

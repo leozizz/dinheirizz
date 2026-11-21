@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
 import { AnimatedNumber } from '../ui/AnimatedNumber'
 import { QuickActions, ActionType } from './QuickActions'
@@ -8,9 +8,14 @@ import { CategoryDonutChart } from './CategoryDonutChart'
 import { ForecastCard } from './ForecastCard'
 import { FinancialCalendar } from './FinancialCalendar'
 import { BudgetProgressWidget } from './BudgetProgressWidget'
-import { SubscriptionsWidget } from './SubscriptionsWidget'
-import { GoalsWidget } from './GoalsWidget'
 import { CreditCardWidget } from '../cards/CreditCardWidget'
+
+const GoalsWidget = React.lazy(() =>
+  import('./GoalsWidget').then((m) => ({ default: m.GoalsWidget }))
+)
+const SubscriptionsWidget = React.lazy(() =>
+  import('./SubscriptionsWidget').then((m) => ({ default: m.SubscriptionsWidget }))
+)
 import { PushNotificationBanner } from './PushNotificationBanner'
 import { OnboardingChecklist } from './OnboardingChecklist'
 import type { BudgetProgressItem } from '../../hooks/useBudgets'
@@ -761,43 +766,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
 
             {hasGoalsWidget && (
-              <GoalsWidget
-                goals={goals || []}
-                summary={
-                  goalsSummary || {
-                    totalSaved: 0,
-                    totalTarget: 0,
-                    activeCount: 0,
-                    completedCount: 0
+              <Suspense fallback={null}>
+                <GoalsWidget
+                  goals={goals || []}
+                  summary={
+                    goalsSummary || {
+                      totalSaved: 0,
+                      totalTarget: 0,
+                      activeCount: 0,
+                      completedCount: 0
+                    }
                   }
-                }
-                profiles={profiles}
-                selectedProfileId={selectedProfileId}
-                isLoading={isGoalsLoading}
-                onOpenCreateGoal={onOpenCreateGoal || (() => {})}
-                onOpenEditGoal={onOpenEditGoal || (() => {})}
-                onContributeGoal={onContributeGoal || (() => {})}
-                contributingGoalId={contributingGoalId}
-              />
+                  profiles={profiles}
+                  selectedProfileId={selectedProfileId}
+                  isLoading={isGoalsLoading}
+                  onOpenCreateGoal={onOpenCreateGoal || (() => {})}
+                  onOpenEditGoal={onOpenEditGoal || (() => {})}
+                  onContributeGoal={onContributeGoal || (() => {})}
+                  contributingGoalId={contributingGoalId}
+                />
+              </Suspense>
             )}
 
             {hasSubscriptionsWidget && (
-              <SubscriptionsWidget
-                subscriptions={subscriptions || []}
-                summary={
-                  subscriptionsSummary || {
-                    totalMonthlyCost: 0,
-                    totalAnnualCost: 0,
-                    activeCount: 0,
-                    alertsCount: 0
+              <Suspense fallback={null}>
+                <SubscriptionsWidget
+                  subscriptions={subscriptions || []}
+                  summary={
+                    subscriptionsSummary || {
+                      totalMonthlyCost: 0,
+                      totalAnnualCost: 0,
+                      activeCount: 0,
+                      alertsCount: 0
+                    }
                   }
-                }
-                isLoading={isSubscriptionsLoading}
-                onConfirm={onConfirmSubscription}
-                onIgnore={onIgnoreSubscription}
-                confirmingId={confirmingSubscriptionId}
-                ignoringKey={ignoringSubscriptionKey}
-              />
+                  isLoading={isSubscriptionsLoading}
+                  onConfirm={onConfirmSubscription}
+                  onIgnore={onIgnoreSubscription}
+                  confirmingId={confirmingSubscriptionId}
+                  ignoringKey={ignoringSubscriptionKey}
+                />
+              </Suspense>
             )}
 
             {hasAiWidget && (

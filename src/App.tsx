@@ -12,7 +12,10 @@ import type { ParsedNlpTransaction } from './lib/nlpTransactionParser'
 import type { PixKeyItem } from './components/modals/PixWalletModal'
 import type { ParsedTransactionCandidate } from './types/import'
 import { ModalSuspenseFallback } from './components/ui/ModalSuspenseFallback'
-import { PwaUpdatePrompt } from './components/pwa/PwaUpdatePrompt'
+
+const PwaUpdatePrompt = React.lazy(() =>
+  import('./components/pwa/PwaUpdatePrompt').then((m) => ({ default: m.PwaUpdatePrompt }))
+)
 
 // Dynamic Imports para Code-Splitting e otimização de bundle
 const TransactionModal = React.lazy(() =>
@@ -66,8 +69,12 @@ const CommandPalette = React.lazy(() =>
 const GoalModal = React.lazy(() =>
   import('./components/modals/GoalModal').then((m) => ({ default: m.GoalModal }))
 )
-import { ProfileSelector } from './components/layout/ProfileSelector'
-import { ReportPrintView } from './lib/export/reportPrintView'
+const ProfileSelector = React.lazy(() =>
+  import('./components/layout/ProfileSelector').then((m) => ({ default: m.ProfileSelector }))
+)
+const ReportPrintView = React.lazy(() =>
+  import('./lib/export/reportPrintView').then((m) => ({ default: m.ReportPrintView }))
+)
 import { useReportExport, type ReportPdfData } from './hooks/useReportExport'
 import { useWorkspaces } from './hooks/useWorkspaces'
 import { useGoals, type SavingsGoalItem } from './hooks/useGoals'
@@ -1207,16 +1214,18 @@ const MainApp = () => {
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t border-border/60 sm:border-t-0 flex-shrink-0">
-            <ProfileSelector
-              profiles={profiles}
-              selectedProfileId={selectedProfileId}
-              onSelectProfile={(nextId) => {
-                setSelectedProfileId(nextId)
-                setSelectedAccountId(null)
-              }}
-              onCreateProfile={createWorkspace}
-              isCreating={isCreatingWorkspace}
-            />
+            <React.Suspense fallback={null}>
+              <ProfileSelector
+                profiles={profiles}
+                selectedProfileId={selectedProfileId}
+                onSelectProfile={(nextId) => {
+                  setSelectedProfileId(nextId)
+                  setSelectedAccountId(null)
+                }}
+                onCreateProfile={createWorkspace}
+                isCreating={isCreatingWorkspace}
+              />
+            </React.Suspense>
 
             {/* Command Bar Global (Cmd+K / Ctrl+K) */}
             <button
@@ -1711,7 +1720,9 @@ const MainApp = () => {
       {/* Container de Impressão Oficial (@media print) */}
       {printData && (
         <div className="print-only">
-          <ReportPrintView data={printData} />
+          <React.Suspense fallback={null}>
+            <ReportPrintView data={printData} />
+          </React.Suspense>
         </div>
       )}
     </>
@@ -1725,7 +1736,9 @@ const MainApp = () => {
       {/* Toaster Glassmorphism e Notificação de Atualização PWA com suporte ao Dual-Theme */}
       <div className="no-print">
         <Toaster position="bottom-right" richColors theme={resolvedTheme} />
-        <PwaUpdatePrompt />
+        <React.Suspense fallback={null}>
+          <PwaUpdatePrompt />
+        </React.Suspense>
       </div>
     </>
   )

@@ -269,26 +269,21 @@ export const useGoals = (profileId?: string | null) => {
       }
 
       if (!token) {
-        let updatedItem: SavingsGoalItem | null = null
-        setDemoGoals((prev) =>
-          prev.map((g) => {
-            if (g.id !== id) return g
-            updatedItem = buildDemoGoal({
-              ...g,
-              name: payload.name ?? g.name,
-              targetAmount: payload.targetAmount ?? g.targetAmount,
-              currentAmount: payload.currentAmount ?? g.currentAmount,
-              deadline: payload.deadline !== undefined ? payload.deadline : g.deadline,
-              profileId: payload.profileId !== undefined ? payload.profileId : g.profileId,
-              icon: payload.icon ?? g.icon,
-              color: payload.color ?? g.color
-            })
-            return updatedItem
-          })
-        )
-        if (!updatedItem) {
+        const existing = demoGoals.find((g) => g.id === id)
+        if (!existing) {
           throw new Error('Meta não encontrada')
         }
+        const updatedItem = buildDemoGoal({
+          ...existing,
+          name: payload.name ?? existing.name,
+          targetAmount: payload.targetAmount ?? existing.targetAmount,
+          currentAmount: payload.currentAmount ?? existing.currentAmount,
+          deadline: payload.deadline !== undefined ? payload.deadline : existing.deadline,
+          profileId: payload.profileId !== undefined ? payload.profileId : existing.profileId,
+          icon: payload.icon ?? existing.icon,
+          color: payload.color ?? existing.color
+        })
+        setDemoGoals((prev) => prev.map((g) => (g.id === id ? updatedItem : g)))
         return updatedItem
       }
 
@@ -328,20 +323,15 @@ export const useGoals = (profileId?: string | null) => {
       amount: number
     }): Promise<SavingsGoalItem> => {
       if (!token) {
-        let updatedItem: SavingsGoalItem | null = null
-        setDemoGoals((prev) =>
-          prev.map((g) => {
-            if (g.id !== id) return g
-            updatedItem = buildDemoGoal({
-              ...g,
-              currentAmount: round2(g.currentAmount + amount)
-            })
-            return updatedItem
-          })
-        )
-        if (!updatedItem) {
+        const existing = demoGoals.find((g) => g.id === id)
+        if (!existing) {
           throw new Error('Meta não encontrada')
         }
+        const updatedItem = buildDemoGoal({
+          ...existing,
+          currentAmount: round2(existing.currentAmount + amount)
+        })
+        setDemoGoals((prev) => prev.map((g) => (g.id === id ? updatedItem : g)))
         return updatedItem
       }
 

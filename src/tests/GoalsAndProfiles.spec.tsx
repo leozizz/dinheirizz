@@ -1,9 +1,10 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, renderHook, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from '../contexts/AuthContext'
 import { goalFormSchema, workspaceFormSchema, contributeGoalSchema } from '../schemas/goals'
-import { calculateGoalMetricsClient, type SavingsGoalItem } from '../hooks/useGoals'
+import { calculateGoalMetricsClient, useGoals, type SavingsGoalItem } from '../hooks/useGoals'
 import { DEMO_PROFILES } from '../hooks/useWorkspaces'
 import { ProfileSelector } from '../components/layout/ProfileSelector'
 import { GoalsWidget } from '../components/dashboard/GoalsWidget'
@@ -276,9 +277,54 @@ describe('Issue #82 — Múltiplos Perfis Financeiros e Metas de Economia (Front
         />
       )
 
+      expect(screen.getByTestId('goal-cancel-btn')).toBeInTheDocument()
+      expect(screen.getByTestId('goal-close-btn')).toBeInTheDocument()
+
       fireEvent.click(screen.getByTestId('goal-delete-btn'))
       await waitFor(() => {
         expect(onDelete).toHaveBeenCalledWith('goal-1')
+      })
+    })
+  })
+
+  describe('useGoals (Modo Demo)', () => {
+    it('deve realizar aporte e atualização de meta no modo demo sem lançar erro de meta não encontrada', async () => {
+      const Wrapper = ({ children }: { children: React.ReactNode }) => {
+        const queryClient = new QueryClient({
+          defaultOptions: { queries: { retry: false } }
+        })
+        return (
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryClientProvider>
+        )
+      }
+
+      const { result } = renderHook(() => useGoals('all'), { wrapper: Wrapper })
+
+      const initialEmergency = result.current.goals.find((g) => g.id === 'demo-goal-emergency')
+      expect(initialEmergency).toBeDefined()
+      const initialAmount = initialEmergency!.currentAmount
+
+      await act(async () => {
+        const updated = await result.current.contributeGoal({
+          id: 'demo-goal-emergency',
+          amount: 100
+        })
+        expect(updated.currentAmount).toBe(initialAmount + 100)
+      })
+
+      await waitFor(() => {
+        const afterContribute = result.current.goals.find((g) => g.id === 'demo-goal-emergency')
+        expect(afterContribute?.currentAmount).toBe(initialAmount + 100)
+      })
+
+      await act(async () => {
+        const renamed = await result.current.updateGoal({
+          id: 'demo-goal-emergency',
+          data: { name: 'Reserva Atualizada' }
+        })
+        expect(renamed.name).toBe('Reserva Atualizada')
       })
     })
   })

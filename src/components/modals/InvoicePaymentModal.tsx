@@ -2,6 +2,13 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CheckCircle, AlertCircle, Wallet, CreditCard as CardIcon } from 'lucide-react'
 import { formatBRL } from '../../lib/formatters'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 import type { CreditCard } from '../../types/database.types'
 import type { AccountItem } from '../../hooks/useAccounts'
 
@@ -138,20 +145,22 @@ export const InvoicePaymentModal = ({
                 Conta de Débito
               </label>
               <div className="relative">
-                <select
-                  id="invoice-payment-account-select"
-                  data-testid="invoice-payment-account-select"
-                  value={selectedAccountId}
-                  onChange={(e) => setSelectedAccountId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
-                >
-                  <option value="" disabled>Selecione a conta...</option>
-                  {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.name} — Saldo: {formatBRL(acc.balance)}
-                    </option>
-                  ))}
-                </select>
+                <Select value={selectedAccountId || undefined} onValueChange={setSelectedAccountId}>
+                  <SelectTrigger
+                    id="invoice-payment-account-select"
+                    data-testid="invoice-payment-account-select"
+                    aria-label="Conta de Débito"
+                  >
+                    <SelectValue placeholder="Selecione a conta..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name} — Saldo: {formatBRL(acc.balance)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {selectedAccount && (

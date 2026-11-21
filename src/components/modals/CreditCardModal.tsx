@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CreditCard as CardIcon, CheckCircle, AlertCircle } from 'lucide-react'
@@ -10,6 +10,13 @@ import {
 } from '../../schemas/creditCards'
 import type { CreditCard } from '../../types/database.types'
 import type { AccountItem } from '../../hooks/useAccounts'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 
 export interface CreditCardModalProps {
   isOpen: boolean
@@ -52,6 +59,7 @@ export const CreditCardModal = ({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -174,18 +182,28 @@ export const CreditCardModal = ({
                 <label htmlFor="credit-card-brand-select" className="block text-xs font-semibold text-foreground">
                   Bandeira
                 </label>
-                <select
-                  id="credit-card-brand-select"
-                  data-testid="credit-card-brand-select"
-                  {...register('brand')}
-                  className="w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
-                >
-                  {BRAND_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  name="brand"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="credit-card-brand-select"
+                        data-testid="credit-card-brand-select"
+                        aria-label="Bandeira"
+                      >
+                        <SelectValue placeholder="Selecione a bandeira..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BRAND_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.brand && (
                   <p className="text-xs text-destructive">{errors.brand.message}</p>
                 )}
@@ -278,19 +296,28 @@ export const CreditCardModal = ({
               <label htmlFor="credit-card-account-select" className="block text-xs font-semibold text-foreground">
                 Conta Padrão para Pagamento
               </label>
-              <select
-                id="credit-card-account-select"
-                data-testid="credit-card-account-select"
-                {...register('accountId')}
-                className="w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
-              >
-                <option value="" disabled>Selecione a conta...</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.type})
-                  </option>
-                ))}
-              </select>
+              <Controller
+                name="accountId"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="credit-card-account-select"
+                      data-testid="credit-card-account-select"
+                      aria-label="Conta Padrão para Pagamento"
+                    >
+                      <SelectValue placeholder="Selecione a conta..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((acc) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.name} ({acc.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.accountId && (
                 <p className="text-xs text-destructive">{errors.accountId.message}</p>
               )}

@@ -108,7 +108,7 @@ describe('Receipt OCR Integration in TransactionModal & QuickActions (TDD)', () 
     await waitFor(() => {
       expect(screen.getByDisplayValue('84,50')).toBeInTheDocument()
       expect(screen.getByDisplayValue('Supermercado Pão de Açúcar')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('2026-11-08')).toBeInTheDocument()
+      expect(screen.getByTestId('occurred-at-input')).toHaveTextContent('08/11/2026')
       expect(screen.getByTestId('ai-extracted-badge')).toBeInTheDocument()
     })
 

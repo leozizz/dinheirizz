@@ -207,7 +207,7 @@ export default defineConfig(({ mode }) => {
               return 'vendor-charts'
             }
 
-            return 'vendor-core'
+            return undefined
           }
         }
       }

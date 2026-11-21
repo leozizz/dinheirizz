@@ -15,8 +15,17 @@ import {
 } from 'lucide-react'
 import { formatBRL } from '../../lib/formatters'
 import { useReportSummary, useReportExport } from '../../hooks/useReportExport'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 import type { ReportFilterInput } from '../../schemas/reports'
 import type { ExportTransactionItem } from '../../lib/export/csvGenerator'
+
+const ALL_ACCOUNTS_VALUE = '__all__'
 
 export interface ExportReportModalProps {
   isOpen: boolean
@@ -256,19 +265,22 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                   >
                     Mês de Referência
                   </label>
-                  <select
-                    id="period-month-select"
-                    data-testid="period-month-select"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl bg-input border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                  >
-                    {MONTHS.map((m) => (
-                      <option key={m.value} value={m.value} className="bg-popover text-foreground">
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger
+                      id="period-month-select"
+                      data-testid="period-month-select"
+                      aria-label="Mês de Referência"
+                    >
+                      <SelectValue placeholder="Selecione o mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTHS.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -279,19 +291,22 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 >
                   Ano {periodType === 'yearly' ? 'Fiscal' : ''}
                 </label>
-                <select
-                  id="period-year-select"
-                  data-testid="period-year-select"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="w-full h-11 px-3.5 rounded-xl bg-input border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                >
-                  {YEARS.map((y) => (
-                    <option key={y} value={y} className="bg-popover text-foreground">
-                      {y}
-                    </option>
-                  ))}
-                </select>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger
+                    id="period-year-select"
+                    data-testid="period-year-select"
+                    aria-label="Ano de Referência"
+                  >
+                    <SelectValue placeholder="Selecione o ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {YEARS.map((y) => (
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -305,22 +320,28 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
               >
                 Centro de Custo / Conta
               </label>
-              <select
-                id="account-filter-select"
-                data-testid="account-filter-select"
-                value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-xl bg-input border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+              <Select
+                value={selectedAccountId || ALL_ACCOUNTS_VALUE}
+                onValueChange={(val) => setSelectedAccountId(val === ALL_ACCOUNTS_VALUE ? '' : val)}
               >
-                <option value="" className="bg-popover text-foreground">
-                  Todas as Contas (Consolidado Geral)
-                </option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id} className="bg-popover text-foreground">
-                    {acc.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id="account-filter-select"
+                  data-testid="account-filter-select"
+                  aria-label="Centro de Custo ou Conta"
+                >
+                  <SelectValue placeholder="Todas as Contas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_ACCOUNTS_VALUE}>
+                    Todas as Contas (Consolidado Geral)
+                  </SelectItem>
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

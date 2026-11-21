@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    pool: 'forks',
+    testTimeout: 60000,
+    maxWorkers: 2,
     setupFiles: ['./src/tests/setup.ts', './api/tests/setup.ts'],
     include: ['**/*.spec.{ts,tsx}', '**/*.test.{ts,tsx}'],
     exclude: ['e2e/**', '**/node_modules/**', '**/dist/**']

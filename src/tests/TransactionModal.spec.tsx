@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { format, subDays } from 'date-fns'
 import { TransactionModal } from '../components/modals/TransactionModal'
 
 const mockCategories = [
@@ -162,18 +163,17 @@ describe('TransactionModal (TDD)', () => {
     const originSelect = screen.getByTestId('from-account-select')
     const destSelect = screen.getByTestId('to-account-select')
 
-    // Definir mesma conta para origem e destino
-    fireEvent.change(originSelect, { target: { value: 'acc-1' } })
-    fireEvent.change(destSelect, { target: { value: 'acc-1' } })
+    // Verificar que a mesma conta da origem fica desabilitada no destino
+    fireEvent.click(destSelect)
+    const listbox = document.querySelector('[role="listbox"]') as HTMLElement
+    const sameAccountText = within(listbox).getByText(/Nubank Principal \(mesma conta\)/i)
+    expect(sameAccountText.closest('[role="option"]')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(within(listbox).getByText('Itaú Reserva'))
+
+    expect(originSelect).toHaveTextContent('Nubank Principal')
+    expect(destSelect).toHaveTextContent('Itaú Reserva')
 
     const submitBtn = screen.getByTestId('transaction-submit-btn')
-    fireEvent.click(submitBtn)
-
-    expect(handleSubmit).not.toHaveBeenCalled()
-    expect(screen.getByText(/origem e de destino não podem ser iguais/i)).toBeInTheDocument()
-
-    // Corrigir destino para acc-2
-    fireEvent.change(destSelect, { target: { value: 'acc-2' } })
     fireEvent.click(submitBtn)
 
     await waitFor(() => {
@@ -200,21 +200,22 @@ describe('TransactionModal (TDD)', () => {
       />
     )
 
-    const originSelect = screen.getByTestId('from-account-select') as HTMLSelectElement
-    const destSelect = screen.getByTestId('to-account-select') as HTMLSelectElement
+    const originSelect = screen.getByTestId('from-account-select')
+    const destSelect = screen.getByTestId('to-account-select')
 
-    expect(originSelect.value).toBe('acc-1')
-    expect(destSelect.value).toBe('acc-2')
+    expect(originSelect).toHaveTextContent('Nubank Principal')
+    expect(destSelect).toHaveTextContent('Itaú Reserva')
 
     const swapBtn = screen.getByTestId('swap-accounts-btn')
     fireEvent.click(swapBtn)
 
-    expect(originSelect.value).toBe('acc-2')
-    expect(destSelect.value).toBe('acc-1')
+    expect(originSelect).toHaveTextContent('Itaú Reserva')
+    expect(destSelect).toHaveTextContent('Nubank Principal')
   })
 
   it('deve permitir alternar para status Pendente e submeter com data de vencimento', async () => {
     const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    const todayIso = format(new Date(), 'yyyy-MM-dd')
     render(
       <TransactionModal
         isOpen={true}
@@ -235,7 +236,8 @@ describe('TransactionModal (TDD)', () => {
     fireEvent.click(pendingBtn)
 
     const dueDateInput = screen.getByTestId('due-date-input')
-    fireEvent.change(dueDateInput, { target: { value: '2026-10-15' } })
+    fireEvent.click(dueDateInput)
+    fireEvent.click(screen.getByTestId('datepicker-preset-today'))
 
     const submitBtn = screen.getByTestId('transaction-submit-btn')
     fireEvent.click(submitBtn)
@@ -246,7 +248,43 @@ describe('TransactionModal (TDD)', () => {
           amount: 89.9,
           description: 'Conta de Energia',
           status: 'pending',
-          dueDate: '2026-10-15'
+          dueDate: todayIso
+        })
+      )
+    })
+  })
+
+  it('deve alterar data de operação para Ontem em 1 clique via DatePicker', async () => {
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    const yesterdayIso = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+
+    render(
+      <TransactionModal
+        isOpen={true}
+        mode="expense"
+        categories={mockCategories}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    )
+
+    fireEvent.change(screen.getByPlaceholderText('0,00'), { target: { value: '45,00' } })
+    fireEvent.change(screen.getByPlaceholderText('Descrição da movimentação'), {
+      target: { value: 'Café' }
+    })
+
+    fireEvent.click(screen.getByTestId('occurred-at-input'))
+    fireEvent.click(screen.getByTestId('datepicker-preset-yesterday'))
+
+    fireEvent.click(screen.getByTestId('transaction-submit-btn'))
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 45,
+          description: 'Café',
+          occurredAt: yesterdayIso
         })
       )
     })
@@ -272,7 +310,8 @@ describe('TransactionModal (TDD)', () => {
     fireEvent.click(installmentToggle)
 
     const installmentSelect = screen.getByTestId('installment-select')
-    fireEvent.change(installmentSelect, { target: { value: '6' } })
+    fireEvent.click(installmentSelect)
+    fireEvent.click(within(document.querySelector('[role="listbox"]') as HTMLElement).getByText('6x'))
 
     expect(screen.getByText(/6x de R\$ 100,00/i)).toBeInTheDocument()
 
@@ -309,7 +348,8 @@ describe('TransactionModal (TDD)', () => {
     fireEvent.click(recurringToggle)
 
     const periodSelect = screen.getByTestId('recurrence-period-select')
-    fireEvent.change(periodSelect, { target: { value: 'monthly' } })
+    fireEvent.click(periodSelect)
+    fireEvent.click(within(document.querySelector('[role="listbox"]') as HTMLElement).getByText('Mensal'))
 
     const submitBtn = screen.getByTestId('transaction-submit-btn')
     fireEvent.click(submitBtn)
@@ -350,7 +390,8 @@ describe('TransactionModal (TDD)', () => {
     expect(screen.getByText('Vencimento dinâmico em dia útil')).toBeInTheDocument()
 
     const daySelect = screen.getByTestId('recurrence-day-select')
-    fireEvent.change(daySelect, { target: { value: '25' } })
+    fireEvent.click(daySelect)
+    fireEvent.click(within(document.querySelector('[role="listbox"]') as HTMLElement).getByText('25'))
 
     const businessDayToggle = screen.getByTestId('adjust-business-day-toggle')
     fireEvent.click(businessDayToggle)
@@ -413,7 +454,8 @@ describe('TransactionModal (TDD)', () => {
 
     // Alterar para 3x
     const installmentsSelect = screen.getByTestId('credit-card-installments-select')
-    fireEvent.change(installmentsSelect, { target: { value: '3' } })
+    fireEvent.click(installmentsSelect)
+    fireEvent.click(within(document.querySelector('[role="listbox"]') as HTMLElement).getByText(/^3x parcelado/i))
 
     const submitBtn = screen.getByTestId('transaction-submit-btn')
     fireEvent.click(submitBtn)

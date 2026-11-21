@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Landmark, AlertCircle, Check } from 'lucide-react'
 import { parseCurrencyToNumber } from '../../lib/formatters'
 import { detectBank } from '../../lib/banks'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 
 interface AccountModalProps {
   isOpen: boolean
@@ -170,19 +177,27 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Tipo de Conta */}
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label htmlFor="account-type-select" className="block text-xs font-medium text-foreground mb-1.5">
                     Tipo de Conta
                   </label>
-                  <select
+                  <Select
                     value={type}
-                    onChange={(e) => setType(e.target.value as 'checking' | 'savings' | 'investment' | 'credit')}
-                    className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                    onValueChange={(val) => setType(val as 'checking' | 'savings' | 'investment' | 'credit')}
                   >
-                    <option value="checking">Conta Corrente</option>
-                    <option value="savings">Poupança / Reserva</option>
-                    <option value="investment">Investimentos</option>
-                    <option value="credit">Cartão / Crédito</option>
-                  </select>
+                    <SelectTrigger
+                      id="account-type-select"
+                      data-testid="account-type-select"
+                      aria-label="Tipo de Conta"
+                    >
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="checking">Conta Corrente</SelectItem>
+                      <SelectItem value="savings">Poupança / Reserva</SelectItem>
+                      <SelectItem value="investment">Investimentos</SelectItem>
+                      <SelectItem value="credit">Cartão / Crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Nome do Banco */}

@@ -18,9 +18,19 @@ import {
 import { toast } from 'sonner'
 import { formatBRL } from '../../lib/formatters'
 import { useImportStatement } from '../../hooks/useImportStatement'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
+import { DatePicker } from '../ui/DatePicker'
 import type { ParsedTransactionCandidate } from '../../types/import'
 import type { TransactionItem } from '../dashboard/Dashboard'
 import type { CategoryItem } from '../../hooks/useCategories'
+
+const NO_CATEGORY_VALUE = '__none__'
 
 export interface ImportStatementModalProps {
   isOpen: boolean
@@ -177,19 +187,28 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                 Conta de Destino:
               </label>
             </div>
-            <select
-              id="import-account-select"
-              data-testid="import-account-select"
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="w-full sm:w-72 h-11 min-h-[44px] px-3 bg-input/40 border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 [&>option]:bg-card [&>option]:text-foreground"
-            >
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name} ({formatBRL(Number(acc.balance) || 0)})
-                </option>
-              ))}
-            </select>
+            <Select value={selectedAccountId || undefined} onValueChange={setSelectedAccountId}>
+              <SelectTrigger
+                id="import-account-select"
+                data-testid="import-account-select"
+                aria-label="Conta de Destino"
+                className="w-full sm:w-72"
+              >
+                <SelectValue placeholder="Selecione a conta" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((acc) => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span>{acc.name}</span>
+                      <span className="text-muted-foreground font-tabular">
+                        ({formatBRL(Number(acc.balance) || 0)})
+                      </span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Error Banner */}
@@ -366,12 +385,12 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
                           )}
                         </button>
 
-                        <input
-                          type="date"
-                          data-testid={`input-date-${tx.id}`}
+                        <DatePicker
+                          dataTestId={`input-date-${tx.id}`}
+                          ariaLabel={`Data de ${tx.description}`}
                           value={tx.date}
-                          onChange={(e) => updateCandidateDate(tx.id, e.target.value)}
-                          className="h-10 min-h-[44px] px-2 bg-input/40 border border-border rounded text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          onChange={(val) => updateCandidateDate(tx.id, val)}
+                          className="w-auto min-w-[140px]"
                         />
                       </div>
 
@@ -404,22 +423,30 @@ export const ImportStatementModal: React.FC<ImportStatementModalProps> = ({
 
                       {/* Category Selector with source badge */}
                       <div className="flex items-center gap-2">
-                        <select
-                          data-testid={`select-category-${tx.id}`}
-                          value={tx.categoryId || ''}
-                          onChange={(e) => {
-                            const found = categories.find((c) => c.id === e.target.value)
-                            updateCandidateCategory(tx.id, e.target.value, found?.name)
+                        <Select
+                          value={tx.categoryId || NO_CATEGORY_VALUE}
+                          onValueChange={(val) => {
+                            const nextId = val === NO_CATEGORY_VALUE ? '' : val
+                            const found = categories.find((c) => c.id === nextId)
+                            updateCandidateCategory(tx.id, nextId, found?.name)
                           }}
-                          className="h-10 min-h-[44px] px-2.5 bg-input/40 border border-border rounded text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[150px] [&>option]:bg-card [&>option]:text-foreground"
                         >
-                          <option value="">Sem Categoria</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            data-testid={`select-category-${tx.id}`}
+                            aria-label={`Categoria de ${tx.description}`}
+                            className="w-auto min-w-[140px] max-w-[180px]"
+                          >
+                            <SelectValue placeholder="Sem Categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_CATEGORY_VALUE}>Sem Categoria</SelectItem>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
                         {tx.categorySource && (
                           <span

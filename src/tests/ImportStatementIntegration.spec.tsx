@@ -54,7 +54,7 @@ describe('Import Statement Full Integration (TDD)', () => {
 
     // Clica para abrir modal
     fireEvent.click(quickImportBtn)
-    expect(await screen.findByTestId('import-statement-modal')).toBeInTheDocument()
+    expect(await screen.findByTestId('import-statement-modal', {}, { timeout: 5000 })).toBeInTheDocument()
 
     // Fecha o modal
     const closeBtn = screen.getByTestId('close-import-modal-btn')

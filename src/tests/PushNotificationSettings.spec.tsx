@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { PushNotificationSettings } from '../components/settings/PushNotificationSettings'
 import type { PushNotificationHookReturn } from '../hooks/usePushNotifications'
@@ -55,7 +55,8 @@ describe('PushNotificationSettings Component (TDD)', () => {
     render(<PushNotificationSettings />)
 
     const selectBills = screen.getByTestId('select-bills-days-before')
-    fireEvent.change(selectBills, { target: { value: '3' } })
+    fireEvent.click(selectBills)
+    fireEvent.click(within(screen.getByRole('listbox')).getByText(/3 dias de antecedência/i))
 
     expect(mockHookState.updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -64,7 +65,8 @@ describe('PushNotificationSettings Component (TDD)', () => {
     )
 
     const selectBudget = screen.getByTestId('select-budget-threshold')
-    fireEvent.change(selectBudget, { target: { value: '90' } })
+    fireEvent.click(selectBudget)
+    fireEvent.click(within(screen.getByRole('listbox')).getByText(/Aos 90% do teto/i))
 
     expect(mockHookState.updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({

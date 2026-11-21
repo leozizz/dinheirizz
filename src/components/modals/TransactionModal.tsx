@@ -24,6 +24,14 @@ import { parseDateParts } from '../../lib/calendar'
 import { useReceiptOcr } from '../../hooks/useReceiptOcr'
 import { ReceiptScannerDropzone } from '../transactions/ReceiptScannerDropzone'
 import { AiKeyPromptModal } from './AiKeyPromptModal'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
+import { DatePicker } from '../ui/DatePicker'
 import type { CategorySummary } from '../../types/aiReceipt'
 
 export type TransactionMode = 'income' | 'expense' | 'transfer'
@@ -136,14 +144,22 @@ export const TransactionModal = ({
   onOpenAiSettings,
   onSubmit
 }: TransactionModalProps) => {
+  const initialAccount =
+    defaultAccountId && accounts.some((a) => a.id === defaultAccountId)
+      ? defaultAccountId
+      : accounts[0]?.id || ''
+  const initialOtherAccount = accounts.find((a) => a.id !== initialAccount)?.id || ''
+  const initialCategory =
+    categories.find((c) => c.type === (mode === 'income' ? 'income' : 'expense'))?.id || ''
+
   const [amountStr, setAmountStr] = useState('')
   const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState('')
-  const [accountId, setAccountId] = useState('')
-  const [fromAccountId, setFromAccountId] = useState('')
-  const [toAccountId, setToAccountId] = useState('')
+  const [categoryId, setCategoryId] = useState(initialCategory)
+  const [accountId, setAccountId] = useState(initialAccount)
+  const [fromAccountId, setFromAccountId] = useState(initialAccount)
+  const [toAccountId, setToAccountId] = useState(initialOtherAccount)
   const [paymentMethod, setPaymentMethod] = useState<'account' | 'credit_card'>('account')
-  const [creditCardId, setCreditCardId] = useState<string>('')
+  const [creditCardId, setCreditCardId] = useState<string>(creditCards[0]?.id || '')
   const [cardInstallments, setCardInstallments] = useState<number>(1)
   const [occurredAt, setOccurredAt] = useState(() => getTodayLocalDate())
   const [status, setStatus] = useState<'completed' | 'pending'>('completed')
@@ -173,42 +189,43 @@ export const TransactionModal = ({
     resetScanState
   } = useReceiptOcr()
 
-  // Reset/ajusta defaults ao abrir ou trocar de modo
+  // Reset/ajusta defaults apenas ao abrir o modal ou trocar de modo
   useEffect(() => {
-    if (isOpen) {
-      setAmountStr('')
-      setDescription('')
-      setError(null)
-      setOccurredAt(getTodayLocalDate())
-      setStatus('completed')
-      setDueDate(getTodayLocalDate())
-      setIsInstallment(false)
-      setInstallmentTotal(2)
-      setIsRecurring(false)
-      setRecurrencePeriod('monthly')
-      setRecurrenceDay(10)
-      setAdjustBusinessDay(false)
-      setPaymentMethod('account')
-      setCreditCardId(creditCards[0]?.id || '')
-      setCardInstallments(1)
-      setIsOcrOpen(Boolean(initialOpenOcr))
-      setAiExtractedInfo(null)
-      resetScanState()
+    if (!isOpen) return
 
-      const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
-      setCategoryId(filteredCats[0]?.id || '')
+    setAmountStr('')
+    setDescription('')
+    setError(null)
+    setOccurredAt(getTodayLocalDate())
+    setStatus('completed')
+    setDueDate(getTodayLocalDate())
+    setIsInstallment(false)
+    setInstallmentTotal(2)
+    setIsRecurring(false)
+    setRecurrencePeriod('monthly')
+    setRecurrenceDay(10)
+    setAdjustBusinessDay(false)
+    setPaymentMethod('account')
+    setCreditCardId(creditCards[0]?.id || '')
+    setCardInstallments(1)
+    setIsOcrOpen(Boolean(initialOpenOcr))
+    setAiExtractedInfo(null)
+    resetScanState()
 
-      const selectedOrFirst =
-        defaultAccountId && accounts.some((a) => a.id === defaultAccountId)
-          ? defaultAccountId
-          : accounts[0]?.id || ''
+    const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
+    setCategoryId(filteredCats[0]?.id || '')
 
-      setAccountId(selectedOrFirst)
-      setFromAccountId(selectedOrFirst)
-      const otherAccount = accounts.find((a) => a.id !== selectedOrFirst)
-      setToAccountId(otherAccount?.id || accounts[1]?.id || selectedOrFirst)
-    }
-  }, [isOpen, mode, categories, accounts, creditCards, defaultAccountId, initialOpenOcr, resetScanState])
+    const selectedOrFirst =
+      defaultAccountId && accounts.some((a) => a.id === defaultAccountId)
+        ? defaultAccountId
+        : accounts[0]?.id || ''
+
+    setAccountId(selectedOrFirst)
+    setFromAccountId(selectedOrFirst)
+    const otherAccount = accounts.find((a) => a.id !== selectedOrFirst)
+    setToAccountId(otherAccount?.id || accounts[1]?.id || selectedOrFirst)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode])
 
   const handleOcrFileSelected = async (file: File) => {
     try {
@@ -538,29 +555,35 @@ export const TransactionModal = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                      <label htmlFor="from-account-select" className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta de Origem
                       </label>
-                      <select
-                        data-testid="from-account-select"
+                      <Select
                         value={fromAccountId}
-                        onChange={(e) => {
-                          const newFrom = e.target.value
+                        onValueChange={(newFrom) => {
                           setFromAccountId(newFrom)
                           if (toAccountId === newFrom) {
                             const nextOther = accounts.find((a) => a.id !== newFrom)
                             if (nextOther) setToAccountId(nextOther.id)
                           }
                         }}
-                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                       >
-                        {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger
+                          id="from-account-select"
+                          data-testid="from-account-select"
+                          aria-label="Conta de Origem"
+                        >
+                          <SelectValue placeholder="Selecione a conta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="flex justify-center sm:pt-6">
@@ -578,81 +601,111 @@ export const TransactionModal = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                      <label htmlFor="to-account-select" className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta de Destino
                       </label>
-                      <select
-                        data-testid="to-account-select"
+                      <Select
                         value={toAccountId}
-                        onChange={(e) => setToAccountId(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                        onValueChange={setToAccountId}
                       >
-                        {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id} disabled={acc.id === fromAccountId}>
-                            {acc.name} {acc.id === fromAccountId ? '(mesma conta)' : ''}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger
+                          id="to-account-select"
+                          data-testid="to-account-select"
+                          aria-label="Conta de Destino"
+                        >
+                          <SelectValue placeholder="Selecione a conta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id} disabled={acc.id === fromAccountId}>
+                              {acc.name} {acc.id === fromAccountId ? '(mesma conta)' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label htmlFor="transaction-category-select" className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5 text-muted-foreground" />
                       Categoria
                     </label>
-                    <select
+                    <Select
                       value={categoryId}
-                      onChange={(e) => setCategoryId(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                      onValueChange={setCategoryId}
                     >
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        id="transaction-category-select"
+                        data-testid="transaction-category-select"
+                        aria-label="Categoria"
+                      >
+                        <SelectValue placeholder="Selecione a categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {paymentMethod === 'credit_card' ? (
-                    <div>
-                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                    <div key="credit-card-field">
+                      <label htmlFor="transaction-credit-card-select" className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Cartão de Crédito
                       </label>
-                      <select
-                        data-testid="transaction-credit-card-select"
+                      <Select
                         value={creditCardId}
-                        onChange={(e) => setCreditCardId(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                        onValueChange={setCreditCardId}
                       >
-                        {creditCards.map((card) => (
-                          <option key={card.id} value={card.id}>
-                            {card.name} (Fecha dia {card.closingDay})
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger
+                          id="transaction-credit-card-select"
+                          data-testid="transaction-credit-card-select"
+                          aria-label="Cartão de Crédito"
+                        >
+                          <SelectValue placeholder="Selecione o cartão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {creditCards.map((card) => (
+                            <SelectItem key={card.id} value={card.id}>
+                              {card.name} (Fecha dia {card.closingDay})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   ) : (
-                    <div>
-                      <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                    <div key="account-field">
+                      <label htmlFor="transaction-account-select" className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                         Conta
                       </label>
-                      <select
+                      <Select
                         value={accountId}
-                        onChange={(e) => setAccountId(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
+                        onValueChange={setAccountId}
                       >
-                        {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger
+                          id="transaction-account-select"
+                          data-testid="transaction-account-select"
+                          aria-label="Conta"
+                        >
+                          <SelectValue placeholder="Selecione a conta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>
@@ -662,22 +715,30 @@ export const TransactionModal = ({
               {mode === 'expense' && paymentMethod === 'credit_card' && (
                 <div className="space-y-3 p-3.5 rounded-2xl bg-muted/20 border border-border/80">
                   <div className="flex items-center justify-between gap-3">
-                    <label className="text-xs font-medium text-foreground">
+                    <label htmlFor="credit-card-installments-select" className="text-xs font-medium text-foreground">
                       Parcelas no Cartão
                     </label>
-                    <select
-                      data-testid="credit-card-installments-select"
-                      value={cardInstallments}
-                      onChange={(e) => setCardInstallments(Number(e.target.value))}
-                      className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none min-h-[44px]"
+                    <Select
+                      value={String(cardInstallments)}
+                      onValueChange={(val) => setCardInstallments(Number(val))}
                     >
-                      {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n === 1 ? '1x à vista' : `${n}x parcelado`}
-                          {numAmount > 0 ? ` (${formatBRL(numAmount / n)})` : ''}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        id="credit-card-installments-select"
+                        data-testid="credit-card-installments-select"
+                        aria-label="Parcelas no Cartão"
+                        className="w-auto min-w-[160px]"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n === 1 ? '1x à vista' : `${n}x parcelado`}
+                            {numAmount > 0 ? ` (${formatBRL(numAmount / n)})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {cyclePreview && selectedCard && (
@@ -739,30 +800,34 @@ export const TransactionModal = ({
               {/* Data da Operação e Vencimento */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
+                  <label htmlFor="occurred-at-input" className="block text-xs font-medium text-foreground mb-1.5 ml-1 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                     Data da Operação
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
+                    id="occurred-at-input"
+                    dataTestId="occurred-at-input"
+                    ariaLabel="Data da Operação"
                     value={occurredAt}
-                    onChange={(e) => setOccurredAt(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                    onChange={setOccurredAt}
+                    presets={['today', 'yesterday', 'tomorrow']}
                   />
                 </div>
 
                 {status === 'pending' && mode !== 'transfer' && (
                   <div>
-                    <label className="block text-xs font-medium text-amber-300 mb-1.5 ml-1 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                    <label htmlFor="due-date-input" className="block text-xs font-medium text-amber-700 dark:text-amber-300 mb-1.5 ml-1 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                       Data de Vencimento
                     </label>
-                    <input
-                      type="date"
-                      data-testid="due-date-input"
+                    <DatePicker
+                      id="due-date-input"
+                      dataTestId="due-date-input"
+                      ariaLabel="Data de Vencimento"
                       value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-transparent transition-all"
+                      onChange={setDueDate}
+                      tone="warning"
+                      presets={['today', 'tomorrow']}
                     />
                   </div>
                 )}
@@ -812,21 +877,29 @@ export const TransactionModal = ({
                   {isInstallment && (
                     <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5 animate-fade-in">
                       <div className="flex items-center justify-between gap-3">
-                        <label className="text-xs font-medium text-foreground">
+                        <label htmlFor="installment-select" className="text-xs font-medium text-foreground">
                           Número de Parcelas
                         </label>
-                        <select
-                          data-testid="installment-select"
-                          value={installmentTotal}
-                          onChange={(e) => setInstallmentTotal(Number(e.target.value))}
-                          className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                        <Select
+                          value={String(installmentTotal)}
+                          onValueChange={(val) => setInstallmentTotal(Number(val))}
                         >
-                          {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36, 48, 60, 72].map((n) => (
-                            <option key={n} value={n}>
-                              {n}x
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            id="installment-select"
+                            data-testid="installment-select"
+                            aria-label="Número de Parcelas"
+                            className="w-auto min-w-[96px]"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36, 48, 60, 72].map((n) => (
+                              <SelectItem key={n} value={String(n)}>
+                                {n}x
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {numAmount > 0 && (
@@ -843,41 +916,57 @@ export const TransactionModal = ({
                   {isRecurring && (
                     <div className="p-3.5 rounded-2xl bg-card border border-border space-y-3 animate-fade-in">
                       <div className="flex items-center justify-between gap-3">
-                        <label className="text-xs font-medium text-foreground">
+                        <label htmlFor="recurrence-period-select" className="text-xs font-medium text-foreground">
                           Frequência de Repetição
                         </label>
-                        <select
-                          data-testid="recurrence-period-select"
+                        <Select
                           value={recurrencePeriod}
-                          onChange={(e) => setRecurrencePeriod(e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                          onValueChange={setRecurrencePeriod}
                         >
-                          <option value="monthly">Mensal</option>
-                          <option value="weekly">Semanal</option>
-                          <option value="yearly">Anual</option>
-                        </select>
+                          <SelectTrigger
+                            id="recurrence-period-select"
+                            data-testid="recurrence-period-select"
+                            aria-label="Frequência de Repetição"
+                            className="w-auto min-w-[120px]"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Mensal</SelectItem>
+                            <SelectItem value="weekly">Semanal</SelectItem>
+                            <SelectItem value="yearly">Anual</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {recurrencePeriod === 'monthly' && (
                         <>
                           <div className="flex items-center justify-between gap-3 pt-2 border-t border-border">
-                            <label className="text-xs font-medium text-foreground">
+                            <label htmlFor="recurrence-day-select" className="text-xs font-medium text-foreground">
                               Vence todo dia
                             </label>
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs text-muted-foreground">Dia</span>
-                              <select
-                                data-testid="recurrence-day-select"
-                                value={recurrenceDay}
-                                onChange={(e) => setRecurrenceDay(Number(e.target.value))}
-                                className="px-3 py-1.5 rounded-lg bg-card border border-border text-foreground text-xs focus:ring-1 focus:ring-primary focus:outline-none font-medium"
+                              <Select
+                                value={String(recurrenceDay)}
+                                onValueChange={(val) => setRecurrenceDay(Number(val))}
                               >
-                                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                                  <option key={day} value={day}>
-                                    {day}
-                                  </option>
-                                ))}
-                              </select>
+                                <SelectTrigger
+                                  id="recurrence-day-select"
+                                  data-testid="recurrence-day-select"
+                                  aria-label="Dia de vencimento"
+                                  className="w-auto min-w-[76px]"
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                    <SelectItem key={day} value={String(day)}>
+                                      {day}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
 

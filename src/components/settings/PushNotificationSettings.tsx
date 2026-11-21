@@ -11,6 +11,13 @@ import {
   Smartphone
 } from 'lucide-react'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 import type { NotificationPreferences } from '../../schemas/push'
 
 export const PushNotificationSettings: React.FC = () => {
@@ -240,19 +247,26 @@ export const PushNotificationSettings: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <select
-                id="select-bills-days-before"
-                aria-label="Antecedência de alerta de contas a vencer"
-                data-testid="select-bills-days-before"
-                value={currentPrefs.billsDueDaysBefore}
-                onChange={(e) => handleChangeBillsDays(Number(e.target.value) as 0 | 1 | 3)}
+              <Select
+                value={String(currentPrefs.billsDueDaysBefore)}
+                onValueChange={(val) => handleChangeBillsDays(Number(val) as 0 | 1 | 3)}
                 disabled={!currentPrefs.pushEnabled || isUpdatingPreferences}
-                className="min-h-[44px] px-3 py-1.5 rounded-xl bg-input/40 border border-border text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 [&>option]:bg-card [&>option]:text-foreground"
               >
-                <option value={0}>No dia do vencimento</option>
-                <option value={1}>1 dia de antecedência</option>
-                <option value={3}>3 dias de antecedência</option>
-              </select>
+                <SelectTrigger
+                  id="select-bills-days-before"
+                  aria-label="Antecedência de alerta de contas a vencer"
+                  data-testid="select-bills-days-before"
+                  disabled={!currentPrefs.pushEnabled || isUpdatingPreferences}
+                  className="w-auto min-w-[180px]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No dia do vencimento</SelectItem>
+                  <SelectItem value="1">1 dia de antecedência</SelectItem>
+                  <SelectItem value="3">3 dias de antecedência</SelectItem>
+                </SelectContent>
+              </Select>
 
               <button
                 type="button"
@@ -290,22 +304,29 @@ export const PushNotificationSettings: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <select
-                id="select-budget-threshold"
-                aria-label="Percentual de disparo do alerta de orçamento"
-                data-testid="select-budget-threshold"
-                value={currentPrefs.budgetThresholdPercent}
-                onChange={(e) =>
-                  handleChangeBudgetThreshold(Number(e.target.value) as 80 | 85 | 90 | 100)
+              <Select
+                value={String(currentPrefs.budgetThresholdPercent)}
+                onValueChange={(val) =>
+                  handleChangeBudgetThreshold(Number(val) as 80 | 85 | 90 | 100)
                 }
                 disabled={!currentPrefs.pushEnabled || isUpdatingPreferences}
-                className="min-h-[44px] px-3 py-1.5 rounded-xl bg-input/40 border border-border text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40 [&>option]:bg-card [&>option]:text-foreground"
               >
-                <option value={80}>Aos 80% do teto</option>
-                <option value={85}>Aos 85% do teto</option>
-                <option value={90}>Aos 90% do teto</option>
-                <option value={100}>Ao estourar 100%</option>
-              </select>
+                <SelectTrigger
+                  id="select-budget-threshold"
+                  aria-label="Percentual de disparo do alerta de orçamento"
+                  data-testid="select-budget-threshold"
+                  disabled={!currentPrefs.pushEnabled || isUpdatingPreferences}
+                  className="w-auto min-w-[165px]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="80">Aos 80% do teto</SelectItem>
+                  <SelectItem value="85">Aos 85% do teto</SelectItem>
+                  <SelectItem value="90">Aos 90% do teto</SelectItem>
+                  <SelectItem value="100">Ao estourar 100%</SelectItem>
+                </SelectContent>
+              </Select>
 
               <button
                 type="button"

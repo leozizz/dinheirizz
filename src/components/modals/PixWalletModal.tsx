@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, QrCode, Copy, Check, ShieldCheck, Plus, Trash2, KeyRound } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 
 export interface PixKeyItem {
   id: string
@@ -231,21 +238,28 @@ export const PixWalletModal = ({
                         </button>
                       )}
                     </div>
-                    <select
-                      data-testid="pix-key-select"
-                      value={selectedKey?.id}
-                      onChange={(e) => {
-                        setSelectedKeyId(e.target.value)
+                    <Select
+                      value={selectedKey?.id || undefined}
+                      onValueChange={(val) => {
+                        setSelectedKeyId(val)
                         setCopied(false)
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-input/40 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all [&>option]:bg-card [&>option]:text-foreground"
                     >
-                      {pixKeys.map((key) => (
-                        <option key={key.id} value={key.id}>
-                          {formatKeyType(key.key_type)} — {key.key_value} ({key.bank_name || 'Conta'})
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        id="pix-key-select"
+                        data-testid="pix-key-select"
+                        aria-label="Chave Ativa"
+                      >
+                        <SelectValue placeholder="Selecione uma chave" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pixKeys.map((key) => (
+                          <SelectItem key={key.id} value={key.id}>
+                            {formatKeyType(key.key_type)} — {key.key_value} ({key.bank_name || 'Conta'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* QR Code Container */}
@@ -356,20 +370,28 @@ export const PixWalletModal = ({
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label htmlFor="pix-key-type-select" className="block text-xs font-medium text-foreground mb-1.5">
                     Tipo de Chave
                   </label>
-                  <select
+                  <Select
                     value={newKeyType}
-                    onChange={(e) => setNewKeyType(e.target.value as 'cpf' | 'cnpj' | 'email' | 'phone' | 'random')}
-                    className="w-full px-3.5 py-2.5 bg-input/40 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent [&>option]:bg-card [&>option]:text-foreground"
+                    onValueChange={(val) => setNewKeyType(val as 'cpf' | 'cnpj' | 'email' | 'phone' | 'random')}
                   >
-                    <option value="cpf">CPF</option>
-                    <option value="cnpj">CNPJ</option>
-                    <option value="email">E-mail</option>
-                    <option value="phone">Telefone (Celular)</option>
-                    <option value="random">Chave Aleatória (EVP)</option>
-                  </select>
+                    <SelectTrigger
+                      id="pix-key-type-select"
+                      data-testid="pix-key-type-select"
+                      aria-label="Tipo de Chave"
+                    >
+                      <SelectValue placeholder="Selecione o tipo de chave" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cpf">CPF</SelectItem>
+                      <SelectItem value="cnpj">CNPJ</SelectItem>
+                      <SelectItem value="email">E-mail</SelectItem>
+                      <SelectItem value="phone">Telefone (Celular)</SelectItem>
+                      <SelectItem value="random">Chave Aleatória (EVP)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>

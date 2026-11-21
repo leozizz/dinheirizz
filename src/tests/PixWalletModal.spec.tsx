@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { PixWalletModal } from '../components/modals/PixWalletModal'
 
 const mockPixKeys = [
@@ -39,7 +39,7 @@ describe('PixWalletModal (TDD)', () => {
 
     expect(screen.getByText('Carteira Pix')).toBeInTheDocument()
     expect(screen.getByText(/selecione uma chave para receber pagamentos/i)).toBeInTheDocument()
-    expect(screen.getByDisplayValue(/leo@dinheirizz.com/i)).toBeInTheDocument()
+    expect(screen.getByTestId('pix-key-select')).toHaveTextContent(/leo@dinheirizz.com/i)
   })
 
   it('não deve renderizar quando isOpen for false', () => {
@@ -64,7 +64,8 @@ describe('PixWalletModal (TDD)', () => {
     )
 
     const select = screen.getByTestId('pix-key-select')
-    fireEvent.change(select, { target: { value: 'pix-2' } })
+    fireEvent.click(select)
+    fireEvent.click(within(screen.getByRole('listbox')).getByText(/123\.456\.789-00/i))
 
     expect(screen.getByTestId('active-pix-key-value')).toHaveTextContent('123.456.789-00')
   })

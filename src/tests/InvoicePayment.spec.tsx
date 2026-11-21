@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { InvoicePaymentModal } from '../components/modals/InvoicePaymentModal'
 import { AnticipateInstallmentsModal } from '../components/modals/AnticipateInstallmentsModal'
@@ -109,7 +109,8 @@ describe('InvoicePaymentModal & Modals (TDD)', () => {
     )
 
     const select = screen.getByTestId('invoice-payment-account-select')
-    fireEvent.change(select, { target: { value: 'b2c3d4e5-f6a7-8901-bcde-f12345678901' } })
+    fireEvent.click(select)
+    fireEvent.click(within(screen.getByRole('listbox')).getByText(/Poupança Itaú/i))
 
     const confirmBtn = screen.getByTestId('btn-confirm-invoice-payment')
     fireEvent.click(confirmBtn)

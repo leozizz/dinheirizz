@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import React from 'react'
 import { CreditCardWidget } from '../components/cards/CreditCardWidget'
 import { CreditCardModal } from '../components/modals/CreditCardModal'
@@ -270,7 +270,8 @@ describe('QA Suite — Validação de Cartões de Crédito, Faturas e Ciclos (#5
 
       const accountSelect = screen.getByTestId('invoice-payment-account-select')
       // Alterna para acc-2 (Reserva Itaú com R$ 150,00 para fatura de R$ 1850,50)
-      fireEvent.change(accountSelect, { target: { value: 'acc-2' } })
+      fireEvent.click(accountSelect)
+      fireEvent.click(within(screen.getByRole('listbox')).getByText(/Reserva Itaú/i))
 
       expect(screen.getByText(/O saldo da conta selecionada é inferior ao valor da fatura/i)).toBeDefined()
     })

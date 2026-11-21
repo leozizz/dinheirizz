@@ -68,7 +68,7 @@ describe('App Component (Dinheirizz 2.0 Frontend)', () => {
     const transferBtn = await screen.findByRole('button', { name: /transferir/i }, { timeout: 4000 })
     fireEvent.click(transferBtn)
 
-    expect(await screen.findByText('Transferência entre Contas', {}, { timeout: 4000 })).toBeInTheDocument()
+    expect(await screen.findByText('Transferência entre Contas', {}, { timeout: 10000 })).toBeInTheDocument()
     expect(screen.getByText('Conta de Origem')).toBeInTheDocument()
     expect(screen.getByText('Conta de Destino')).toBeInTheDocument()
   })

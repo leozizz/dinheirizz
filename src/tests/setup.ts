@@ -26,3 +26,11 @@ vi.mock('virtual:pwa-register/react', () => ({
     updateServiceWorker: vi.fn().mockResolvedValue(undefined)
   })
 }))
+
+// Polyfills jsdom necessários para Radix Select / Popover
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture ??= () => false
+  Element.prototype.setPointerCapture ??= () => {}
+  Element.prototype.releasePointerCapture ??= () => {}
+  Element.prototype.scrollIntoView ??= () => {}
+}

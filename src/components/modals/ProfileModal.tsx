@@ -39,6 +39,13 @@ import { useAuth } from '../../contexts/AuthContext'
 import { ThemeContext } from '../../contexts/ThemeContext'
 import type { ThemeMode } from '../../types/theme'
 import { PushNotificationSettings } from '../settings/PushNotificationSettings'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/Select'
 
 export interface ProfileModalProps {
   isOpen: boolean
@@ -601,29 +608,37 @@ export const ProfileModal = ({
                   <label htmlFor="byok-provider" className="block text-[11px] font-medium text-foreground mb-1">
                     Provedor de IA
                   </label>
-                  <select
-                    id="byok-provider"
-                    value={aiProvider}
-                    onChange={(e) => setAiProvider(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-input/40 border border-border text-foreground text-xs focus:outline-none focus:border-indigo-400 [&>option]:bg-card [&>option]:text-foreground"
-                  >
-                    <option value="gemini">Google Gemini</option>
-                  </select>
+                  <Select value={aiProvider} onValueChange={setAiProvider}>
+                    <SelectTrigger
+                      id="byok-provider"
+                      data-testid="byok-provider-select"
+                      aria-label="Provedor de IA"
+                    >
+                      <SelectValue placeholder="Selecione o provedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gemini">Google Gemini</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <label htmlFor="byok-model" className="block text-[11px] font-medium text-foreground mb-1">
                     Modelo
                   </label>
-                  <select
-                    id="byok-model"
-                    value={aiCustomModel}
-                    onChange={(e) => setAiCustomModel(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-input/40 border border-border text-foreground text-xs focus:outline-none focus:border-indigo-400 [&>option]:bg-card [&>option]:text-foreground"
-                  >
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Recomendado)</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                  </select>
+                  <Select value={aiCustomModel} onValueChange={setAiCustomModel}>
+                    <SelectTrigger
+                      id="byok-model"
+                      data-testid="byok-model-select"
+                      aria-label="Modelo de IA"
+                    >
+                      <SelectValue placeholder="Selecione o modelo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash (Recomendado)</SelectItem>
+                      <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

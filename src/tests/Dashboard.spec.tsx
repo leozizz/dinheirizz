@@ -605,6 +605,91 @@ describe('Dashboard & QuickActions (TDD)', () => {
 
     expect(screen.getByTestId('push-notification-banner')).toBeInTheDocument()
   })
+
+  it('deve somar faturas de creditCards no card Cartão de Crédito da Visão Geral', () => {
+    const mockCreditCards = [
+      {
+        id: 'card-1',
+        name: 'Nubank Ultravioleta',
+        brand: 'mastercard' as const,
+        limitAmount: 15000,
+        usedLimit: 3000,
+        availableLimit: 12000,
+        closingDay: 25,
+        dueDay: 5,
+        color: '#7bc816',
+        lastFourDigits: '8821',
+        accountId: 'acc-1',
+        currentInvoice: {
+          id: 'inv-1',
+          period: '2026-11',
+          amount: 1250.4,
+          status: 'open' as const,
+          closingDate: '2026-11-25T00:00:00.000Z',
+          dueDate: '2026-12-05T00:00:00.000Z'
+        }
+      }
+    ]
+
+    render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        creditCards={mockCreditCards}
+      />
+    )
+
+    const creditCardOverview = screen.getByTestId('overview-card-credit-card')
+    expect(creditCardOverview).toHaveTextContent('R$ 1.250,40')
+    expect(creditCardOverview).toHaveTextContent('1 cartão vinculado')
+  })
+
+  it('deve exibir OnboardingChecklist para usuário autenticado sem transações e ocultar ao dispensar', () => {
+    localStorage.clear()
+    render(
+      <Dashboard
+        totalBalance={0}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={[]}
+        accounts={[{ id: 'acc-1', name: 'Conta Principal', balance: 0, type: 'checking' }]}
+        onActionClick={vi.fn()}
+        onNewAccount={vi.fn()}
+        onImportStatement={vi.fn()}
+        onOpenBudgetModal={vi.fn()}
+        isAuthenticated={true}
+        userId="user-123"
+      />
+    )
+
+    expect(screen.getByTestId('onboarding-checklist')).toBeInTheDocument()
+
+    const dismissBtn = screen.getByTestId('onboarding-dismiss-btn')
+    fireEvent.click(dismissBtn)
+
+    expect(screen.queryByTestId('onboarding-checklist')).not.toBeInTheDocument()
+    expect(localStorage.getItem('dinheirizz_onboarding_dismissed_user-123')).toBe('true')
+  })
+
+  it('não deve exibir OnboardingChecklist no Modo Demonstração (isAuthenticated=false)', () => {
+    localStorage.clear()
+    render(
+      <Dashboard
+        totalBalance={0}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={[]}
+        accounts={[]}
+        onActionClick={vi.fn()}
+        isAuthenticated={false}
+      />
+    )
+
+    expect(screen.queryByTestId('onboarding-checklist')).not.toBeInTheDocument()
+  })
 })
 
 

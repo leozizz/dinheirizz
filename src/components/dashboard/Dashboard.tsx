@@ -10,6 +10,7 @@ import { FinancialCalendar } from './FinancialCalendar'
 import { BudgetProgressWidget } from './BudgetProgressWidget'
 import { CreditCardWidget } from '../cards/CreditCardWidget'
 import { PushNotificationBanner } from './PushNotificationBanner'
+import { OnboardingChecklist } from './OnboardingChecklist'
 import type { BudgetProgressItem } from '../../hooks/useBudgets'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
@@ -111,6 +112,9 @@ export interface DashboardProps {
   onOpenInvoiceDetails?: (card: CreditCardItemType) => void
   onOpenPayInvoice?: (card: CreditCardItemType) => void
   onOpenAnticipate?: (card: CreditCardItemType) => void
+  // Issue #77: Onboarding guiado para novas contas
+  isAuthenticated?: boolean
+  userId?: string | null
 }
 
 const getDueStatus = (dueDateStr?: string | null) => {
@@ -167,8 +171,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenCreateCreditCard,
   onOpenInvoiceDetails,
   onOpenPayInvoice,
-  onOpenAnticipate
+  onOpenAnticipate,
+  isAuthenticated = false,
+  userId = null
 }) => {
+  const onboardingStorageKey = userId
+    ? `dinheirizz_onboarding_dismissed_${userId}`
+    : 'dinheirizz_onboarding_dismissed'
+
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem(onboardingStorageKey) === 'true'
+  })
+
+  const handleDismissOnboarding = () => {
+    setIsOnboardingDismissed(true)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(onboardingStorageKey, 'true')
+    }
+  }
+
+  const shouldShowOnboarding =
+    isAuthenticated &&
+    !isLoading &&
+    transactions.length === 0 &&
+    accounts.length <= 1 &&
+    !isOnboardingDismissed
+
   const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
 
@@ -281,7 +310,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Resumo de contas de crédito e transferências
   const creditAccounts = accounts.filter((a) => a.type === 'credit')
-  const creditCardTotal = creditAccounts.reduce((sum, a) => sum + Math.abs(Number(a.balance) || 0), 0)
+  const creditAccountsTotal = creditAccounts.reduce((sum, a) => sum + Math.abs(Number(a.balance) || 0), 0)
+  const creditCardsTotal = (creditCards ?? []).reduce(
+    (sum, card) => sum + Math.max(0, Number(card.currentInvoice?.amount ?? card.usedLimit ?? 0)),
+    0
+  )
+  const creditCardTotal = creditAccountsTotal + creditCardsTotal
+  const totalLinkedCards = creditAccounts.length + (creditCards?.length ?? 0)
 
   const transferTransactions = transactions.filter(
     (t) => t.type === 'transfer' || (t.category?.name && t.category.name.toLowerCase().includes('transfer'))
@@ -411,6 +446,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
+      {/* Onboarding Guiado para Contas Novas */}
+      {shouldShowOnboarding && (
+        <OnboardingChecklist
+          hasAccount={accounts.length >= 1}
+          onOpenAccountModal={onNewAccount || (() => {})}
+          onOpenTransactionModal={() => onActionClick('expense')}
+          onOpenImportModal={onImportStatement}
+          onOpenBudgetModal={onOpenBudgetModal}
+          onDismiss={handleDismissOnboarding}
+        />
+      )}
+
       {/* Bloco de Visão Geral (Compromissos, Cartões e Balanços) */}
       <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-3.5">
         <div className="flex items-center justify-between">
@@ -427,7 +474,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
           {/* A Pagar (Despesas Pendentes) */}
-          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
+          <div data-testid="overview-card-payable" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] text-muted-foreground font-medium">A Pagar</span>
               <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -445,7 +492,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* A Receber (Receitas Pendentes) */}
-          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
+          <div data-testid="overview-card-receivable" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] text-muted-foreground font-medium">A Receber</span>
               <span className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
@@ -463,7 +510,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Cartão de Crédito */}
-          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
+          <div data-testid="overview-card-credit-card" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] text-muted-foreground font-medium">Cartão de Crédito</span>
               <span className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
@@ -475,17 +522,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <AnimatedNumber value={creditCardTotal} formatter={formatBRL} />
               </span>
               <span className="text-[10px] text-muted-foreground block truncate">
-                {creditAccounts.length > 0
-                  ? creditAccounts.length === 1
+                {totalLinkedCards > 0
+                  ? totalLinkedCards === 1
                     ? '1 cartão vinculado'
-                    : `${creditAccounts.length} cartões vinculados`
+                    : `${totalLinkedCards} cartões vinculados`
                   : 'Sem faturas em aberto'}
               </span>
             </div>
           </div>
 
           {/* Balanço de Transferências */}
-          <div className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
+          <div data-testid="overview-card-transfers" className="p-3 rounded-2xl bg-card border border-border flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] text-muted-foreground font-medium">Transferências</span>
               <span className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">

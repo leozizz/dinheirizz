@@ -40,6 +40,7 @@ import { ThemeContext } from '../../contexts/ThemeContext'
 import type { ThemeMode } from '../../types/theme'
 import { PushNotificationSettings } from '../settings/PushNotificationSettings'
 import { OpenFinanceSettings } from '../settings/OpenFinanceSettings'
+import { McpIntegrationsSettings } from '../settings/McpIntegrationsSettings'
 import {
   Select,
   SelectContent,
@@ -539,6 +540,9 @@ export const ProfileModal = ({
 
           {/* Seção Conexões Bancárias (Open Finance Brasil) */}
           <OpenFinanceSettings />
+
+          {/* Seção Integrações & MCP Pessoal */}
+          <McpIntegrationsSettings />
 
           {/* Seção Inteligência Artificial & BYOK */}
           <div className="mt-6 pt-5 border-t border-border">

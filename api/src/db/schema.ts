@@ -366,6 +366,44 @@ export const openFinanceAccountLinks = pgTable(
   ]
 )
 
+export const personalApiTokens = pgTable(
+  'personal_api_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    tokenPrefix: text('token_prefix').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    scopes: text('scopes')
+      .array()
+      .default(sql`ARRAY['read:accounts','read:transactions','read:forecast','read:budgets','read:invoices']::text[]`)
+      .notNull(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('personal_api_tokens_user_id_idx').on(table.userId),
+    uniqueIndex('personal_api_tokens_hash_uidx').on(table.tokenHash)
+  ]
+)
+
+export const mcpAuditLogs = pgTable(
+  'mcp_audit_logs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tokenId: uuid('token_id').references(() => personalApiTokens.id, { onDelete: 'cascade' }).notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    toolName: text('tool_name').notNull(),
+    status: text('status').notNull(), // 'success' | 'forbidden' | 'error'
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('mcp_audit_logs_user_id_idx').on(table.userId, table.createdAt)
+  ]
+)
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -419,5 +457,11 @@ export type NewOpenFinanceConnection = typeof openFinanceConnections.$inferInser
 
 export type OpenFinanceAccountLink = typeof openFinanceAccountLinks.$inferSelect
 export type NewOpenFinanceAccountLink = typeof openFinanceAccountLinks.$inferInsert
+
+export type PersonalApiToken = typeof personalApiTokens.$inferSelect
+export type NewPersonalApiToken = typeof personalApiTokens.$inferInsert
+
+export type McpAuditLog = typeof mcpAuditLogs.$inferSelect
+export type NewMcpAuditLog = typeof mcpAuditLogs.$inferInsert
 
 

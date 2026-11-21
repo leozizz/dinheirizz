@@ -139,6 +139,29 @@ vi.mock('../hooks/useOpenFinance', () => ({
   })
 }))
 
+vi.mock('../hooks/useApiTokens', () => ({
+  useApiTokens: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+    error: null
+  }),
+  useMcpAuditLogs: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+    error: null
+  }),
+  useCreateApiToken: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false
+  }),
+  useRevokeApiToken: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false
+  })
+}))
+
 describe('ProfileModal Component (TDD)', () => {
   beforeEach(() => {
     vi.clearAllMocks()

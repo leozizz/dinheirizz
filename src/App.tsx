@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
 import { queryClient } from './lib/queryClient'
@@ -7,7 +7,8 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { useTheme } from './hooks/useTheme'
 import { Dashboard, TransactionItem } from './components/dashboard/Dashboard'
 import { ActionType } from './components/dashboard/QuickActions'
-import type { TransactionMode } from './components/modals/TransactionModal'
+import type { TransactionInitialValues, TransactionMode } from './components/modals/TransactionModal'
+import type { ParsedNlpTransaction } from './lib/nlpTransactionParser'
 import type { PixKeyItem } from './components/modals/PixWalletModal'
 import type { ParsedTransactionCandidate } from './types/import'
 import { ModalSuspenseFallback } from './components/ui/ModalSuspenseFallback'
@@ -59,6 +60,9 @@ const InvoiceDetailsModal = React.lazy(() =>
 const ExportReportModal = React.lazy(() =>
   import('./components/modals/ExportReportModal').then((m) => ({ default: m.ExportReportModal }))
 )
+const CommandPalette = React.lazy(() =>
+  import('./components/modals/CommandPalette').then((m) => ({ default: m.CommandPalette }))
+)
 import { ReportPrintView } from './lib/export/reportPrintView'
 import { useReportExport, type ReportPdfData } from './hooks/useReportExport'
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
@@ -84,7 +88,7 @@ import type { CreditCard } from './types/database.types'
 import type { CreateCreditCardInput } from './schemas/creditCards'
 import { calculateRecurringDueDate } from './lib/businessDays'
 import { formatYMD } from './lib/calendar'
-import { Wallet, Bell, ShieldCheck, LogIn, LogOut, Sun, Moon } from 'lucide-react'
+import { Wallet, Bell, ShieldCheck, LogIn, LogOut, Sun, Moon, Search } from 'lucide-react'
 
 const getCurrentMonthDateIso = (dayOffsetFromToday: number): string => {
   const now = new Date()
@@ -292,6 +296,15 @@ const MainApp = () => {
   const [isTxModalOpen, setIsTxModalOpen] = useState(false)
   const [isTxModalOcrInitial, setIsTxModalOcrInitial] = useState(false)
   const [txMode, setTxMode] = useState<TransactionMode>('income')
+  const [txInitialValues, setTxInitialValues] = useState<TransactionInitialValues | null>(null)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'feed' | 'calendar'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dinheirizz_view_mode')
+      if (saved === 'calendar' || saved === 'feed') return saved
+    }
+    return 'feed'
+  })
   const [isPixModalOpen, setIsPixModalOpen] = useState(false)
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
@@ -576,6 +589,24 @@ const MainApp = () => {
     }
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsCommandPaletteOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleViewModeChange = (mode: 'feed' | 'calendar') => {
+    setViewMode(mode)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dinheirizz_view_mode', mode)
+    }
+  }
+
   const handleActionClick = (action: ActionType) => {
     if (action === 'pix') {
       setIsPixModalOpen(true)
@@ -583,10 +614,12 @@ const MainApp = () => {
       setIsImportModalOpen(true)
     } else if (action === 'scan') {
       setTxMode('expense')
+      setTxInitialValues(null)
       setIsTxModalOcrInitial(true)
       setIsTxModalOpen(true)
     } else {
       setTxMode(action as TransactionMode)
+      setTxInitialValues(null)
       setIsTxModalOcrInitial(false)
       setIsTxModalOpen(true)
     }
@@ -658,6 +691,7 @@ const MainApp = () => {
     recurrenceDay?: number
     adjustBusinessDay?: boolean
     installmentTotal?: number
+    creditCardId?: string
     type: TransactionMode
   }) => {
     if (user) {
@@ -688,6 +722,7 @@ const MainApp = () => {
             recurrenceDay: data.recurrenceDay,
             adjustBusinessDay: data.adjustBusinessDay,
             installmentTotal: data.installmentTotal,
+            creditCardId: data.creditCardId,
             type: data.type
           })
           const successMsg =
@@ -1048,16 +1083,16 @@ const MainApp = () => {
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-25" />
 
       {/* Top Bar with Floating Capsule and Safe Area Support */}
-      <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-3.5 sm:px-6 transition-all">
-        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
+      <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-2.5 sm:px-6 transition-all">
+        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-2.5 py-2 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1
                 data-testid="header-app-title"
-                className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display"
+                className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display truncate"
               >
                 Dinheirizz
               </h1>
@@ -1070,7 +1105,23 @@ const MainApp = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Command Bar Global (Cmd+K / Ctrl+K) */}
+            <button
+              type="button"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              data-testid="header-command-palette-btn"
+              aria-label="Abrir barra de comandos e lançamento rápido"
+              title="Command Bar (⌘K / Ctrl+K)"
+              className="min-w-[44px] min-h-[44px] sm:min-h-[40px] sm:px-3 rounded-full sm:rounded-xl glass-card-interactive flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
+            >
+              <Search className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-medium">Buscar...</span>
+              <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded bg-muted text-muted-foreground border border-border">
+                ⌘K
+              </kbd>
+            </button>
+
             {/* Alternância Rápida de Tema Dual-Theme */}
             <button
               type="button"
@@ -1098,7 +1149,7 @@ const MainApp = () => {
             </button>
 
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => setIsProfileModalOpen(true)}
@@ -1125,7 +1176,7 @@ const MainApp = () => {
                 type="button"
                 data-testid="header-login-btn"
                 onClick={() => setUnauthView('login')}
-                className="py-2 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all min-h-[44px] min-w-[44px]"
+                className="py-2 px-2.5 sm:px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1 sm:gap-1.5 cursor-pointer transition-all min-h-[44px] min-w-[44px] whitespace-nowrap"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Entrar</span>
@@ -1195,6 +1246,8 @@ const MainApp = () => {
           onOpenAnticipate={handleOpenAnticipate}
           isAuthenticated={Boolean(user)}
           userId={user?.id ?? null}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
         />
       </main>
 
@@ -1209,7 +1262,11 @@ const MainApp = () => {
             creditCards={activeCreditCards}
             defaultAccountId={selectedAccountId || undefined}
             initialOpenOcr={isTxModalOcrInitial}
-            onClose={() => setIsTxModalOpen(false)}
+            initialValues={txInitialValues}
+            onClose={() => {
+              setIsTxModalOpen(false)
+              setTxInitialValues(null)
+            }}
             onOpenAiSettings={() => setIsProfileModalOpen(true)}
             onSubmit={handleCreateTransaction}
           />
@@ -1441,6 +1498,47 @@ const MainApp = () => {
         </React.Suspense>
       )}
     </div>
+
+      {/* Command Bar Global (Cmd+K / Ctrl+K) */}
+      {isCommandPaletteOpen && (
+        <React.Suspense fallback={null}>
+          <CommandPalette
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            accounts={activeAccounts}
+            creditCards={activeCreditCards}
+            categories={activeCategories}
+            transactions={activeTransactions}
+            resolvedTheme={resolvedTheme}
+            viewMode={viewMode}
+            onQuickCreateTransaction={async (parsed: ParsedNlpTransaction) => {
+              if (!parsed.isValidTransaction || !parsed.amount) return
+              await handleCreateTransaction({
+                amount: parsed.amount,
+                description: parsed.description,
+                categoryId: parsed.categoryId,
+                accountId: parsed.accountId || activeAccounts[0]?.id,
+                creditCardId: parsed.creditCardId,
+                occurredAt: parsed.occurredAt,
+                status: 'completed',
+                type: parsed.type
+              })
+              setIsCommandPaletteOpen(false)
+            }}
+            onOpenTransactionModal={(mode: TransactionMode, initialValues?: TransactionInitialValues) => {
+              setTxMode(mode)
+              setTxInitialValues(initialValues ?? null)
+              setIsTxModalOcrInitial(false)
+              setIsTxModalOpen(true)
+            }}
+            onSelectAccount={(accId) => setSelectedAccountId(accId)}
+            onToggleTheme={toggleTheme}
+            onOpenImportStatement={() => setIsImportModalOpen(true)}
+            onOpenExportReport={() => setIsExportModalOpen(true)}
+            onToggleViewMode={() => handleViewModeChange(viewMode === 'feed' ? 'calendar' : 'feed')}
+          />
+        </React.Suspense>
+      )}
 
       {/* Container de Impressão Oficial (@media print) */}
       {printData && (

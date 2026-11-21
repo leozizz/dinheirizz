@@ -115,6 +115,9 @@ export interface DashboardProps {
   // Issue #77: Onboarding guiado para novas contas
   isAuthenticated?: boolean
   userId?: string | null
+  // Issue #80: Alternância Feed/Calendário controlada opcionalmente pela Command Palette
+  viewMode?: 'feed' | 'calendar'
+  onViewModeChange?: (mode: 'feed' | 'calendar') => void
 }
 
 const getDueStatus = (dueDateStr?: string | null) => {
@@ -173,7 +176,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenPayInvoice,
   onOpenAnticipate,
   isAuthenticated = false,
-  userId = null
+  userId = null,
+  viewMode: controlledViewMode,
+  onViewModeChange
 }) => {
   const onboardingStorageKey = userId
     ? `dinheirizz_onboarding_dismissed_${userId}`
@@ -201,7 +206,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'completed' | 'pending' | 'future'>('all')
   const activeStatusFilter = statusFilter !== undefined ? statusFilter : internalStatusFilter
 
-  const [viewMode, setViewMode] = useState<'feed' | 'calendar'>(() => {
+  const [internalViewMode, setInternalViewMode] = useState<'feed' | 'calendar'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('dinheirizz_view_mode')
       if (saved === 'calendar' || saved === 'feed') return saved
@@ -209,11 +214,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return 'feed'
   })
 
+  const viewMode = controlledViewMode ?? internalViewMode
+
   const handleViewModeChange = (mode: 'feed' | 'calendar') => {
-    setViewMode(mode)
+    setInternalViewMode(mode)
     if (typeof window !== 'undefined') {
       localStorage.setItem('dinheirizz_view_mode', mode)
     }
+    onViewModeChange?.(mode)
   }
 
   const handleStatusChange = (newStatus: 'all' | 'completed' | 'pending' | 'future') => {

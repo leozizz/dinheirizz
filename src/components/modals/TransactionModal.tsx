@@ -59,6 +59,16 @@ export interface CreditCardOption {
   accountId?: string
 }
 
+export interface TransactionInitialValues {
+  description?: string
+  amount?: number
+  categoryId?: string
+  accountId?: string
+  creditCardId?: string
+  occurredAt?: string
+  type?: TransactionMode
+}
+
 interface TransactionModalProps {
   isOpen: boolean
   mode: TransactionMode
@@ -67,6 +77,7 @@ interface TransactionModalProps {
   creditCards?: CreditCardOption[]
   defaultAccountId?: string | null
   initialOpenOcr?: boolean
+  initialValues?: TransactionInitialValues | null
   onClose: () => void
   onOpenAiSettings?: () => void
   onSubmit: (data: {
@@ -140,6 +151,7 @@ export const TransactionModal = ({
   creditCards = EMPTY_CREDIT_CARDS,
   defaultAccountId,
   initialOpenOcr = false,
+  initialValues = null,
   onClose,
   onOpenAiSettings,
   onSubmit
@@ -189,43 +201,60 @@ export const TransactionModal = ({
     resetScanState
   } = useReceiptOcr()
 
-  // Reset/ajusta defaults apenas ao abrir o modal ou trocar de modo
+  // Reset/ajusta defaults apenas ao abrir o modal, trocar de modo ou receber initialValues
   useEffect(() => {
     if (!isOpen) return
 
-    setAmountStr('')
-    setDescription('')
+    const formattedInitialAmount =
+      initialValues?.amount !== undefined && initialValues.amount > 0
+        ? initialValues.amount.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })
+        : ''
+
+    setAmountStr(formattedInitialAmount)
+    setDescription(initialValues?.description ?? '')
     setError(null)
-    setOccurredAt(getTodayLocalDate())
+    setOccurredAt(initialValues?.occurredAt || getTodayLocalDate())
     setStatus('completed')
-    setDueDate(getTodayLocalDate())
+    setDueDate(initialValues?.occurredAt || getTodayLocalDate())
     setIsInstallment(false)
     setInstallmentTotal(2)
     setIsRecurring(false)
     setRecurrencePeriod('monthly')
     setRecurrenceDay(10)
     setAdjustBusinessDay(false)
-    setPaymentMethod('account')
-    setCreditCardId(creditCards[0]?.id || '')
+
+    const hasInitialCard = Boolean(
+      initialValues?.creditCardId && creditCards.some((c) => c.id === initialValues.creditCardId)
+    )
+    setPaymentMethod(hasInitialCard ? 'credit_card' : 'account')
+    setCreditCardId(hasInitialCard && initialValues?.creditCardId ? initialValues.creditCardId : creditCards[0]?.id || '')
     setCardInstallments(1)
     setIsOcrOpen(Boolean(initialOpenOcr))
     setAiExtractedInfo(null)
     resetScanState()
 
     const filteredCats = categories.filter((c) => c.type === (mode === 'income' ? 'income' : 'expense'))
-    setCategoryId(filteredCats[0]?.id || '')
+    const hasInitialCategory = Boolean(
+      initialValues?.categoryId && categories.some((c) => c.id === initialValues.categoryId)
+    )
+    setCategoryId(hasInitialCategory && initialValues?.categoryId ? initialValues.categoryId : filteredCats[0]?.id || '')
 
     const selectedOrFirst =
-      defaultAccountId && accounts.some((a) => a.id === defaultAccountId)
-        ? defaultAccountId
-        : accounts[0]?.id || ''
+      initialValues?.accountId && accounts.some((a) => a.id === initialValues.accountId)
+        ? initialValues.accountId
+        : defaultAccountId && accounts.some((a) => a.id === defaultAccountId)
+          ? defaultAccountId
+          : accounts[0]?.id || ''
 
     setAccountId(selectedOrFirst)
     setFromAccountId(selectedOrFirst)
     const otherAccount = accounts.find((a) => a.id !== selectedOrFirst)
     setToAccountId(otherAccount?.id || accounts[1]?.id || selectedOrFirst)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, mode])
+  }, [isOpen, mode, initialValues])
 
   const handleOcrFileSelected = async (file: File) => {
     try {

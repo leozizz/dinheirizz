@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { appendProfileIdParam, getApiOrigin, normalizeProfileId } from '../lib/profileQuery'
 
 export interface AccountItem {
   id: string
@@ -8,6 +9,7 @@ export interface AccountItem {
   balance: number
   bank?: string
   color?: string
+  profileId?: string | null
   created_at?: string
 }
 
@@ -17,6 +19,7 @@ export interface CreateAccountInput {
   balance?: number
   bank?: string
   color?: string
+  profileId?: string | null
 }
 
 interface RawAccountItem {
@@ -30,19 +33,13 @@ interface RawAccountItem {
 
 export const ACCOUNTS_QUERY_KEY = ['accounts'] as const
 
-const getApiOrigin = (): string => {
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin
-  }
-  return 'http://localhost:3000'
-}
-
-export const useAccounts = () => {
+export const useAccounts = (profileId?: string | null) => {
   const { session } = useAuth()
   const token = session?.access_token
+  const normalizedProfileId = normalizeProfileId(profileId)
 
   const query = useQuery({
-    queryKey: ACCOUNTS_QUERY_KEY,
+    queryKey: [...ACCOUNTS_QUERY_KEY, normalizedProfileId || 'all'],
     enabled: Boolean(token),
     queryFn: async (): Promise<AccountItem[]> => {
       const origin = getApiOrigin()
@@ -51,7 +48,12 @@ export const useAccounts = () => {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const res = await fetch(`${origin}/api/v1/accounts`, { headers })
+      const params = new URLSearchParams()
+      appendProfileIdParam(params, normalizedProfileId)
+      const qs = params.toString()
+      const url = qs ? `${origin}/api/v1/accounts?${qs}` : `${origin}/api/v1/accounts`
+
+      const res = await fetch(url, { headers })
       if (!res.ok) {
         throw new Error('Falha ao carregar contas')
       }

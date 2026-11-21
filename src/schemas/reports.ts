@@ -10,6 +10,7 @@ export const reportFilterSchema = z
       message: 'Formato de período inválido. Use YYYY-MM para mensal ou YYYY para anual.'
     }),
     accountId: z.string().uuid('ID de conta inválido').optional(),
+    profileId: z.string().optional(),
     status: z.enum(['all', 'completed', 'pending']).default('completed')
   })
   .refine(

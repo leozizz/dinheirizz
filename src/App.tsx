@@ -63,8 +63,15 @@ const ExportReportModal = React.lazy(() =>
 const CommandPalette = React.lazy(() =>
   import('./components/modals/CommandPalette').then((m) => ({ default: m.CommandPalette }))
 )
+const GoalModal = React.lazy(() =>
+  import('./components/modals/GoalModal').then((m) => ({ default: m.GoalModal }))
+)
+import { ProfileSelector } from './components/layout/ProfileSelector'
 import { ReportPrintView } from './lib/export/reportPrintView'
 import { useReportExport, type ReportPdfData } from './hooks/useReportExport'
+import { useWorkspaces } from './hooks/useWorkspaces'
+import { useGoals, type SavingsGoalItem } from './hooks/useGoals'
+import type { GoalFormData } from './schemas/goals'
 import { useTransactions, useCreateTransaction, usePayTransaction } from './hooks/useTransactions'
 import { useAccounts, useCreateAccount, type AccountItem } from './hooks/useAccounts'
 import { useTransferTransaction } from './hooks/useTransfer'
@@ -323,6 +330,9 @@ const MainApp = () => {
   const [isInvoiceDetailsModalOpen, setIsInvoiceDetailsModalOpen] = useState(false)
   const [cardForDetails, setCardForDetails] = useState<CreditCard | null>(null)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false)
+  const [selectedGoalForEdit, setSelectedGoalForEdit] = useState<SavingsGoalItem | null>(null)
+  const [contributingGoalId, setContributingGoalId] = useState<string | null>(null)
   const [printData, setPrintData] = useState<ReportPdfData | null>(null)
   const { fetchPdfData } = useReportExport()
   const [demoBudgets, setDemoBudgets] = useState<Array<{ id: string; categoryId: string; amountLimit: number }>>([
@@ -330,6 +340,27 @@ const MainApp = () => {
     { id: 'demo-b-2', categoryId: 'cat-3', amountLimit: 1200 },
     { id: 'demo-b-3', categoryId: 'cat-4', amountLimit: 800 }
   ])
+
+  const {
+    profiles,
+    selectedProfileId,
+    setSelectedProfileId,
+    createWorkspace,
+    isCreatingWorkspace
+  } = useWorkspaces()
+
+  const {
+    goals,
+    summary: goalsSummary,
+    isLoading: isGoalsLoading,
+    createGoal,
+    updateGoal,
+    contributeGoal,
+    deleteGoal,
+    isCreatingGoal,
+    isUpdatingGoal,
+    isDeletingGoal
+  } = useGoals(selectedProfileId)
 
   // TanStack Query Hooks (Carregamento reativo da API do BFF)
   const {
@@ -342,9 +373,13 @@ const MainApp = () => {
     hasMore: apiHasMore,
     isLoadingMore: apiIsLoadingMore,
     loadMore: apiLoadMore
-  } = useTransactions({ accountId: selectedAccountId || undefined, limit: 100 })
+  } = useTransactions({
+    accountId: selectedAccountId || undefined,
+    profileId: selectedProfileId,
+    limit: 100
+  })
 
-  const { accounts: apiAccounts, isLoading: isAccountsLoading } = useAccounts()
+  const { accounts: apiAccounts, isLoading: isAccountsLoading } = useAccounts(selectedProfileId)
   const createAccountMutation = useCreateAccount()
   const transferMutation = useTransferTransaction()
   const { pixKeys: apiPixKeys } = usePixKeys()
@@ -359,7 +394,7 @@ const MainApp = () => {
     budgets: apiBudgets,
     summary: apiBudgetSummary,
     isLoading: isBudgetsLoading
-  } = useBudgets()
+  } = useBudgets(undefined, selectedProfileId)
   const createBudgetMutation = useCreateBudget()
   const updateBudgetMutation = useUpdateBudget()
   const deleteBudgetMutation = useDeleteBudget()
@@ -395,7 +430,7 @@ const MainApp = () => {
     await ignoreSubscription(normalizedKey)
   }
 
-  const { creditCards: apiCreditCards, isLoading: isCreditCardsLoading } = useCreditCards()
+  const { creditCards: apiCreditCards, isLoading: isCreditCardsLoading } = useCreditCards(selectedProfileId)
   const createCardMutation = useCreateCreditCard()
   const payInvoiceMutation = usePayInvoice()
   const anticipateMutation = useAnticipateInstallments()
@@ -1131,6 +1166,17 @@ const MainApp = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <ProfileSelector
+              profiles={profiles}
+              selectedProfileId={selectedProfileId}
+              onSelectProfile={(nextId) => {
+                setSelectedProfileId(nextId)
+                setSelectedAccountId(null)
+              }}
+              onCreateProfile={createWorkspace}
+              isCreating={isCreatingWorkspace}
+            />
+
             {/* Command Bar Global (Cmd+K / Ctrl+K) */}
             <button
               type="button"
@@ -1280,6 +1326,28 @@ const MainApp = () => {
           onIgnoreSubscription={handleIgnoreSubscription}
           confirmingSubscriptionId={confirmingSubscriptionId}
           ignoringSubscriptionKey={ignoringSubscriptionKey}
+          goals={goals}
+          goalsSummary={goalsSummary}
+          isGoalsLoading={isGoalsLoading}
+          profiles={profiles}
+          selectedProfileId={selectedProfileId}
+          onOpenCreateGoal={() => {
+            setSelectedGoalForEdit(null)
+            setIsGoalModalOpen(true)
+          }}
+          onOpenEditGoal={(goal) => {
+            setSelectedGoalForEdit(goal)
+            setIsGoalModalOpen(true)
+          }}
+          onContributeGoal={async (goalId, amount) => {
+            setContributingGoalId(goalId)
+            try {
+              await contributeGoal({ id: goalId, amount })
+            } finally {
+              setContributingGoalId(null)
+            }
+          }}
+          contributingGoalId={contributingGoalId}
         />
       </main>
 
@@ -1301,6 +1369,33 @@ const MainApp = () => {
             }}
             onOpenAiSettings={() => setIsProfileModalOpen(true)}
             onSubmit={handleCreateTransaction}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Modal de Metas de Economia (Caixinhas) */}
+      {isGoalModalOpen && (
+        <React.Suspense fallback={<ModalSuspenseFallback message="Carregando metas..." />}>
+          <GoalModal
+            isOpen={isGoalModalOpen}
+            onClose={() => {
+              setIsGoalModalOpen(false)
+              setSelectedGoalForEdit(null)
+            }}
+            goal={selectedGoalForEdit}
+            profiles={profiles}
+            defaultProfileId={selectedProfileId}
+            onSubmit={async (data: GoalFormData, goalId?: string) => {
+              if (goalId) {
+                await updateGoal({ id: goalId, data })
+              } else {
+                await createGoal(data)
+              }
+            }}
+            onDelete={async (goalId: string) => {
+              await deleteGoal(goalId)
+            }}
+            isLoading={isCreatingGoal || isUpdatingGoal || isDeletingGoal}
           />
         </React.Suspense>
       )}

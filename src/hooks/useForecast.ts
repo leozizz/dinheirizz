@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { appendProfileIdParam, normalizeProfileId } from '../lib/profileQuery'
 
 export interface DailyCashFlowPoint {
   date: string
@@ -26,6 +27,7 @@ export interface ForecastResponse {
 export interface UseForecastOptions {
   days?: 30 | 60
   accountId?: string | null
+  profileId?: string | null
 }
 
 export const FORECAST_QUERY_KEY = ['forecast'] as const
@@ -114,6 +116,7 @@ export function useForecast(options?: UseForecastOptions) {
 
   const days = options?.days === 60 ? 60 : 30
   const accountId = options?.accountId || null
+  const normalizedProfileId = normalizeProfileId(options?.profileId)
 
   if (!hasQueryClient) {
     const demo = getDemoForecast(days)
@@ -130,7 +133,7 @@ export function useForecast(options?: UseForecastOptions) {
   const token = session?.access_token
 
   return useQuery<ForecastResponse>({
-    queryKey: ['forecast', { days, accountId, token: Boolean(token) }],
+    queryKey: ['forecast', { days, accountId, profileId: normalizedProfileId, token: Boolean(token) }],
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<ForecastResponse> => {
       if (!token) {
@@ -143,6 +146,7 @@ export function useForecast(options?: UseForecastOptions) {
       if (accountId) {
         params.set('accountId', accountId)
       }
+      appendProfileIdParam(params, normalizedProfileId)
 
       const res = await fetch(`${origin}/api/v1/forecast?${params.toString()}`, {
         headers: {

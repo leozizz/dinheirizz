@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { appendProfileIdParam, normalizeProfileId } from '../lib/profileQuery'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import { FORECAST_QUERY_KEY } from './useForecast'
 import type { TransactionItem } from '../components/dashboard/Dashboard'
@@ -9,6 +10,7 @@ export interface CreateTransactionInput {
   description?: string
   categoryId?: string | null
   accountId?: string
+  profileId?: string | null
   creditCardId?: string | null
   invoiceId?: string | null
   occurredAt?: string
@@ -25,6 +27,7 @@ export interface CreateTransactionInput {
 
 export interface UseTransactionsOptions {
   accountId?: string | null
+  profileId?: string | null
   limit?: number
   startDate?: string
   endDate?: string
@@ -88,6 +91,7 @@ export const getTransactionsQueryKey = (options?: UseTransactionsOptions) =>
     'transactions',
     {
       accountId: options?.accountId || null,
+      profileId: normalizeProfileId(options?.profileId),
       limit: options?.limit || 20,
       startDate: options?.startDate || null,
       endDate: options?.endDate || null,
@@ -135,6 +139,7 @@ export const useTransactions = (options?: UseTransactionsOptions) => {
       if (options?.dueDateEnd) params.set('dueDateEnd', options.dueDateEnd)
       if (options?.scope) params.set('scope', options.scope)
       if (options?.month) params.set('month', options.month)
+      appendProfileIdParam(params, options?.profileId)
 
       const res = await fetch(`${origin}/api/v1/transactions?${params.toString()}`, { headers })
       if (!res.ok) {

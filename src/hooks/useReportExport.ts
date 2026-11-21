@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { appendProfileIdParam } from '../lib/profileQuery'
 import type { ReportFilterInput, ReportSummaryResponse } from '../schemas/reports'
 import {
   generateTransactionsCSV,
@@ -234,6 +235,7 @@ export const useReportSummary = (filters: ReportFilterInput) => {
       if (filters.accountId) {
         params.append('accountId', filters.accountId)
       }
+      appendProfileIdParam(params, filters.profileId)
 
       const origin = getApiOrigin()
       const url = `${origin}/api/v1/reports/summary?${params.toString()}`
@@ -286,6 +288,7 @@ export const useReportExport = () => {
         if (filters.accountId) {
           params.append('accountId', filters.accountId)
         }
+        appendProfileIdParam(params, filters.profileId)
 
         const origin = getApiOrigin()
         const url = `${origin}/api/v1/reports/export/csv?${params.toString()}`
@@ -328,6 +331,7 @@ export const useReportExport = () => {
         if (filters.accountId) {
           params.append('accountId', filters.accountId)
         }
+        appendProfileIdParam(params, filters.profileId)
 
         const origin = getApiOrigin()
         const url = `${origin}/api/v1/reports/export/pdf-data?${params.toString()}`

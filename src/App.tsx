@@ -1144,28 +1144,69 @@ const MainApp = () => {
 
       {/* Top Bar with Floating Capsule and Safe Area Support */}
       <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-2.5 sm:px-6 transition-all">
-        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-2.5 py-2 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
-              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-2.5 py-2 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 min-w-0 sm:flex-1">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
+                <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h1
+                  data-testid="header-app-title"
+                  className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display truncate"
+                >
+                  Dinheirizz
+                </h1>
+                <p
+                  data-testid="header-app-subtitle"
+                  className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Finanças Pessoais
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1
-                data-testid="header-app-title"
-                className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display truncate"
+
+            {/* Ações rápidas visíveis na linha superior em mobile; no desktop ficam inline com o seletor */}
+            <div className="flex items-center gap-1 sm:hidden flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCommandPaletteOpen(true)}
+                data-testid="header-command-palette-btn-mobile"
+                aria-label="Abrir barra de comandos e lançamento rápido"
+                title="Command Bar (⌘K / Ctrl+K)"
+                className="min-w-[44px] min-h-[44px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
               >
-                Dinheirizz
-              </h1>
-              <p
-                data-testid="header-app-subtitle"
-                className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1"
+                <Search className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                data-testid="header-theme-toggle-btn-mobile"
+                aria-label="Alternar tema visual"
+                title={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+                className="min-w-[44px] min-h-[44px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Finanças Pessoais
-              </p>
+                {resolvedTheme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-indigo-400" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                data-testid="header-notifications-btn-mobile"
+                aria-label="Notificações"
+                className="min-w-[44px] min-h-[44px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer"
+              >
+                <Bell className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t border-border/60 sm:border-t-0 flex-shrink-0">
             <ProfileSelector
               profiles={profiles}
               selectedProfileId={selectedProfileId}
@@ -1184,10 +1225,10 @@ const MainApp = () => {
               data-testid="header-command-palette-btn"
               aria-label="Abrir barra de comandos e lançamento rápido"
               title="Command Bar (⌘K / Ctrl+K)"
-              className="min-w-[44px] min-h-[44px] sm:min-h-[40px] sm:px-3 rounded-full sm:rounded-xl glass-card-interactive flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
+              className="hidden sm:flex min-h-[40px] sm:px-3 rounded-xl glass-card-interactive items-center justify-center gap-2 text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
             >
               <Search className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs font-medium">Buscar...</span>
+              <span className="text-xs font-medium">Buscar...</span>
               <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded bg-muted text-muted-foreground border border-border">
                 ⌘K
               </kbd>
@@ -1200,7 +1241,7 @@ const MainApp = () => {
               data-testid="header-theme-toggle-btn"
               aria-label="Alternar tema visual"
               title={resolvedTheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
+              className="hidden sm:flex w-10 h-10 min-w-[40px] min-h-[40px] rounded-full glass-card-interactive items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer active:scale-95 transition-all"
             >
               {resolvedTheme === 'dark' ? (
                 <Sun className="w-4 h-4 text-amber-400" />
@@ -1214,20 +1255,20 @@ const MainApp = () => {
               onClick={() => setIsProfileModalOpen(true)}
               data-testid="header-notifications-btn"
               aria-label="Notificações"
-              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer"
+              className="hidden sm:flex w-10 h-10 min-w-[40px] min-h-[40px] rounded-full glass-card-interactive items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer"
             >
               <Bell className="w-4 h-4" />
             </button>
 
             {user ? (
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsProfileModalOpen(true)}
                   data-testid="user-profile-avatar-btn"
                   title={user.fullName ? `${user.fullName} (@${user.username || 'perfil'})` : (user.email || 'Meu Perfil')}
                   aria-label="Abrir configurações de perfil"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs sm:text-sm text-primary-foreground border border-border shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 rounded-full avatar-gradient flex items-center justify-center font-bold text-xs sm:text-sm text-primary-foreground border border-border shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
                   {userInitials}
                 </button>
@@ -1237,7 +1278,7 @@ const MainApp = () => {
                   data-testid="header-logout-btn"
                   title="Sair da conta"
                   aria-label="Sair da conta"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-rose-400 border border-border transition-colors cursor-pointer active:scale-95"
+                  className="min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 rounded-full glass-card-interactive flex items-center justify-center text-muted-foreground hover:text-rose-400 border border-border transition-colors cursor-pointer active:scale-95"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -1247,7 +1288,7 @@ const MainApp = () => {
                 type="button"
                 data-testid="header-login-btn"
                 onClick={() => setUnauthView('login')}
-                className="py-2 px-2.5 sm:px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1 sm:gap-1.5 cursor-pointer transition-all min-h-[44px] min-w-[44px] whitespace-nowrap"
+                className="py-2 px-3 sm:px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all min-h-[44px] sm:min-h-[40px] min-w-[44px] whitespace-nowrap flex-shrink-0"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Entrar</span>

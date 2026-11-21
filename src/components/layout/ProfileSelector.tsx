@@ -102,15 +102,17 @@ export const ProfileSelector: React.FC<ProfileSelectorProps> = ({
           data-testid="header-profile-selector"
           aria-label={`Perfil financeiro ativo: ${activeLabel}`}
           className={cn(
-            'min-h-[44px] sm:min-h-[40px] max-w-[132px] sm:max-w-[190px] px-2.5 sm:px-3 rounded-xl glass-card-interactive',
-            'flex items-center gap-1.5 sm:gap-2 text-xs font-medium text-foreground border border-border',
+            'min-h-[44px] sm:min-h-[40px] flex-1 sm:flex-initial min-w-0 sm:max-w-[190px] px-3 rounded-xl glass-card-interactive',
+            'flex items-center justify-between sm:justify-start gap-2 text-xs font-medium text-foreground border border-border',
             'cursor-pointer active:scale-95 transition-all'
           )}
         >
-          <span className="text-primary flex-shrink-0">
-            {renderProfileIcon(activeType, 'w-3.5 h-3.5 sm:w-4 sm:h-4')}
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="text-primary flex-shrink-0">
+              {renderProfileIcon(activeType, 'w-4 h-4')}
+            </span>
+            <span className="truncate">{activeLabel}</span>
           </span>
-          <span className="truncate">{activeLabel}</span>
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
         </button>
       </PopoverPrimitive.Trigger>

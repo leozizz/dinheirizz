@@ -355,8 +355,8 @@ export const McpIntegrationsSettings: React.FC = () => {
         data-testid="mcp-create-token-form"
         className="p-3.5 rounded-xl bg-muted/30 border border-border space-y-3"
       >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <div className="sm:col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_168px] gap-2.5">
+          <div>
             <label
               htmlFor="mcp-token-name"
               className="block text-[11px] font-medium text-foreground mb-1"

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Landmark,
   ShieldCheck,
@@ -100,15 +101,15 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
     }
   }
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="open-finance-modal-title"
       data-testid="open-finance-modal"
     >
-      <div className="relative w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3 min-w-0">
@@ -118,11 +119,11 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
             <div className="min-w-0">
               <h2
                 id="open-finance-modal-title"
-                className="text-sm sm:text-base font-semibold text-foreground truncate"
+                className="text-sm sm:text-base font-semibold text-foreground leading-snug"
               >
                 Conexão Open Finance Brasil
               </h2>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground leading-snug">
                 {step === 'consent' && 'Etapa 1 de 3 · Autorização somente leitura'}
                 {step === 'connect' && 'Etapa 2 de 3 · Seleção de instituição'}
                 {step === 'summary' && 'Etapa 3 de 3 · Sincronização concluída'}
@@ -376,4 +377,6 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent
 }

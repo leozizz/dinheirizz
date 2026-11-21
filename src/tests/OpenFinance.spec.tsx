@@ -160,6 +160,25 @@ describe('OpenFinance Frontend (TDD)', () => {
       fireEvent.click(screen.getByTestId('open-finance-finish-btn'))
       expect(onClose).toHaveBeenCalled()
     })
+
+    it('renderiza o modal via portal diretamente em document.body sem truncar o cabeçalho', () => {
+      const onClose = vi.fn()
+      const { container } = render(
+        <div data-testid="nested-modal-host">
+          <OpenFinanceModal isOpen={true} onClose={onClose} />
+        </div>
+      )
+
+      const host = container.querySelector('[data-testid="nested-modal-host"]')
+      const modal = screen.getByTestId('open-finance-modal')
+      const title = screen.getByText('Conexão Open Finance Brasil')
+      const subtitle = screen.getByText(/Etapa 1 de 3/i)
+
+      expect(host?.contains(modal)).toBe(false)
+      expect(modal.parentElement).toBe(document.body)
+      expect(title.className).not.toContain('truncate')
+      expect(subtitle.className).not.toContain('truncate')
+    })
   })
 
   describe('OpenFinanceSettings', () => {

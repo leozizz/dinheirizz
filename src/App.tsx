@@ -66,6 +66,9 @@ const ExportReportModal = React.lazy(() =>
 const CommandPalette = React.lazy(() =>
   import('./components/modals/CommandPalette').then((m) => ({ default: m.CommandPalette }))
 )
+const CopilotDrawer = React.lazy(() =>
+  import('./components/ai/CopilotDrawer').then((m) => ({ default: m.CopilotDrawer }))
+)
 const GoalModal = React.lazy(() =>
   import('./components/modals/GoalModal').then((m) => ({ default: m.GoalModal }))
 )
@@ -313,6 +316,7 @@ const MainApp = () => {
   const [txMode, setTxMode] = useState<TransactionMode>('income')
   const [txInitialValues, setTxInitialValues] = useState<TransactionInitialValues | null>(null)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'feed' | 'calendar'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('dinheirizz_view_mode')
@@ -1352,6 +1356,7 @@ const MainApp = () => {
           isAiLoading={Boolean(user && isAiLoading)}
           isAiGenerating={isAiGenerating}
           onGenerateAiInsight={user ? () => generateInsights() : undefined}
+          onOpenCopilot={() => setIsCopilotOpen(true)}
           onPayTransaction={handlePayTransaction}
           budgets={activeBudgets}
           budgetSummary={activeBudgetSummary}
@@ -1713,6 +1718,19 @@ const MainApp = () => {
             onOpenImportStatement={() => setIsImportModalOpen(true)}
             onOpenExportReport={() => setIsExportModalOpen(true)}
             onToggleViewMode={() => handleViewModeChange(viewMode === 'feed' ? 'calendar' : 'feed')}
+            onOpenCopilot={() => setIsCopilotOpen(true)}
+          />
+        </React.Suspense>
+      )}
+
+      {/* Copiloto Financeiro Conversacional */}
+      {isCopilotOpen && (
+        <React.Suspense fallback={null}>
+          <CopilotDrawer
+            isOpen={isCopilotOpen}
+            onClose={() => setIsCopilotOpen(false)}
+            onOpenAiSettings={() => setIsProfileModalOpen(true)}
+            profileId={selectedProfileId}
           />
         </React.Suspense>
       )}

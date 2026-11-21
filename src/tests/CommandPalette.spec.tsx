@@ -204,4 +204,15 @@ describe('CommandPalette (TDD)', () => {
     expect(screen.getByTestId('command-tx-item-tx-1')).toBeTruthy()
     expect(screen.getByTestId('command-tx-item-tx-2')).toBeTruthy()
   })
+
+  it('deve renderizar e acionar o item Abrir Copiloto Financeiro quando onOpenCopilot for fornecido', () => {
+    const onOpenCopilot = vi.fn()
+    render(<CommandPalette {...defaultProps} onOpenCopilot={onOpenCopilot} />)
+
+    const copilotItem = screen.getByTestId('command-action-open-copilot')
+    expect(copilotItem).toBeInTheDocument()
+    fireEvent.click(copilotItem)
+    expect(onOpenCopilot).toHaveBeenCalledTimes(1)
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
+  })
 })

@@ -174,5 +174,23 @@ describe('AiInsightsCard (TDD)', () => {
     expect(screen.getByText(/Gastos com alimentação reduziram 12%/i)).toBeInTheDocument()
     expect(screen.queryByText(/✓/)).not.toBeInTheDocument()
   })
+
+  it('deve renderizar botão para abrir o Copiloto Financeiro quando onOpenCopilot for fornecido', () => {
+    const onOpenCopilot = vi.fn()
+    render(
+      <AiInsightsCard
+        insight={mockInsight}
+        isLoading={false}
+        isGenerating={false}
+        onGenerate={vi.fn()}
+        onOpenCopilot={onOpenCopilot}
+      />
+    )
+
+    const copilotBtn = screen.getByTestId('ai-insights-open-copilot-btn')
+    expect(copilotBtn).toBeInTheDocument()
+    fireEvent.click(copilotBtn)
+    expect(onOpenCopilot).toHaveBeenCalledTimes(1)
+  })
 })
 

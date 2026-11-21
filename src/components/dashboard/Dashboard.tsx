@@ -99,6 +99,7 @@ export interface DashboardProps {
   isAiLoading?: boolean
   isAiGenerating?: boolean
   onGenerateAiInsight?: () => void
+  onOpenCopilot?: () => void
   // Issue #29 & #39: Gestão de Vencimentos, Status e Baixa Rápida
   statusFilter?: 'all' | 'completed' | 'pending' | 'future'
   onStatusFilterChange?: (status: 'all' | 'completed' | 'pending' | 'future') => void
@@ -191,6 +192,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isAiLoading = false,
   isAiGenerating = false,
   onGenerateAiInsight,
+  onOpenCopilot,
   budgets,
   budgetSummary,
   onOpenBudgetModal,
@@ -815,6 +817,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 isLoading={isAiLoading}
                 isGenerating={isAiGenerating}
                 onGenerate={onGenerateAiInsight}
+                onOpenCopilot={onOpenCopilot}
               />
             )}
           </div>

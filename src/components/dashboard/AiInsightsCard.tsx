@@ -9,7 +9,8 @@ import {
   ChevronUp,
   Zap,
   KeyRound,
-  Check
+  Check,
+  MessageSquare
 } from 'lucide-react'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 
@@ -18,13 +19,15 @@ export interface AiInsightsCardProps {
   isLoading?: boolean
   isGenerating?: boolean
   onGenerate?: () => void
+  onOpenCopilot?: () => void
 }
 
 export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
   insight,
   isLoading = false,
   isGenerating = false,
-  onGenerate
+  onGenerate,
+  onOpenCopilot
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -236,21 +239,34 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
           )}
         </button>
 
-        {onGenerate && (
-          <button
-            type="button"
-            onClick={onGenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-medium text-foreground transition-all border border-border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <RotateCw
-              className={`w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 ${
-                isGenerating ? 'animate-spin' : ''
-              }`}
-            />
-            {isGenerating ? 'Analisando...' : 'Atualizar Análise'}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenCopilot && (
+            <button
+              type="button"
+              data-testid="ai-insights-open-copilot-btn"
+              onClick={onOpenCopilot}
+              className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Conversar com Copiloto</span>
+            </button>
+          )}
+          {onGenerate && (
+            <button
+              type="button"
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-muted hover:bg-muted/80 text-xs font-medium text-foreground transition-all border border-border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <RotateCw
+                className={`w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 ${
+                  isGenerating ? 'animate-spin' : ''
+                }`}
+              />
+              {isGenerating ? 'Analisando...' : 'Atualizar Análise'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -17,7 +17,8 @@ import {
   Tag,
   CornerDownLeft,
   SlidersHorizontal,
-  Receipt
+  Receipt,
+  Sparkles
 } from 'lucide-react'
 import { parseNaturalLanguageTransaction, type ParsedNlpTransaction } from '../../lib/nlpTransactionParser'
 import { formatBRL, formatTransactionDate } from '../../lib/formatters'
@@ -43,6 +44,7 @@ export interface CommandPaletteProps {
   onOpenImportStatement: () => void
   onOpenExportReport: () => void
   onToggleViewMode: () => void
+  onOpenCopilot?: () => void
 }
 
 export const CommandPalette = ({
@@ -60,7 +62,8 @@ export const CommandPalette = ({
   onToggleTheme,
   onOpenImportStatement,
   onOpenExportReport,
-  onToggleViewMode
+  onToggleViewMode,
+  onOpenCopilot
 }: CommandPaletteProps) => {
   const [search, setSearch] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -346,6 +349,18 @@ export const CommandPalette = ({
                 )}
                 <span>{viewMode === 'feed' ? 'Alternar para Calendário' : 'Alternar para Feed'}</span>
               </Command.Item>
+
+              {onOpenCopilot && (
+                <Command.Item
+                  value="abrir copiloto financeiro ia chat assistente"
+                  data-testid="command-action-open-copilot"
+                  onSelect={() => runAction(onOpenCopilot)}
+                  className="flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl text-sm text-foreground cursor-pointer hover:bg-muted/60 aria-selected:bg-muted/80 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>Abrir Copiloto Financeiro</span>
+                </Command.Item>
+              )}
             </Command.Group>
 
             {accounts.length > 0 && (

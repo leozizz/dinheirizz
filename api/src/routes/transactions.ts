@@ -71,6 +71,8 @@ export interface MockTransaction {
   creditCardId?: string | null
   invoiceId?: string | null
   type?: 'income' | 'expense' | 'transfer'
+  externalId?: string | null
+  source?: string
   occurredAt: string
   createdAt: string
 }

@@ -138,6 +138,8 @@ export const transactions = pgTable(
     installmentCurrent: integer('installment_current'),
     installmentTotal: integer('installment_total'),
     parentTransactionId: uuid('parent_transaction_id'),
+    externalId: text('external_id'),
+    source: text('source').default('manual').notNull(), // 'manual' | 'import' | 'open_finance'
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
   },
   (table) => [
@@ -149,7 +151,8 @@ export const transactions = pgTable(
     index('transactions_invoice_id_idx').on(table.invoiceId),
     index('transactions_user_occurred_idx').on(table.userId, table.occurredAt),
     index('transactions_user_due_date_idx').on(table.userId, table.dueDate),
-    index('transactions_user_status_idx').on(table.userId, table.status)
+    index('transactions_user_status_idx').on(table.userId, table.status),
+    index('transactions_user_external_id_idx').on(table.userId, table.externalId)
   ]
 )
 
@@ -317,6 +320,52 @@ export const subscriptionIgnores = pgTable(
   ]
 )
 
+export const openFinanceConnections = pgTable(
+  'open_finance_connections',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    profileId: uuid('profile_id').references(() => financialProfiles.id, { onDelete: 'set null' }),
+    provider: text('provider').notNull(), // 'pluggy' | 'belvo' | 'sandbox'
+    externalItemId: text('external_item_id').notNull(),
+    institutionId: text('institution_id').notNull(),
+    institutionName: text('institution_name').notNull(),
+    institutionLogoUrl: text('institution_logo_url'),
+    status: text('status').default('active').notNull(), // 'active' | 'updating' | 'login_error' | 'outdated' | 'revoked'
+    consentScope: text('consent_scope').default('read_only').notNull(),
+    consentExpiresAt: timestamp('consent_expires_at', { withTimezone: true }),
+    lastSyncAt: timestamp('last_sync_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('open_finance_connections_user_id_idx').on(table.userId),
+    uniqueIndex('open_finance_connections_provider_item_uidx').on(table.provider, table.externalItemId)
+  ]
+)
+
+export const openFinanceAccountLinks = pgTable(
+  'open_finance_account_links',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    connectionId: uuid('connection_id').references(() => openFinanceConnections.id, { onDelete: 'cascade' }).notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    externalAccountId: text('external_account_id').notNull(),
+    externalAccountType: text('external_account_type').notNull(), // 'BANK' | 'CREDIT'
+    externalAccountName: text('external_account_name').notNull(),
+    accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    creditCardId: uuid('credit_card_id').references(() => creditCards.id, { onDelete: 'set null' }),
+    lastBalance: numeric('last_balance', { precision: 12, scale: 2 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('open_finance_account_links_user_id_idx').on(table.userId),
+    uniqueIndex('open_finance_account_links_conn_ext_uidx').on(table.connectionId, table.externalAccountId)
+  ]
+)
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
@@ -364,5 +413,11 @@ export type NewFinancialProfile = typeof financialProfiles.$inferInsert
 
 export type SavingsGoal = typeof savingsGoals.$inferSelect
 export type NewSavingsGoal = typeof savingsGoals.$inferInsert
+
+export type OpenFinanceConnection = typeof openFinanceConnections.$inferSelect
+export type NewOpenFinanceConnection = typeof openFinanceConnections.$inferInsert
+
+export type OpenFinanceAccountLink = typeof openFinanceAccountLinks.$inferSelect
+export type NewOpenFinanceAccountLink = typeof openFinanceAccountLinks.$inferInsert
 
 

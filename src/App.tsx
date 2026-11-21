@@ -1083,16 +1083,16 @@ const MainApp = () => {
       <div className="fixed top-1/3 -right-24 w-96 h-96 rounded-full gradient-orb-accent pointer-events-none opacity-25" />
 
       {/* Top Bar with Floating Capsule and Safe Area Support */}
-      <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-3.5 sm:px-6 transition-all">
-        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
+      <header className="sticky top-0 z-30 pt-3 sm:pt-5 pb-2 px-2.5 sm:px-6 transition-all">
+        <div className="max-w-7xl mx-auto backdrop-blur-2xl bg-[var(--card)] border border-border rounded-2xl sm:rounded-3xl px-2.5 py-2 sm:px-6 sm:py-3 shadow-2xl shadow-black/10 dark:shadow-black/60 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl avatar-gradient flex items-center justify-center shadow-lg shadow-primary/20 border border-border flex-shrink-0">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1
                 data-testid="header-app-title"
-                className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display"
+                className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display truncate"
               >
                 Dinheirizz
               </h1>
@@ -1105,7 +1105,7 @@ const MainApp = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Command Bar Global (Cmd+K / Ctrl+K) */}
             <button
               type="button"
@@ -1149,7 +1149,7 @@ const MainApp = () => {
             </button>
 
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => setIsProfileModalOpen(true)}
@@ -1176,7 +1176,7 @@ const MainApp = () => {
                 type="button"
                 data-testid="header-login-btn"
                 onClick={() => setUnauthView('login')}
-                className="py-2 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all min-h-[44px] min-w-[44px]"
+                className="py-2 px-2.5 sm:px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1 sm:gap-1.5 cursor-pointer transition-all min-h-[44px] min-w-[44px] whitespace-nowrap"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Entrar</span>

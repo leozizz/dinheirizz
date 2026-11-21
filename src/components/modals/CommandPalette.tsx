@@ -161,7 +161,7 @@ export const CommandPalette = ({
               onKeyDown={handleInputKeyDown}
               autoFocus
               placeholder="Ex.: Mercado 185,50 ontem nubank ou busque ações..."
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none py-2.5 min-h-[44px]"
+              className="w-full bg-transparent text-base sm:text-sm text-foreground placeholder:text-muted-foreground outline-none py-2.5 min-h-[44px]"
             />
             <button
               type="button"

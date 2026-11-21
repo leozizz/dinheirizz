@@ -25,7 +25,10 @@ import { pushRouter } from './src/routes/push'
 import { workspacesRouter } from './src/routes/workspaces'
 import { goalsRouter } from './src/routes/goals'
 import { openFinanceRouter } from './src/routes/openFinance'
+import { apiTokensRouter } from './src/routes/apiTokens'
+import { mcpRouter } from './src/routes/mcp'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
+import { mcpAuthMiddleware } from './src/middlewares/mcpAuth'
 import { runWithRuntimeEnv, type RuntimeEnv } from './src/lib/env'
 import { closeRequestDb } from './src/db/client'
 
@@ -142,6 +145,15 @@ app.use('/v1/open-finance/connect-token', authMiddleware)
 app.use('/v1/open-finance/connections', authMiddleware)
 app.use('/v1/open-finance/connections/*', authMiddleware)
 app.route('/v1/open-finance', openFinanceRouter)
+
+// Personal API Tokens (Gestão via Supabase JWT) & Servidor MCP (Bearer Token Pessoal)
+app.use('/v1/api-tokens/*', authMiddleware)
+app.use('/v1/api-tokens', authMiddleware)
+app.route('/v1/api-tokens', apiTokensRouter)
+
+app.use('/mcp/*', mcpAuthMiddleware)
+app.use('/mcp', mcpAuthMiddleware)
+app.route('/mcp', mcpRouter)
 
 export default app
 

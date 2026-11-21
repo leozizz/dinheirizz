@@ -6,9 +6,10 @@ export type ActionType = 'income' | 'expense' | 'transfer' | 'pix' | 'import' | 
 export interface QuickActionsProps {
   onAction: (action: ActionType) => void
   onHover?: (action: ActionType) => void
+  compact?: boolean
 }
 
-export const QuickActions = ({ onAction, onHover }: QuickActionsProps) => {
+export const QuickActions = ({ onAction, onHover, compact = false }: QuickActionsProps) => {
   const actions = [
     {
       id: 'income' as ActionType,
@@ -73,7 +74,13 @@ export const QuickActions = ({ onAction, onHover }: QuickActionsProps) => {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 my-4 sm:my-6">
+    <div
+      className={
+        compact
+          ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5 sm:gap-3 my-0'
+          : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 my-4 sm:my-6'
+      }
+    >
       {actions.map((action) => {
         const Icon = action.icon
         return (
@@ -83,7 +90,7 @@ export const QuickActions = ({ onAction, onHover }: QuickActionsProps) => {
             data-testid={getTestId(action.id)}
             onClick={() => onAction(action.id)}
             onMouseEnter={() => onHover?.(action.id)}
-            className={`glass-card-interactive p-3 sm:p-4 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-border/40 bg-gradient-to-b min-h-[80px] sm:min-h-[96px] justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
+            className={`glass-card-interactive ${compact ? 'p-2.5 sm:p-3 min-h-[80px]' : 'p-3 sm:p-4 min-h-[80px] sm:min-h-[96px]'} rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-200 border border-border/40 bg-gradient-to-b justify-center ${action.bgGlow} ${action.borderColor} active:scale-[0.97]`}
           >
             <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-muted/40 border border-border/40 mb-2 sm:mb-2.5 shadow-sm group-hover:scale-110 transition-transform ${action.color}`}>
               <Icon className="w-4 h-4 sm:w-5 sm:h-5" />

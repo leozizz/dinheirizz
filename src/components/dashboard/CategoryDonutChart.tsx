@@ -8,6 +8,7 @@ export interface CategoryDonutChartProps {
   transactions: TransactionItem[]
   mode?: 'expense' | 'income'
   onModeChange?: (mode: 'expense' | 'income') => void
+  className?: string
 }
 
 interface CategorySlice {
@@ -39,11 +40,12 @@ const DEFAULT_INCOME_COLORS = [
   '#64748b'  // Slate
 ]
 
-export function CategoryDonutChart({
+export const CategoryDonutChart = ({
   transactions,
   mode: controlledMode,
-  onModeChange
-}: CategoryDonutChartProps) {
+  onModeChange,
+  className = ''
+}: CategoryDonutChartProps) => {
   const [internalMode, setInternalMode] = useState<'expense' | 'income'>('expense')
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
 
@@ -103,7 +105,7 @@ export function CategoryDonutChart({
   let accumulatedOffset = 0
 
   return (
-    <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border">
+    <div className={`glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border flex flex-col justify-between ${className}`}>
       {/* Cabeçalho com Título e Toggle Deslizante */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">

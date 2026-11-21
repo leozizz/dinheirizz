@@ -690,6 +690,120 @@ describe('Dashboard & QuickActions (TDD)', () => {
 
     expect(screen.queryByTestId('onboarding-checklist')).not.toBeInTheDocument()
   })
+
+  it('deve renderizar o Bento Grid de 12 colunas com container max-w-7xl e todos os slots estruturais', () => {
+    const { container } = render(
+      <Dashboard
+        totalBalance={12450.75}
+        totalIncome={15000.0}
+        totalExpense={2549.25}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+      />
+    )
+
+    const rootWrapper = container.firstChild as HTMLElement
+    expect(rootWrapper).toHaveClass('max-w-7xl')
+
+    const bentoGrid = screen.getByTestId('dashboard-bento-grid')
+    expect(bentoGrid).toHaveClass('grid', 'grid-cols-1', 'lg:grid-cols-12')
+
+    expect(screen.getByTestId('bento-slot-hero')).toHaveClass('lg:col-span-7')
+    expect(screen.getByTestId('bento-slot-overview')).toHaveClass('lg:col-span-5')
+    expect(screen.getByTestId('bento-slot-forecast')).toHaveClass('lg:col-span-7')
+    expect(screen.getByTestId('bento-slot-donut')).toHaveClass('lg:col-span-5')
+    expect(screen.getByTestId('bento-slot-transactions')).toHaveClass('lg:col-span-12')
+  })
+
+  it('deve renderizar dashboard-skeleton-grid espelhando o Bento Grid de 12 colunas quando isLoading={true}', () => {
+    const { container } = render(
+      <Dashboard
+        totalBalance={0}
+        totalIncome={0}
+        totalExpense={0}
+        transactions={[]}
+        onActionClick={vi.fn()}
+        isLoading={true}
+      />
+    )
+
+    const rootWrapper = container.firstChild as HTMLElement
+    expect(rootWrapper).toHaveClass('max-w-7xl')
+
+    const skeletonGrid = screen.getByTestId('dashboard-skeleton-grid')
+    expect(skeletonGrid).toHaveClass('grid', 'grid-cols-1', 'lg:grid-cols-12')
+  })
+
+  it('deve renderizar QuickActions com compact={true} em 3 colunas no desktop mantendo os 6 botões clicáveis', () => {
+    const handleAction = vi.fn()
+    const { container } = render(<QuickActions onAction={handleAction} compact />)
+
+    const grid = container.firstChild as HTMLElement
+    expect(grid).toHaveClass('lg:grid-cols-3')
+
+    const buttons = screen.getAllByRole('button')
+    expect(buttons).toHaveLength(6)
+
+    fireEvent.click(screen.getByTestId('quick-action-income'))
+    expect(handleAction).toHaveBeenCalledWith('income')
+  })
+
+  it('deve aplicar degradação graciosa na Linha 3 do Bento Grid (lg:col-span-6 quando pareado, lg:col-span-12 quando isolado)', () => {
+    const mockAccountsList = [
+      { id: 'acc-1', name: 'Nubank Principal', balance: 3500.0, type: 'checking' as const }
+    ]
+
+    const { rerender } = render(
+      <Dashboard
+        totalBalance={3500}
+        totalIncome={3500}
+        totalExpense={0}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        accounts={mockAccountsList}
+        onSelectAccount={vi.fn()}
+        onNewAccount={vi.fn()}
+        budgets={[]}
+        onOpenBudgetModal={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('bento-slot-accounts-cards')).toHaveClass('lg:col-span-6')
+    expect(screen.getByTestId('bento-slot-budgets-ai')).toHaveClass('lg:col-span-6')
+
+    // Apenas Contas/Cartões presente
+    rerender(
+      <Dashboard
+        totalBalance={3500}
+        totalIncome={3500}
+        totalExpense={0}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        accounts={mockAccountsList}
+        onSelectAccount={vi.fn()}
+        onNewAccount={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('bento-slot-accounts-cards')).toHaveClass('lg:col-span-12')
+    expect(screen.queryByTestId('bento-slot-budgets-ai')).not.toBeInTheDocument()
+
+    // Apenas Orçamentos/IA presente
+    rerender(
+      <Dashboard
+        totalBalance={3500}
+        totalIncome={3500}
+        totalExpense={0}
+        transactions={mockTransactions}
+        onActionClick={vi.fn()}
+        budgets={[]}
+        onOpenBudgetModal={vi.fn()}
+      />
+    )
+
+    expect(screen.queryByTestId('bento-slot-accounts-cards')).not.toBeInTheDocument()
+    expect(screen.getByTestId('bento-slot-budgets-ai')).toHaveClass('lg:col-span-12')
+  })
 })
 
 

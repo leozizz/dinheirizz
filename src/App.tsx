@@ -977,11 +977,17 @@ const MainApp = () => {
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display">
-                Dinheirizz <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/30">2.0 PWA</span>
+              <h1
+                data-testid="header-app-title"
+                className="font-bold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 sm:gap-2 text-foreground font-display"
+              >
+                Dinheirizz
               </h1>
-              <p className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Cloudflare Pages & BFF
+              <p
+                data-testid="header-app-subtitle"
+                className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Finanças Pessoais
               </p>
             </div>
           </div>
@@ -1038,8 +1044,10 @@ const MainApp = () => {
               </div>
             ) : (
               <button
+                type="button"
+                data-testid="header-login-btn"
                 onClick={() => setUnauthView('login')}
-                className="py-1.5 px-3 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 text-xs font-medium border border-blue-500/30 flex items-center gap-1.5 cursor-pointer transition-all min-h-[36px]"
+                className="py-2 px-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all min-h-[44px] min-w-[44px]"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Entrar</span>
@@ -1051,11 +1059,16 @@ const MainApp = () => {
 
       {/* Demo Banner for Unauthenticated Users */}
       {!user && (
-        <div className="bg-gradient-to-r from-blue-600/20 via-teal-500/20 to-purple-600/20 border-b border-border px-3 py-2 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
+        <div
+          data-testid="demo-mode-banner"
+          className="bg-primary/10 border-b border-primary/20 px-3 py-2 text-center text-xs text-foreground flex items-center justify-center gap-1.5 flex-wrap"
+        >
           <span>Modo de demonstração.</span>
           <button
+            type="button"
+            data-testid="demo-banner-login-btn"
             onClick={() => setUnauthView('login')}
-            className="text-teal-400 font-semibold underline hover:text-foreground transition-colors cursor-pointer"
+            className="text-primary font-semibold underline hover:text-primary/80 transition-colors cursor-pointer min-h-[44px] inline-flex items-center px-1"
           >
             Fazer login ou cadastrar
           </button>

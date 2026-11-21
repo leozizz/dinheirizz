@@ -30,18 +30,18 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 shadow-xl space-y-4 animate-pulse">
+      <div className="glass-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xl space-y-4 animate-pulse">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10" />
+            <div className="w-10 h-10 rounded-xl bg-muted" />
             <div className="space-y-2">
-              <div className="w-36 h-4 bg-white/10 rounded" />
-              <div className="w-24 h-3 bg-white/5 rounded" />
+              <div className="w-36 h-4 bg-muted rounded" />
+              <div className="w-24 h-3 bg-muted/60 rounded" />
             </div>
           </div>
-          <div className="w-16 h-8 bg-white/10 rounded-xl" />
+          <div className="w-16 h-8 bg-muted rounded-xl" />
         </div>
-        <div className="h-14 bg-white/5 rounded-xl" />
+        <div className="h-14 bg-muted/60 rounded-xl" />
       </div>
     )
   }
@@ -51,17 +51,17 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
   }
 
   const score = Math.round(insight.financialHealthScore)
-  let scoreColorClass = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+  let scoreColorClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
   let scoreLabel = 'Excelente'
 
   if (score < 50) {
-    scoreColorClass = 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+    scoreColorClass = 'text-rose-700 dark:text-rose-400 bg-rose-500/10 border-rose-500/20'
     scoreLabel = 'Atenção'
   } else if (score < 75) {
-    scoreColorClass = 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+    scoreColorClass = 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20'
     scoreLabel = 'Regular'
   } else if (score < 90) {
-    scoreColorClass = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+    scoreColorClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
     scoreLabel = 'Saudável'
   }
 
@@ -70,20 +70,20 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
   const isCorporateSystem = !isDeterministicFallback && insight.source === 'system'
 
   return (
-    <div className="relative overflow-hidden glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 shadow-xl">
+    <div className="relative overflow-hidden glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xl">
       {/* Glow decorativo sutil */}
       <div className="absolute -top-12 -right-12 w-44 h-44 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header do Card */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 mb-4">
         <div className="flex items-start sm:items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shadow-inner shrink-0 mt-0.5 sm:mt-0">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shadow-inner shrink-0 mt-0.5 sm:mt-0">
             {isDeterministicFallback ? (
-              <Zap className="w-5 h-5 text-amber-400" />
+              <Zap className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             ) : isByokKey ? (
               <KeyRound className="w-5 h-5 text-primary" />
             ) : (
-              <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+              <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -94,9 +94,9 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
               {isDeterministicFallback && (
                 <span
                   data-testid="badge-fallback"
-                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1"
+                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1"
                 >
-                  <Zap className="w-3 h-3 text-amber-400" />
+                  <Zap className="w-3 h-3 text-amber-700 dark:text-amber-400" />
                   Diagnóstico Analítico (Sem IA)
                 </span>
               )}
@@ -112,14 +112,14 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
               {isCorporateSystem && (
                 <span
                   data-testid="badge-system"
-                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1"
+                  className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-1"
                 >
-                  <Sparkles className="w-3 h-3 text-indigo-400" />
+                  <Sparkles className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                   Dinheirizz IA (Admin/Pro){insight.modelName ? ` • ${insight.modelName}` : ''}
                 </span>
               )}
             </div>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {isDeterministicFallback
                 ? 'Baseado em regras orçamentárias heurísticas locais'
                 : isByokKey
@@ -130,8 +130,8 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
         </div>
 
         {/* Score Badge: No mobile, alinhado de forma equilibrada em linha com label */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2.5 sm:pt-0 border-t border-white/5 sm:border-0 self-stretch sm:self-auto">
-          <span className="text-xs text-neutral-400 font-medium sm:hidden">
+        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2.5 sm:pt-0 border-t border-border/60 sm:border-0 self-stretch sm:self-auto">
+          <span className="text-xs text-muted-foreground font-medium sm:hidden">
             Saúde Financeira:
           </span>
           <div
@@ -160,9 +160,9 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
         {insight.highlights?.slice(0, 1).map((highlight, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-2.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl"
+            className="flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl"
           >
-            <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" />
             <span className="leading-snug">{highlight}</span>
           </div>
         ))}
@@ -170,9 +170,9 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
         {insight.alerts?.slice(0, 1).map((alert, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-2.5 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl"
+            className="flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl"
           >
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
             <span className="leading-snug">{alert}</span>
           </div>
         ))}
@@ -184,7 +184,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
           {insight.recommendations && insight.recommendations.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-foreground/80 mb-2 flex items-center gap-1.5">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                <Lightbulb className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                 Recomendações Práticas
               </h4>
               <ul className="space-y-2">
@@ -207,8 +207,8 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
               </h4>
               <ul className="space-y-1.5">
                 {insight.highlights.slice(1).map((h, i) => (
-                  <li key={i} className="text-xs text-emerald-400/90 leading-relaxed flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <li key={i} className="text-xs text-emerald-700 dark:text-emerald-400/90 leading-relaxed flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
                     <span>{h}</span>
                   </li>
                 ))}
@@ -244,7 +244,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-medium text-foreground transition-all border border-border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <RotateCw
-              className={`w-3.5 h-3.5 text-indigo-400 ${
+              className={`w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 ${
                 isGenerating ? 'animate-spin' : ''
               }`}
             />

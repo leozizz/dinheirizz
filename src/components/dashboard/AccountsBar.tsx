@@ -19,13 +19,14 @@ export function AccountsBar({
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2.5 px-1">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Suas Contas
         </h3>
         <button
           type="button"
+          data-testid="accounts-bar-new-btn"
           onClick={onNewAccount}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1.5 px-2.5 rounded-lg hover:bg-white/5 active:scale-95"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors min-h-[44px] py-1.5 px-2.5 rounded-lg hover:bg-muted/60 active:scale-95 cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Nova Conta</span>
@@ -95,7 +96,7 @@ export function AccountsBar({
                 </span>
                 <span
                   className={`block text-[11px] font-semibold tabular-nums ${
-                    acc.balance >= 0 ? 'text-foreground' : 'text-rose-400'
+                    acc.balance >= 0 ? 'text-foreground' : 'text-rose-600 dark:text-rose-400'
                   }`}
                 >
                   {formatBRL(acc.balance)}

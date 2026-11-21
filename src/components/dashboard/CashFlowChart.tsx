@@ -18,7 +18,7 @@ export function CashFlowChart({
 
   if (!timeline || timeline.length === 0) {
     return (
-      <div className="flex h-44 w-full items-center justify-center text-xs text-stone-500">
+      <div className="flex h-44 w-full items-center justify-center text-xs text-muted-foreground">
         Sem dados de projeção suficientes.
       </div>
     )
@@ -216,28 +216,28 @@ export function CashFlowChart({
       {/* Tooltip flutuante tátil */}
       {activePoint && (
         <div
-          className="pointer-events-none absolute -top-3 z-20 -translate-x-1/2 -translate-y-full rounded-lg border border-white/10 bg-zinc-900/95 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all duration-75"
+          className="pointer-events-none absolute -top-3 z-20 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-popover text-popover-foreground px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all duration-75"
           style={{
             left: `${(activePoint.x / width) * 100}%`
           }}
         >
-          <div className="text-[10px] font-medium text-stone-400">
+          <div className="text-[10px] font-medium text-muted-foreground">
             {activePoint.point.date.split('-').reverse().slice(0, 2).join('/')}
           </div>
           <div
             className={`text-xs font-bold ${
-              activePoint.point.balance < 0 ? 'text-rose-400' : 'text-emerald-400'
+              activePoint.point.balance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
             }`}
           >
             {formatBRL(activePoint.point.balance)}
           </div>
           {activePoint.point.scheduledIncome > 0 && (
-            <div className="text-[10px] text-emerald-400">
+            <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
               +{formatBRL(activePoint.point.scheduledIncome)}
             </div>
           )}
           {activePoint.point.scheduledExpense > 0 && (
-            <div className="text-[10px] text-rose-400">
+            <div className="text-[10px] text-rose-600 dark:text-rose-400">
               -{formatBRL(activePoint.point.scheduledExpense)}
             </div>
           )}
@@ -245,7 +245,7 @@ export function CashFlowChart({
       )}
 
       {/* Rótulos temporais no rodapé */}
-      <div className="mt-1 flex items-center justify-between px-2 text-[10px] font-medium text-stone-500">
+      <div className="mt-1 flex items-center justify-between px-2 text-[10px] font-medium text-muted-foreground">
         <span>Hoje</span>
         <span>
           {timeline.length >= 15

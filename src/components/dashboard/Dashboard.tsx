@@ -415,7 +415,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       >
         {/* Linha 1 — Esquerda (7/12): Saldo Principal Card */}
         <div data-testid="bento-slot-hero" className="lg:col-span-7">
-          <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-border shadow-2xl h-full flex flex-col justify-between">
+          <div className="relative overflow-hidden glass-card-glow p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl border border-border shadow-2xl h-full flex flex-col justify-between gap-5">
             <div>
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className="flex items-center gap-2">
@@ -434,7 +434,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               {/* Valor de Destaque */}
-              <div className="mb-4 sm:mb-6">
+              <div className="mb-4">
                 <h2
                   data-testid="main-balance-value"
                   className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-display break-words"
@@ -464,8 +464,56 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
 
+            {/* Balanço do Período (Proporção Receitas vs Despesas) */}
+            <div className="p-3.5 rounded-2xl bg-card/70 border border-border space-y-2.5">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="text-muted-foreground font-medium">Resultado líquido do mês</span>
+                <span
+                  data-testid="hero-net-result"
+                  className={`font-bold tabular-nums ${
+                    displayIncome - displayExpense >= 0 ? 'text-primary' : 'text-rose-500 dark:text-rose-400'
+                  }`}
+                >
+                  {displayIncome - displayExpense >= 0 ? '+' : ''}
+                  {formatBRL(displayIncome - displayExpense)}
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden flex">
+                {displayIncome + displayExpense > 0 ? (
+                  <>
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{
+                        width: `${Math.round((displayIncome / (displayIncome + displayExpense)) * 100)}%`
+                      }}
+                    />
+                    <div
+                      className="h-full bg-rose-500 transition-all duration-500"
+                      style={{
+                        width: `${Math.round((displayExpense / (displayIncome + displayExpense)) * 100)}%`
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="h-full w-full bg-muted" />
+                )}
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>
+                  {displayIncome > 0
+                    ? `${Math.max(0, Math.round(((displayIncome - displayExpense) / displayIncome) * 100))}% de margem livre`
+                    : 'Sem receitas registradas'}
+                </span>
+                <span className="tabular-nums">
+                  {accounts.length > 0
+                    ? `${accounts.length} conta${accounts.length > 1 ? 's' : ''} ativa${accounts.length > 1 ? 's' : ''}`
+                    : 'Conta consolidada'}
+                </span>
+              </div>
+            </div>
+
             {/* Resumo de Entradas e Saídas - Grid Adaptável com Proteção contra Achatamento */}
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 sm:pt-4 border-t border-border">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-3.5 border-t border-border">
               <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary flex-shrink-0">
                   <ArrowDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -484,16 +532,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <div className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border backdrop-blur-md min-w-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 flex-shrink-0">
                   <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">Despesas do Mês</span>
-                  <span className="text-xs sm:text-base font-semibold text-rose-400 block truncate tabular-nums">
+                  <span className="text-xs sm:text-base font-semibold text-rose-500 dark:text-rose-400 block truncate tabular-nums">
                     <AnimatedNumber value={displayExpense} formatter={formatBRL} />
                   </span>
                   {pendingExpense > 0 && (
-                    <span className="text-[10px] text-rose-400/80 block truncate font-medium">
+                    <span className="text-[10px] text-rose-500/80 dark:text-rose-400/80 block truncate font-medium">
                       {formatBRL(pendingExpense)} a pagar
                     </span>
                   )}
@@ -504,9 +552,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Linha 1 — Direita (5/12): Visão Geral + Ações Rápidas */}
-        <div data-testid="bento-slot-overview" className="lg:col-span-5 flex flex-col gap-5 h-full">
+        <div data-testid="bento-slot-overview" className="lg:col-span-5 flex flex-col gap-4 h-full">
           {/* Bloco de Visão Geral (Compromissos, Cartões e Balanços) */}
-          <div className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border space-y-3.5">
+          <div className="glass-card p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-border space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-xl bg-muted border border-border flex items-center justify-center text-primary">

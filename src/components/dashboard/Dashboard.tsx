@@ -8,10 +8,12 @@ import { CategoryDonutChart } from './CategoryDonutChart'
 import { ForecastCard } from './ForecastCard'
 import { FinancialCalendar } from './FinancialCalendar'
 import { BudgetProgressWidget } from './BudgetProgressWidget'
+import { SubscriptionsWidget } from './SubscriptionsWidget'
 import { CreditCardWidget } from '../cards/CreditCardWidget'
 import { PushNotificationBanner } from './PushNotificationBanner'
 import { OnboardingChecklist } from './OnboardingChecklist'
 import type { BudgetProgressItem } from '../../hooks/useBudgets'
+import type { DetectedSubscription, SubscriptionsSummary } from '../../hooks/useSubscriptions'
 import type { AccountItem } from '../../hooks/useAccounts'
 import type { AiInsightData } from '../../hooks/useAiInsights'
 import type { CreditCard as CreditCardItemType } from '../../types/database.types'
@@ -118,6 +120,14 @@ export interface DashboardProps {
   // Issue #80: Alternância Feed/Calendário controlada opcionalmente pela Command Palette
   viewMode?: 'feed' | 'calendar'
   onViewModeChange?: (mode: 'feed' | 'calendar') => void
+  // Issue #81: Rastreador Automático de Assinaturas e Contas Recorrentes
+  subscriptions?: DetectedSubscription[]
+  subscriptionsSummary?: SubscriptionsSummary | null
+  isSubscriptionsLoading?: boolean
+  onConfirmSubscription?: (subscription: DetectedSubscription) => void | Promise<void>
+  onIgnoreSubscription?: (normalizedKey: string) => void | Promise<void>
+  confirmingSubscriptionId?: string | null
+  ignoringSubscriptionKey?: string | null
 }
 
 const getDueStatus = (dueDateStr?: string | null) => {
@@ -178,7 +188,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isAuthenticated = false,
   userId = null,
   viewMode: controlledViewMode,
-  onViewModeChange
+  onViewModeChange,
+  subscriptions,
+  subscriptionsSummary,
+  isSubscriptionsLoading = false,
+  onConfirmSubscription,
+  onIgnoreSubscription,
+  confirmingSubscriptionId = null,
+  ignoringSubscriptionKey = null
 }) => {
   const onboardingStorageKey = userId
     ? `dinheirizz_onboarding_dismissed_${userId}`
@@ -396,8 +413,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const hasLeftRow3 = hasAccountsWidget || hasCreditCardsWidget
 
   const hasBudgetsWidget = budgets !== undefined || onOpenBudgetModal !== undefined
+  const hasSubscriptionsWidget = subscriptions !== undefined || isSubscriptionsLoading
   const hasAiWidget = Boolean(insight || isAiLoading)
-  const hasRightRow3 = hasBudgetsWidget || hasAiWidget
+  const hasRightRow3 = hasBudgetsWidget || hasSubscriptionsWidget || hasAiWidget
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-5 animate-fade-in pb-12">
@@ -716,6 +734,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 overallPercentageUsed={budgetSummary?.overallPercentageUsed || 0}
                 onOpenBudgetModal={onOpenBudgetModal || (() => {})}
                 isLoading={isBudgetsLoading}
+              />
+            )}
+
+            {hasSubscriptionsWidget && (
+              <SubscriptionsWidget
+                subscriptions={subscriptions || []}
+                summary={
+                  subscriptionsSummary || {
+                    totalMonthlyCost: 0,
+                    totalAnnualCost: 0,
+                    activeCount: 0,
+                    alertsCount: 0
+                  }
+                }
+                isLoading={isSubscriptionsLoading}
+                onConfirm={onConfirmSubscription}
+                onIgnore={onIgnoreSubscription}
+                confirmingId={confirmingSubscriptionId}
+                ignoringKey={ignoringSubscriptionKey}
               />
             )}
 

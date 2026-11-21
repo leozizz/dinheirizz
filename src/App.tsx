@@ -71,6 +71,7 @@ import { useTransferTransaction } from './hooks/useTransfer'
 import { usePixKeys, useCreatePixKey, useDeletePixKey } from './hooks/usePixKeys'
 import { useCategories, type CategoryItem } from './hooks/useCategories'
 import { useAiInsights } from './hooks/useAiInsights'
+import { useSubscriptions, type DetectedSubscription } from './hooks/useSubscriptions'
 import {
   useBudgets,
   useCreateBudget,
@@ -369,6 +370,30 @@ const MainApp = () => {
     isGenerating: isAiGenerating,
     generateInsights
   } = useAiInsights()
+
+  const {
+    subscriptions: activeSubscriptions,
+    summary: activeSubscriptionsSummary,
+    isLoading: isSubscriptionsLoading,
+    confirmSubscription,
+    ignoreSubscription,
+    confirmingId: confirmingSubscriptionId,
+    ignoringKey: ignoringSubscriptionKey
+  } = useSubscriptions({ accountId: selectedAccountId })
+
+  const handleConfirmSubscription = async (sub: DetectedSubscription) => {
+    const parsedDate = new Date(sub.lastChargedAt)
+    const recurrenceDay = !isNaN(parsedDate.getTime()) ? parsedDate.getUTCDate() : undefined
+    await confirmSubscription({
+      transactionId: sub.latestTransactionId,
+      frequency: sub.frequency,
+      recurrenceDay
+    })
+  }
+
+  const handleIgnoreSubscription = async (normalizedKey: string) => {
+    await ignoreSubscription(normalizedKey)
+  }
 
   const { creditCards: apiCreditCards, isLoading: isCreditCardsLoading } = useCreditCards()
   const createCardMutation = useCreateCreditCard()
@@ -1248,6 +1273,13 @@ const MainApp = () => {
           userId={user?.id ?? null}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
+          subscriptions={activeSubscriptions}
+          subscriptionsSummary={activeSubscriptionsSummary}
+          isSubscriptionsLoading={isSubscriptionsLoading}
+          onConfirmSubscription={handleConfirmSubscription}
+          onIgnoreSubscription={handleIgnoreSubscription}
+          confirmingSubscriptionId={confirmingSubscriptionId}
+          ignoringSubscriptionKey={ignoringSubscriptionKey}
         />
       </main>
 

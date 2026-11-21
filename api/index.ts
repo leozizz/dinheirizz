@@ -24,6 +24,7 @@ import { reportsRouter } from './src/routes/reports'
 import { pushRouter } from './src/routes/push'
 import { workspacesRouter } from './src/routes/workspaces'
 import { goalsRouter } from './src/routes/goals'
+import { openFinanceRouter } from './src/routes/openFinance'
 import { authMiddleware, type AuthEnv } from './src/middlewares/auth'
 import { runWithRuntimeEnv, type RuntimeEnv } from './src/lib/env'
 import { closeRequestDb } from './src/db/client'
@@ -135,6 +136,12 @@ app.route('/v1/workspaces', workspacesRouter)
 app.use('/v1/goals/*', authMiddleware)
 app.use('/v1/goals', authMiddleware)
 app.route('/v1/goals', goalsRouter)
+
+// Open Finance Brasil (webhook público validado via HMAC-SHA256; demais rotas autenticadas)
+app.use('/v1/open-finance/connect-token', authMiddleware)
+app.use('/v1/open-finance/connections', authMiddleware)
+app.use('/v1/open-finance/connections/*', authMiddleware)
+app.route('/v1/open-finance', openFinanceRouter)
 
 export default app
 

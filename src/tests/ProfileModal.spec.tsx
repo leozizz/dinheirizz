@@ -120,6 +120,25 @@ vi.mock('../hooks/usePushNotifications', () => ({
   })
 }))
 
+vi.mock('../hooks/useOpenFinance', () => ({
+  useOpenFinance: () => ({
+    connections: [],
+    total: 0,
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+    createConnectToken: vi.fn(),
+    isCreatingToken: false,
+    createConnection: vi.fn(),
+    isCreatingConnection: false,
+    syncConnection: vi.fn(),
+    isSyncing: false,
+    revokeConnection: vi.fn(),
+    isRevoking: false
+  })
+}))
+
 describe('ProfileModal Component (TDD)', () => {
   beforeEach(() => {
     vi.clearAllMocks()

@@ -337,7 +337,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
           <span className="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             <TrendingUp className="w-3 h-3" />
             Ativo
           </span>
@@ -547,7 +547,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Ações Rápidas */}
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2 px-1">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
           Ações Rápidas
         </h3>
         <QuickActions onAction={onActionClick} onHover={onActionHover} />
@@ -780,13 +780,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="text-right flex-shrink-0 pl-2 flex flex-col items-end">
                     <span
                       className={`text-xs sm:text-base font-semibold tabular-nums block ${
-                        isIncome ? 'text-emerald-400' : 'text-rose-400'
+                        isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                       }`}
                     >
                       {isIncome ? '+' : ''}
                       {formatBRL(t.amount)}
                     </span>
-                    <span className="block text-[10px] sm:text-[11px] text-neutral-500">
+                    <span className="block text-[10px] sm:text-[11px] text-muted-foreground">
                       {isPending ? 'Pendente' : 'Concluído'}
                     </span>
                     {onPayTransaction && isPending && (
@@ -794,10 +794,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         type="button"
                         data-testid={`pay-tx-btn-${t.id}`}
                         onClick={() => onPayTransaction(t.id)}
-                        className="mt-1.5 min-h-[28px] px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer active:scale-95 shadow-sm"
+                        className="mt-1.5 min-h-[28px] px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer active:scale-95 shadow-sm"
                         title="Marcar como liquidada / dar baixa"
                       >
-                        <Check className="w-3 h-3 text-emerald-400" />
+                        <Check className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
                         <span>Dar Baixa</span>
                       </button>
                     )}

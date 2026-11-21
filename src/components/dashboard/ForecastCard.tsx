@@ -75,10 +75,10 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
           <div
             className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
               isDanger
-                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400'
                 : isWarning
-                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
             }`}
           >
             <TrendingUp className="h-4 w-4" />
@@ -97,10 +97,11 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
         <div className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 shadow-inner">
           <button
             type="button"
+            data-testid="forecast-horizon-30-btn"
             onClick={() => setDays(30)}
-            className={`min-h-[36px] rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+            className={`min-h-[44px] rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
               days === 30
-                ? 'bg-emerald-500/20 text-emerald-400 shadow-sm'
+                ? 'bg-primary/15 text-primary shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -108,10 +109,11 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
           </button>
           <button
             type="button"
+            data-testid="forecast-horizon-60-btn"
             onClick={() => setDays(60)}
-            className={`min-h-[36px] rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+            className={`min-h-[44px] rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
               days === 60
-                ? 'bg-emerald-500/20 text-emerald-400 shadow-sm'
+                ? 'bg-primary/15 text-primary shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -130,7 +132,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
             <span
               className={`text-2xl font-black tracking-tight sm:text-3xl tabular-nums ${
                 forecast.projectedEndBalance < 0
-                  ? 'text-rose-400'
+                  ? 'text-rose-700 dark:text-rose-400'
                   : 'text-foreground'
               }`}
             >
@@ -144,12 +146,12 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
           {/* Delta em relação ao saldo atual */}
           <div className="mt-1 flex items-center gap-1.5 text-xs">
             {forecast.netChange >= 0 ? (
-              <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-400 tabular-nums">
+              <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                 <ArrowUpRight className="h-3.5 w-3.5" />
                 +{formatBRL(forecast.netChange)}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-0.5 font-semibold text-rose-400 tabular-nums">
+              <span className="inline-flex items-center gap-0.5 font-semibold text-rose-700 dark:text-rose-400 tabular-nums">
                 <ArrowDownRight className="h-3.5 w-3.5" />
                 -{formatBRL(Math.abs(forecast.netChange))}
               </span>
@@ -161,22 +163,22 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
         {/* Badge Semântico de Saúde Financeira */}
         <div className="flex items-center">
           {isSafe && (
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]">
+              <span className="h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Tranquilo</span>
             </div>
           )}
 
           {isWarning && (
-            <div className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]">
+            <div className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]">
               <AlertTriangle className="h-3.5 w-3.5" />
               <span>Atenção</span>
             </div>
           )}
 
           {isDanger && (
-            <div className="flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 px-3 py-1 text-xs font-bold text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)] animate-pulse">
+            <div className="flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
               <AlertCircle className="h-3.5 w-3.5" />
               <span>Risco de Saldo Negativo</span>
             </div>
@@ -215,7 +217,7 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
             <div className="text-[10px] text-muted-foreground">Menor Saldo no Período</div>
             <div
               className={`font-semibold tabular-nums ${
-                forecast.lowestPoint.balance < 0 ? 'text-rose-400' : 'text-foreground'
+                forecast.lowestPoint.balance < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-foreground'
               }`}
             >
               {formatBRL(forecast.lowestPoint.balance)}
@@ -234,18 +236,18 @@ export const ForecastCard: React.FC<ForecastCardProps> = ({
         <div
           className={`relative z-10 mt-3 flex items-start gap-2 rounded-xl border p-2.5 text-xs ${
             isDanger
-              ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+              ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300'
               : isWarning
-                ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
                 : 'border-border bg-muted/40 text-foreground'
           }`}
         >
           {isDanger ? (
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-700 dark:text-rose-400" />
           ) : isWarning ? (
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
           ) : (
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
           )}
           <p className="leading-relaxed">{forecast.healthMessage}</p>
         </div>

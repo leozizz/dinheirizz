@@ -363,128 +363,6 @@ export class PluggyAdapter implements OpenFinanceProviderAdapter {
   }
 }
 
-export class BelvoAdapter implements OpenFinanceProviderAdapter {
-  readonly provider = 'belvo' as const
-  readonly mode = 'production' as const
-  private readonly authHeader: string
-  private readonly baseUrl = 'https://api.belvo.com'
-
-  constructor(secretId: string, secretPassword: string) {
-    this.authHeader = `Basic ${btoa(`${secretId}:${secretPassword}`)}`
-  }
-
-  async createConnectToken(params: {
-    userId: string
-    itemId?: string
-  }): Promise<ConnectTokenResult> {
-    const res = await fetch(`${this.baseUrl}/api/token/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: this.authHeader
-      },
-      body: JSON.stringify({
-        id: this.authHeader,
-        scopes: 'read_institutions,write_links,read_links',
-        link_id: params.itemId
-      })
-    })
-    if (!res.ok) {
-      throw new Error(`Belvo connect_token failed with status ${res.status}`)
-    }
-    const data = (await res.json()) as { access: string }
-    return {
-      connectToken: data.access,
-      provider: 'belvo',
-      mode: 'production',
-      consentScope: 'read_only',
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString()
-    }
-  }
-
-  async getItem(externalItemId: string): Promise<ExternalItemInfo> {
-    const res = await fetch(
-      `${this.baseUrl}/api/links/${encodeURIComponent(externalItemId)}/`,
-      { headers: { Authorization: this.authHeader } }
-    )
-    if (!res.ok) {
-      throw new Error(`Belvo getItem failed with status ${res.status}`)
-    }
-    const link = (await res.json()) as { id: string; institution: string; status: string }
-    return {
-      externalItemId: link.id,
-      status: link.status === 'valid' ? 'active' : 'login_error',
-      institutionId: link.institution,
-      institutionName: link.institution,
-      consentExpiresAt: null
-    }
-  }
-
-  async listAccounts(externalItemId: string): Promise<ExternalAccountInfo[]> {
-    const res = await fetch(
-      `${this.baseUrl}/api/accounts/?link=${encodeURIComponent(externalItemId)}`,
-      { headers: { Authorization: this.authHeader } }
-    )
-    if (!res.ok) {
-      throw new Error(`Belvo listAccounts failed with status ${res.status}`)
-    }
-    const data = (await res.json()) as {
-      results: Array<{
-        id: string
-        category: string
-        name: string
-        balance: { current: number }
-      }>
-    }
-    return data.results.map((acc) => ({
-      externalAccountId: acc.id,
-      type: acc.category === 'CREDIT_CARD' ? 'CREDIT' : 'BANK',
-      name: acc.name,
-      balance: acc.balance?.current ?? 0
-    }))
-  }
-
-  async listTransactions(externalAccountId: string): Promise<ExternalTransactionInfo[]> {
-    const res = await fetch(
-      `${this.baseUrl}/api/transactions/?account=${encodeURIComponent(externalAccountId)}`,
-      { headers: { Authorization: this.authHeader } }
-    )
-    if (!res.ok) {
-      throw new Error(`Belvo listTransactions failed with status ${res.status}`)
-    }
-    const data = (await res.json()) as {
-      results: Array<{
-        id: string
-        amount: number
-        type: 'INFLOW' | 'OUTFLOW'
-        description: string
-        value_date: string
-      }>
-    }
-    return data.results.map((tx) => ({
-      externalId: tx.id,
-      externalAccountId,
-      amount: Math.abs(tx.amount),
-      type: tx.type === 'INFLOW' ? 'income' : 'expense',
-      description: tx.description,
-      occurredAt: new Date(tx.value_date).toISOString()
-    }))
-  }
-
-  async revokeItem(externalItemId: string): Promise<void> {
-    const res = await fetch(
-      `${this.baseUrl}/api/links/${encodeURIComponent(externalItemId)}/`,
-      {
-        method: 'DELETE',
-        headers: { Authorization: this.authHeader }
-      }
-    )
-    if (!res.ok && res.status !== 404) {
-      throw new Error(`Belvo revokeItem failed with status ${res.status}`)
-    }
-  }
-}
-
 export class OpenFinanceConfigError extends Error {
   constructor(message: string) {
     super(message)
@@ -496,6 +374,10 @@ export const getOpenFinanceAdapter = (
   provider: OpenFinanceProvider,
   env?: Partial<RuntimeEnv>
 ): OpenFinanceProviderAdapter => {
+  if (provider === 'belvo') {
+    throw new Error('Provedor Belvo não é mais suportado. Utilize o Pluggy.')
+  }
+
   const sandboxFlag = env?.OPEN_FINANCE_SANDBOX ?? process.env.OPEN_FINANCE_SANDBOX
   if (provider === 'sandbox' || sandboxFlag === 'true') {
     return new SandboxOpenFinanceAdapter(provider)
@@ -509,17 +391,9 @@ export const getOpenFinanceAdapter = (
     }
   }
 
-  if (provider === 'belvo') {
-    const secretId = env?.BELVO_SECRET_ID ?? process.env.BELVO_SECRET_ID
-    const secretPassword = env?.BELVO_SECRET_PASSWORD ?? process.env.BELVO_SECRET_PASSWORD
-    if (secretId && secretPassword) {
-      return new BelvoAdapter(secretId, secretPassword)
-    }
-  }
-
   if (isProductionEnv(env)) {
     throw new OpenFinanceConfigError(
-      'As credenciais do agregador não estão disponíveis neste ambiente.'
+      'As credenciais do Pluggy não estão disponíveis neste ambiente.'
     )
   }
 

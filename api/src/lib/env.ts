@@ -17,9 +17,6 @@ export interface RuntimeEnv {
   PLUGGY_CLIENT_ID?: string
   PLUGGY_CLIENT_SECRET?: string
   PLUGGY_WEBHOOK_SECRET?: string
-  BELVO_SECRET_ID?: string
-  BELVO_SECRET_PASSWORD?: string
-  BELVO_WEBHOOK_SECRET?: string
   OPEN_FINANCE_SANDBOX?: string
 }
 

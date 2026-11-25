@@ -132,6 +132,13 @@ openFinanceRouter.post('/connections', async (c) => {
           conn.provider === provider && conn.externalItemId === externalItemId
       )
 
+      if (existing && existing.userId !== userId) {
+        return c.json(
+          { error: 'Conflito: item já vinculado a outro usuário' },
+          409
+        )
+      }
+
       const connId = existing?.id ?? crypto.randomUUID()
       const nowIso = new Date().toISOString()
       const connRecord: MockOpenFinanceConnection = {
@@ -174,28 +181,68 @@ openFinanceRouter.post('/connections', async (c) => {
           },
           syncSummary
         },
-        201
+        existing ? 200 : 201
       )
     }
 
-    const [created] = await db
-      .insert(openFinanceConnections)
-      .values({
-        userId,
-        profileId: resolvedProfileId,
-        provider,
-        externalItemId,
-        institutionId,
-        institutionName,
-        institutionLogoUrl: institutionLogoUrl ?? null,
-        status: 'active',
-        consentScope: 'read_only',
-        consentExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-      })
-      .returning()
+    const [existing] = await db
+      .select()
+      .from(openFinanceConnections)
+      .where(
+        and(
+          eq(openFinanceConnections.provider, provider),
+          eq(openFinanceConnections.externalItemId, externalItemId)
+        )
+      )
+      .limit(1)
+
+    if (existing && existing.userId !== userId) {
+      return c.json(
+        { error: 'Conflito: item já vinculado a outro usuário' },
+        409
+      )
+    }
+
+    const now = new Date()
+    const consentExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    let connectionId: string
+
+    if (existing) {
+      await db
+        .update(openFinanceConnections)
+        .set({
+          profileId: resolvedProfileId,
+          institutionId,
+          institutionName,
+          institutionLogoUrl: institutionLogoUrl ?? null,
+          status: 'active',
+          consentExpiresAt,
+          lastError: null,
+          updatedAt: now
+        })
+        .where(eq(openFinanceConnections.id, existing.id))
+      connectionId = existing.id
+    } else {
+      const [created] = await db
+        .insert(openFinanceConnections)
+        .values({
+          userId,
+          profileId: resolvedProfileId,
+          provider,
+          externalItemId,
+          institutionId,
+          institutionName,
+          institutionLogoUrl: institutionLogoUrl ?? null,
+          status: 'active',
+          consentScope: 'read_only',
+          consentExpiresAt
+        })
+        .returning()
+      connectionId = created.id
+    }
 
     const syncSummary = await syncOpenFinanceConnection({
-      connectionId: created.id,
+      connectionId,
       userId,
       adapter
     })
@@ -203,7 +250,7 @@ openFinanceRouter.post('/connections', async (c) => {
     const [refreshed] = await db
       .select()
       .from(openFinanceConnections)
-      .where(eq(openFinanceConnections.id, created.id))
+      .where(eq(openFinanceConnections.id, connectionId))
       .limit(1)
 
     return c.json(
@@ -219,7 +266,7 @@ openFinanceRouter.post('/connections', async (c) => {
         },
         syncSummary
       },
-      201
+      existing ? 200 : 201
     )
   } catch (error: unknown) {
     if (error instanceof OpenFinanceConfigError) {
@@ -324,6 +371,15 @@ openFinanceRouter.post('/connections/:id/sync', async (c) => {
       if (conn.status === 'revoked') {
         return c.json({ error: 'Conexão já foi revogada' }, 400)
       }
+      if (conn.provider === 'belvo') {
+        return c.json(
+          {
+            error:
+              'Provedor Belvo descontinuado. Remova esta conexão e reconecte via Pluggy.'
+          },
+          400
+        )
+      }
       const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
       provider = parsedProv.success ? parsedProv.data : 'sandbox'
     } else {
@@ -342,6 +398,15 @@ openFinanceRouter.post('/connections/:id/sync', async (c) => {
       }
       if (conn.status === 'revoked') {
         return c.json({ error: 'Conexão já foi revogada' }, 400)
+      }
+      if (conn.provider === 'belvo') {
+        return c.json(
+          {
+            error:
+              'Provedor Belvo descontinuado. Remova esta conexão e reconecte via Pluggy.'
+          },
+          400
+        )
       }
       const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
       provider = parsedProv.success ? parsedProv.data : 'sandbox'
@@ -384,12 +449,14 @@ openFinanceRouter.delete('/connections/:id', async (c) => {
       if (!conn || conn.userId !== userId) {
         return c.json({ error: 'Conexão Open Finance não encontrada' }, 404)
       }
-      const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
-      const adapter = getOpenFinanceAdapter(
-        parsedProv.success ? parsedProv.data : 'sandbox',
-        c.env
-      )
-      await adapter.revokeItem(conn.externalItemId)
+      if (conn.provider !== 'belvo') {
+        const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
+        const adapter = getOpenFinanceAdapter(
+          parsedProv.success ? parsedProv.data : 'sandbox',
+          c.env
+        )
+        await adapter.revokeItem(conn.externalItemId)
+      }
       conn.status = 'revoked'
       conn.updatedAt = new Date().toISOString()
 
@@ -411,12 +478,14 @@ openFinanceRouter.delete('/connections/:id', async (c) => {
       return c.json({ error: 'Conexão Open Finance não encontrada' }, 404)
     }
 
-    const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
-    const adapter = getOpenFinanceAdapter(
-      parsedProv.success ? parsedProv.data : 'sandbox',
-      c.env
-    )
-    await adapter.revokeItem(conn.externalItemId)
+    if (conn.provider !== 'belvo') {
+      const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
+      const adapter = getOpenFinanceAdapter(
+        parsedProv.success ? parsedProv.data : 'sandbox',
+        c.env
+      )
+      await adapter.revokeItem(conn.externalItemId)
+    }
 
     await db
       .update(openFinanceConnections)
@@ -441,21 +510,14 @@ openFinanceRouter.post('/webhook', async (c) => {
 
   const pluggySecret =
     c.env?.PLUGGY_WEBHOOK_SECRET ?? process.env.PLUGGY_WEBHOOK_SECRET
-  const belvoSecret =
-    c.env?.BELVO_WEBHOOK_SECRET ?? process.env.BELVO_WEBHOOK_SECRET
 
   const validPluggy = await verifyHmacSha256Signature(
     rawBody,
     signature,
     pluggySecret
   )
-  const validBelvo = await verifyHmacSha256Signature(
-    rawBody,
-    signature,
-    belvoSecret
-  )
 
-  if (!validPluggy && !validBelvo) {
+  if (!validPluggy) {
     return c.json({ error: 'Assinatura de webhook inválida ou ausente' }, 401)
   }
 
@@ -479,7 +541,7 @@ openFinanceRouter.post('/webhook', async (c) => {
       const conn = Array.from(mockOpenFinanceConnectionsStore.values()).find(
         (item) => item.externalItemId === itemId && item.status !== 'revoked'
       )
-      if (conn) {
+      if (conn && conn.provider !== 'belvo') {
         const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
         const adapter = getOpenFinanceAdapter(
           parsedProv.success ? parsedProv.data : 'sandbox',
@@ -500,7 +562,7 @@ openFinanceRouter.post('/webhook', async (c) => {
       .where(eq(openFinanceConnections.externalItemId, itemId))
       .limit(1)
 
-    if (conn && conn.status !== 'revoked') {
+    if (conn && conn.status !== 'revoked' && conn.provider !== 'belvo') {
       const parsedProv = openFinanceProviderSchema.safeParse(conn.provider)
       const adapter = getOpenFinanceAdapter(
         parsedProv.success ? parsedProv.data : 'sandbox',

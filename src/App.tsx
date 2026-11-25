@@ -12,6 +12,7 @@ import type { ParsedNlpTransaction } from './lib/nlpTransactionParser'
 import type { PixKeyItem } from './components/modals/PixWalletModal'
 import type { ParsedTransactionCandidate } from './types/import'
 import { ModalSuspenseFallback } from './components/ui/ModalSuspenseFallback'
+import { SupportButton } from './components/support/SupportButton'
 
 const PwaUpdatePrompt = React.lazy(() =>
   import('./components/pwa/PwaUpdatePrompt').then((m) => ({ default: m.PwaUpdatePrompt }))
@@ -1753,6 +1754,7 @@ const MainApp = () => {
 
       {/* Toaster Glassmorphism e Notificação de Atualização PWA com suporte ao Dual-Theme */}
       <div className="no-print">
+        <SupportButton />
         <Toaster position="bottom-right" richColors theme={resolvedTheme} />
         <React.Suspense fallback={null}>
           <PwaUpdatePrompt />

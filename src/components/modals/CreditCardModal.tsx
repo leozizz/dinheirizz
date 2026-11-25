@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, CreditCard as CardIcon, CheckCircle, AlertCircle } from 'lucide-react'
+import { X, CreditCard as CardIcon, CheckCircle } from 'lucide-react'
 import {
   createCreditCardSchema,
   type CreateCreditCardInput,
@@ -10,6 +10,7 @@ import {
 } from '../../schemas/creditCards'
 import type { CreditCard } from '../../types/database.types'
 import type { AccountItem } from '../../hooks/useAccounts'
+import { VirtualCardSurface } from '../cards/VirtualCardSurface'
 import {
   Select,
   SelectContent,
@@ -80,6 +81,15 @@ export const CreditCardModal = ({
   })
 
   const currentColor = watch('color') || '#7bc816'
+  const currentName = watch('name') || ''
+  const currentBrand = watch('brand') || 'mastercard'
+  const currentDigits = watch('lastFourDigits')
+  const currentClosingDay = watch('closingDay')
+  const currentDueDay = watch('dueDay')
+  const currentAccountId = watch('accountId')
+
+  const linkedAccount = accounts.find((acc) => acc.id === currentAccountId)
+  const fallbackBankHint = linkedAccount ? linkedAccount.bank || linkedAccount.name : undefined
 
   useEffect(() => {
     if (card) {
@@ -155,6 +165,20 @@ export const CreditCardModal = ({
             >
               <X className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Preview em tempo real do cartão virtual */}
+          <div data-testid="credit-card-preview" className="max-w-sm mx-auto w-full">
+            <VirtualCardSurface
+              name={currentName}
+              brand={currentBrand}
+              lastFourDigits={currentDigits}
+              closingDay={currentClosingDay}
+              dueDay={currentDueDay}
+              color={currentColor}
+              fallbackBankHint={fallbackBankHint}
+              compact
+            />
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -147,6 +147,12 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: (id: string) => {
             const normalizedId = id.replace(/\\/g, '/')
+            if (
+              normalizedId.includes('/src/components/banks/') ||
+              normalizedId.includes('/src/lib/banks.')
+            ) {
+              return 'bank-skins'
+            }
             if (!normalizedId.includes('/node_modules/')) {
               return undefined
             }

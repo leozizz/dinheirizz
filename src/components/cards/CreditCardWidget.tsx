@@ -1,14 +1,12 @@
-import React from 'react'
 import {
   CreditCard as CreditCardIcon,
   Plus,
   Receipt,
   CheckCircle,
-  Calendar,
-  Zap,
-  ChevronRight
+  Zap
 } from 'lucide-react'
 import { formatBRL } from '../../lib/formatters'
+import { VirtualCardSurface } from './VirtualCardSurface'
 import type { CreditCard, InvoiceStatus } from '../../types/database.types'
 
 export interface CreditCardWidgetProps {
@@ -68,33 +66,6 @@ const getLimitColor = (percentage: number) => {
     trackClass: 'bg-rose-500/20 border-rose-500/30'
   }
 }
-
-// Chip metálico SVG em formato vetorial elegante
-const CardChip = () => (
-  <svg
-    className="w-10 h-7 rounded-sm shadow-sm"
-    viewBox="0 0 40 28"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-  >
-    <rect width="40" height="28" rx="4" fill="url(#chip-metal)" />
-    <path
-      d="M0 14h12m16 0h12M12 4v20m16-20v20M12 9h16M12 19h16"
-      stroke="#78350f"
-      strokeWidth="0.8"
-      strokeOpacity="0.4"
-    />
-    <rect x="15" y="8" width="10" height="12" rx="2" fill="#d97706" fillOpacity="0.3" />
-    <defs>
-      <linearGradient id="chip-metal" x1="0" y1="0" x2="40" y2="28" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#fde68a" />
-        <stop offset="0.5" stopColor="#d97706" />
-        <stop offset="1" stopColor="#fef3c7" />
-      </linearGradient>
-    </defs>
-  </svg>
-)
 
 export const CreditCardWidget = ({
   cards,
@@ -186,57 +157,15 @@ export const CreditCardWidget = ({
                 data-testid={`credit-card-item-${card.id}`}
                 className="flex flex-col justify-between rounded-2xl border border-border/80 bg-background/60 p-4 sm:p-5 shadow-sm hover:border-primary/40 transition-all duration-200 space-y-4"
               >
-                {/* Cartão Virtual Moderno (Proporção 1.586:1 aproximada) */}
-                <div
-                  className="relative overflow-hidden rounded-2xl p-5 text-white shadow-lg flex flex-col justify-between aspect-[1.586/1] border border-white/10"
-                  style={{
-                    background: card.color
-                      ? `linear-gradient(135deg, ${card.color} 0%, #0d0e12 100%)`
-                      : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
-                  }}
-                >
-                  {/* Overlay Glassmorphism */}
-                  <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
-
-                  {/* Topo do cartão: Chip & Bandeira */}
-                  <div className="relative z-10 flex items-center justify-between">
-                    <CardChip />
-                    <span
-                      data-testid="credit-card-brand"
-                      className="text-xs uppercase font-bold tracking-widest px-2.5 py-1 rounded-md bg-black/40 border border-white/10"
-                    >
-                      {card.brand}
-                    </span>
-                  </div>
-
-                  {/* Número mascarado & Nome */}
-                  <div className="relative z-10 space-y-1 my-auto">
-                    <div
-                      data-testid="credit-card-digits"
-                      className="text-lg sm:text-xl font-mono tracking-wider font-semibold"
-                    >
-                      •••• •••• •••• {card.lastFourDigits || '••••'}
-                    </div>
-                    <div
-                      data-testid="credit-card-name"
-                      className="text-xs sm:text-sm font-medium text-white/90 truncate"
-                    >
-                      {card.name}
-                    </div>
-                  </div>
-
-                  {/* Rodapé do Cartão Virtual: Datas de Ciclo */}
-                  <div className="relative z-10 flex items-center justify-between text-[11px] text-white/80 border-t border-white/10 pt-2 font-mono">
-                    <div>
-                      <span className="text-white/60 block text-[9px] uppercase tracking-wider">Fecha</span>
-                      <span>Dia {String(card.closingDay).padStart(2, '0')}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-white/60 block text-[9px] uppercase tracking-wider">Vence</span>
-                      <span>Dia {String(card.dueDay).padStart(2, '0')}</span>
-                    </div>
-                  </div>
-                </div>
+                {/* Cartão Virtual Moderno com Skin e Logo do Banco */}
+                <VirtualCardSurface
+                  name={card.name}
+                  brand={card.brand}
+                  lastFourDigits={card.lastFourDigits}
+                  closingDay={card.closingDay}
+                  dueDay={card.dueDay}
+                  color={card.color}
+                />
 
                 {/* Status da Fatura e Limite */}
                 <div className="space-y-3">

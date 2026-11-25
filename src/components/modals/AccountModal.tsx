@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Landmark, AlertCircle, Check } from 'lucide-react'
 import { parseCurrencyToNumber } from '../../lib/formatters'
 import { detectBank } from '../../lib/banks'
+import { BankLogo } from '../banks/BankLogo'
 import {
   Select,
   SelectContent,
@@ -159,6 +160,38 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Preview em tempo real do Banco e Identidade */}
+              <div
+                data-testid="account-bank-preview"
+                className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-border bg-muted/30"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <BankLogo
+                    slug={detectedBank.slug}
+                    name={detectedBank.slug === 'generic' ? (name.trim() || 'Nova Conta') : detectedBank.name}
+                    initials={detectedBank.initials}
+                    primaryColor={color || detectedBank.primaryColor}
+                    size="md"
+                    variant="badge"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {name.trim() || 'Nome da conta'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {detectedBank.slug !== 'generic'
+                        ? `Banco • ${detectedBank.name}`
+                        : bank.trim() || 'Instituição personalizada'}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0 border border-border"
+                  style={{ backgroundColor: color }}
+                  aria-hidden="true"
+                />
+              </div>
+
               {/* Nome da Conta */}
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1.5">
@@ -166,11 +199,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 </label>
                 <input
                   type="text"
+                  data-testid="account-name-input"
                   autoFocus
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Ex: Nubank Principal, Itaú Reserva"
-                  className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                  className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all min-h-[44px]"
                 />
               </div>
 
@@ -207,10 +241,11 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    data-testid="account-bank-input"
                     value={bank}
                     onChange={(e) => handleBankChange(e.target.value)}
                     placeholder="Ex: Nubank, Inter, Itaú"
-                    className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-input/40 border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all min-h-[44px]"
                   />
                   {detectedBank.slug !== 'generic' && (
                     <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">

@@ -1,5 +1,7 @@
 export type OpenFinanceProvider = 'pluggy' | 'belvo' | 'sandbox'
 
+export type OpenFinanceCreateProvider = 'pluggy' | 'sandbox'
+
 export type OpenFinanceStatus =
   | 'active'
   | 'updating'
@@ -40,21 +42,21 @@ export interface OpenFinanceSyncSummary {
 }
 
 export interface ConnectTokenRequestInput {
-  provider?: OpenFinanceProvider
+  provider?: OpenFinanceCreateProvider
   itemId?: string
   profileId?: string | null
 }
 
 export interface ConnectTokenResponse {
   connectToken: string
-  provider: OpenFinanceProvider
-  mode: 'live' | 'sandbox' | string
+  provider: OpenFinanceCreateProvider
+  mode: 'live' | 'production' | 'sandbox' | string
   consentScope: 'read_only' | string
   expiresAt: string
 }
 
 export interface CreateConnectionInput {
-  provider: OpenFinanceProvider
+  provider: OpenFinanceCreateProvider
   externalItemId: string
   institutionId: string
   institutionName: string

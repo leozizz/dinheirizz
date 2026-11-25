@@ -6,7 +6,9 @@ import {
   Unlink,
   CheckCircle2,
   AlertTriangle,
-  Plus
+  Plus,
+  ExternalLink,
+  Info
 } from 'lucide-react'
 import { useOpenFinance } from '../../hooks/useOpenFinance'
 import { formatBRL } from '../../lib/formatters'
@@ -148,6 +150,33 @@ export const OpenFinanceSettings: React.FC<OpenFinanceSettingsProps> = ({
         </button>
       </div>
 
+      <div
+        data-testid="open-finance-settings-pluggy-disclaimer"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground"
+      >
+        <div className="flex items-start gap-2">
+          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            Integração oficial via Pluggy sujeita às regras do Open Finance Brasil e ao limite
+            vigente de{' '}
+            <strong className="font-semibold text-foreground">
+              até 5 conexões (instituições/contas) por CPF
+            </strong>{' '}
+            no plano pessoal.
+          </p>
+        </div>
+        <a
+          href="https://meu.pluggy.ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="open-finance-settings-meu-pluggy-link"
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-medium text-primary shrink-0 transition-colors"
+        >
+          <span>Meu Pluggy</span>
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      </div>
+
       {feedback && (
         <div
           role="status"
@@ -211,6 +240,11 @@ export const OpenFinanceSettings: React.FC<OpenFinanceSettingsProps> = ({
                       <span className="text-[10px] text-muted-foreground uppercase">
                         {conn.provider}
                       </span>
+                      {conn.provider === 'belvo' && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-muted text-muted-foreground border-border">
+                          Legado
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       Última sincronização: {formatLastSync(conn.lastSyncAt)}

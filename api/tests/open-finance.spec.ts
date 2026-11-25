@@ -31,7 +31,7 @@ const createToken = async (userId: string, email: string): Promise<string> => {
   )
 }
 
-describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
+describe('Open Finance Brasil (Pluggy-only / Sandbox) - TDD', () => {
   const userA = '11111111-1111-4111-8111-111111111111'
   const userB = '22222222-2222-4222-8222-222222222222'
   let tokenA: string
@@ -51,6 +51,8 @@ describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
     process.env.ENVIRONMENT = 'test'
     process.env.NODE_ENV = 'test'
     process.env.PLUGGY_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET
+    process.env.PLUGGY_CLIENT_ID = ''
+    process.env.PLUGGY_CLIENT_SECRET = 'super-secret-pluggy-client-secret-do-not-leak'
     mockOpenFinanceConnectionsStore.clear()
     mockOpenFinanceAccountLinksStore.clear()
     mockAccountsStore.clear()
@@ -91,6 +93,38 @@ describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
       const serialized = JSON.stringify(json)
       expect(serialized).not.toContain('super-secret-pluggy-client-secret-do-not-leak')
       expect(serialized).not.toContain(TEST_WEBHOOK_SECRET)
+    })
+
+    it('deve retornar 400 ao tentar gerar connect-token com provider belvo', async () => {
+      const res = await app.request('/api/v1/open-finance/connect-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenA}`
+        },
+        body: JSON.stringify({ provider: 'belvo' })
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('deve retornar 503 em produção quando PLUGGY_CLIENT_ID/PLUGGY_CLIENT_SECRET não estiverem configurados', async () => {
+      process.env.ENVIRONMENT = 'production'
+      process.env.NODE_ENV = 'production'
+      process.env.OPEN_FINANCE_SANDBOX = 'false'
+      process.env.PLUGGY_CLIENT_ID = ''
+      process.env.PLUGGY_CLIENT_SECRET = ''
+
+      const res = await app.request('/api/v1/open-finance/connect-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenA}`
+        },
+        body: JSON.stringify({ provider: 'pluggy' })
+      })
+
+      expect(res.status).toBe(503)
     })
   })
 
@@ -157,6 +191,100 @@ describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
       const listB = (await listBRes.json()) as { data: Array<unknown>; total: number }
       expect(listB.total).toBe(0)
     })
+
+    it('deve retornar 400 ao tentar criar conexão com provider belvo', async () => {
+      const res = await app.request('/api/v1/open-finance/connections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenA}`
+        },
+        body: JSON.stringify({
+          provider: 'belvo',
+          externalItemId: 'belvo-item-01',
+          institutionId: '201',
+          institutionName: 'Nubank'
+        })
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('deve reutilizar/atualizar conexão de forma idempotente para o mesmo (provider, externalItemId) e userId', async () => {
+      const firstRes = await app.request('/api/v1/open-finance/connections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenA}`
+        },
+        body: JSON.stringify({
+          provider: 'pluggy',
+          externalItemId: 'pluggy-item-idempotent-01',
+          institutionId: '201',
+          institutionName: 'Nubank'
+        })
+      })
+      expect(firstRes.status).toBe(201)
+      const firstJson = (await firstRes.json()) as { connection: { id: string } }
+
+      const secondRes = await app.request('/api/v1/open-finance/connections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenA}`
+        },
+        body: JSON.stringify({
+          provider: 'pluggy',
+          externalItemId: 'pluggy-item-idempotent-01',
+          institutionId: '201',
+          institutionName: 'Nubank Atualizado'
+        })
+      })
+      expect([200, 201]).toContain(secondRes.status)
+      const secondJson = (await secondRes.json()) as {
+        connection: { id: string; institutionName: string }
+      }
+      expect(secondJson.connection.id).toBe(firstJson.connection.id)
+      expect(secondJson.connection.institutionName).toBe('Nubank Atualizado')
+
+      const listRes = await app.request('/api/v1/open-finance/connections', {
+        headers: { Authorization: `Bearer ${tokenA}` }
+      })
+      const listJson = (await listRes.json()) as { total: number }
+      expect(listJson.total).toBe(1)
+    })
+
+    it('deve retornar 409 ao tentar vincular externalItemId já pertencente a outro usuário', async () => {
+      const firstRes = await app.request('/api/v1/open-finance/connections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenA}`
+        },
+        body: JSON.stringify({
+          provider: 'pluggy',
+          externalItemId: 'pluggy-item-shared-conflict',
+          institutionId: '201',
+          institutionName: 'Nubank'
+        })
+      })
+      expect(firstRes.status).toBe(201)
+
+      const conflictRes = await app.request('/api/v1/open-finance/connections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tokenB}`
+        },
+        body: JSON.stringify({
+          provider: 'pluggy',
+          externalItemId: 'pluggy-item-shared-conflict',
+          institutionId: '201',
+          institutionName: 'Nubank'
+        })
+      })
+      expect(conflictRes.status).toBe(409)
+    })
   })
 
   describe('POST /api/v1/open-finance/connections/:id/sync', () => {
@@ -202,6 +330,33 @@ describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
       })
       expect(forbiddenSync.status).toBe(404)
     })
+
+    it('deve retornar 400 ao tentar sincronizar registro legado belvo orientando reconexão via Pluggy', async () => {
+      const legacyId = '66666666-6666-4666-8666-666666666666'
+      mockOpenFinanceConnectionsStore.set(legacyId, {
+        id: legacyId,
+        userId: userA,
+        profileId: null,
+        provider: 'belvo',
+        externalItemId: 'legacy-belvo-item-sync',
+        institutionId: '201',
+        institutionName: 'Nubank (Belvo)',
+        institutionLogoUrl: null,
+        status: 'active',
+        consentScope: 'read_only',
+        consentExpiresAt: null,
+        lastSyncAt: null,
+        lastError: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+
+      const syncRes = await app.request(`/api/v1/open-finance/connections/${legacyId}/sync`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${tokenA}` }
+      })
+      expect(syncRes.status).toBe(400)
+    })
   })
 
   describe('DELETE /api/v1/open-finance/connections/:id', () => {
@@ -246,6 +401,44 @@ describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
 
       revokeSpy.mockRestore()
     })
+
+    it('deve revogar localmente registro legado belvo sem chamar adaptador externo', async () => {
+      const revokeSpy = vi.spyOn(SandboxOpenFinanceAdapter.prototype, 'revokeItem')
+      const legacyId = '77777777-7777-4777-8777-777777777777'
+      mockOpenFinanceConnectionsStore.set(legacyId, {
+        id: legacyId,
+        userId: userA,
+        profileId: null,
+        provider: 'belvo',
+        externalItemId: 'legacy-belvo-item-revoke',
+        institutionId: '201',
+        institutionName: 'Nubank (Belvo)',
+        institutionLogoUrl: null,
+        status: 'active',
+        consentScope: 'read_only',
+        consentExpiresAt: null,
+        lastSyncAt: null,
+        lastError: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+
+      const delRes = await app.request(`/api/v1/open-finance/connections/${legacyId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${tokenA}` }
+      })
+      expect(delRes.status).toBe(200)
+      const delJson = (await delRes.json()) as { revoked: boolean; id: string; status: string }
+      expect(delJson).toEqual({
+        revoked: true,
+        id: legacyId,
+        status: 'revoked'
+      })
+      expect(revokeSpy).not.toHaveBeenCalled()
+      expect(mockOpenFinanceConnectionsStore.get(legacyId)?.status).toBe('revoked')
+
+      revokeSpy.mockRestore()
+    })
   })
 
   describe('POST /api/v1/open-finance/webhook (HMAC-SHA256)', () => {
@@ -272,6 +465,19 @@ describe('Open Finance Brasil (Pluggy / Belvo / Sandbox) - TDD', () => {
         body: payload
       })
       expect(invalidSig.status).toBe(401)
+
+      process.env.BELVO_WEBHOOK_SECRET = 'legacy-belvo-webhook-secret-should-not-work'
+      const belvoSig = await computeHmacSha256Hex(payload, process.env.BELVO_WEBHOOK_SECRET)
+      const rejectedBelvoSig = await app.request('/api/v1/open-finance/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-open-finance-signature': belvoSig
+        },
+        body: payload
+      })
+      expect(rejectedBelvoSig.status).toBe(401)
+      delete process.env.BELVO_WEBHOOK_SECRET
     })
 
     it('deve processar sincronização e retornar 200 quando assinatura HMAC-SHA256 for válida', async () => {

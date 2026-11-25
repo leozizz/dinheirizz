@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { PluggyConnect } from 'pluggy-connect-sdk'
 import {
   Landmark,
   ShieldCheck,
@@ -10,14 +11,15 @@ import {
   AlertTriangle,
   RefreshCw,
   X,
-  Building2
+  Building2,
+  ExternalLink,
+  Info
 } from 'lucide-react'
 import { useOpenFinance } from '../../hooks/useOpenFinance'
 import {
   OPEN_FINANCE_SANDBOX_INSTITUTIONS,
   type ConnectTokenResponse,
   type OpenFinanceInstitutionOption,
-  type OpenFinanceProvider,
   type OpenFinanceSyncSummary
 } from '../../types/openFinance'
 
@@ -44,7 +46,6 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
   } = useOpenFinance(profileId)
 
   const [step, setStep] = useState<ModalStep>('consent')
-  const [provider, setProvider] = useState<OpenFinanceProvider>('pluggy')
   const [tokenData, setTokenData] = useState<ConnectTokenResponse | null>(null)
   const [selectedInstitution, setSelectedInstitution] = useState<OpenFinanceInstitutionOption>(
     OPEN_FINANCE_SANDBOX_INSTITUTIONS[0]
@@ -52,22 +53,89 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
   const [syncSummary, setSyncSummary] = useState<OpenFinanceSyncSummary | null>(null)
   const [connectedInstitutionName, setConnectedInstitutionName] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isLaunchingWidget, setIsLaunchingWidget] = useState<boolean>(false)
+  const pluggyInstanceRef = useRef<PluggyConnect | null>(null)
 
-  if (!isOpen) return null
+  const isLiveMode = tokenData?.mode === 'production' || tokenData?.mode === 'live'
 
   const handleClose = () => {
+    void pluggyInstanceRef.current?.destroy?.()
+    pluggyInstanceRef.current = null
     setStep('consent')
     setTokenData(null)
     setSyncSummary(null)
     setErrorMessage(null)
+    setIsLaunchingWidget(false)
     onClose()
   }
+
+  const launchPluggyWidget = useCallback(async (connectToken: string) => {
+    setErrorMessage(null)
+    setIsLaunchingWidget(true)
+    try {
+      const pluggy = new PluggyConnect({
+        connectToken,
+        language: 'pt',
+        onSuccess: async ({ item }) => {
+          setErrorMessage(null)
+          try {
+            const institutionId = String(item.connector?.id ?? 'pluggy')
+            const institutionName = item.connector?.name ?? 'Instituição Bancária'
+            const institutionLogoUrl = item.connector?.imageUrl ?? null
+            const result = await createConnection({
+              provider: 'pluggy',
+              externalItemId: item.id,
+              institutionId,
+              institutionName,
+              institutionLogoUrl,
+              profileId
+            })
+            setConnectedInstitutionName(result.connection.institutionName || institutionName)
+            setSyncSummary(result.syncSummary)
+            setStep('summary')
+            if (onConnected) {
+              onConnected(result.syncSummary)
+            }
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Erro ao registrar conexão Pluggy.'
+            setErrorMessage(msg)
+          }
+        },
+        onError: (error) => {
+          setErrorMessage(error?.message || 'Erro ao conectar instituição no Pluggy Connect.')
+        },
+        onClose: () => {
+          setIsLaunchingWidget(false)
+        }
+      })
+      pluggyInstanceRef.current = pluggy
+      await pluggy.init()
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Não foi possível abrir o Pluggy Connect.'
+      setErrorMessage(msg)
+    } finally {
+      setIsLaunchingWidget(false)
+    }
+  }, [createConnection, onConnected, profileId])
+
+  useEffect(() => {
+    if (!isOpen || step !== 'connect' || !isLiveMode || !tokenData?.connectToken) {
+      return
+    }
+    void launchPluggyWidget(tokenData.connectToken)
+    return () => {
+      void pluggyInstanceRef.current?.destroy?.()
+      pluggyInstanceRef.current = null
+    }
+  }, [isOpen, step, isLiveMode, tokenData?.connectToken, launchPluggyWidget])
+
+  if (!isOpen) return null
 
   const handleProceedToConnect = async () => {
     setErrorMessage(null)
     try {
       const response = await createConnectToken({
-        provider,
+        provider: 'pluggy',
         profileId
       })
       setTokenData(response)
@@ -81,9 +149,9 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
   const handleConfirmConnection = async () => {
     setErrorMessage(null)
     try {
-      const externalItemId = `sandbox-${provider}-${selectedInstitution.id}-${Date.now()}`
+      const externalItemId = `sandbox-pluggy-${selectedInstitution.id}-${Date.now()}`
       const result = await createConnection({
-        provider,
+        provider: 'pluggy',
         externalItemId,
         institutionId: selectedInstitution.id,
         institutionName: selectedInstitution.name,
@@ -173,41 +241,48 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <span className="block text-xs font-medium text-foreground">
-                  Agregador Open Finance
-                </span>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    data-testid="open-finance-provider-pluggy"
-                    onClick={() => setProvider('pluggy')}
-                    aria-pressed={provider === 'pluggy'}
-                    className={`min-h-[44px] px-3 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      provider === 'pluggy'
-                        ? 'bg-primary/15 border-primary text-foreground ring-1 ring-primary/30'
-                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    <div className="text-xs font-semibold">Pluggy</div>
-                    <div className="text-[11px] text-muted-foreground">Open Finance Brasil</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    data-testid="open-finance-provider-belvo"
-                    onClick={() => setProvider('belvo')}
-                    aria-pressed={provider === 'belvo'}
-                    className={`min-h-[44px] px-3 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      provider === 'belvo'
-                        ? 'bg-primary/15 border-primary text-foreground ring-1 ring-primary/30'
-                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    <div className="text-xs font-semibold">Belvo</div>
-                    <div className="text-[11px] text-muted-foreground">Agregador alternativo</div>
-                  </button>
+              <div
+                data-testid="open-finance-meu-pluggy-guide"
+                className="p-3.5 rounded-xl bg-muted/40 border border-border space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-foreground">
+                    Conexão oficial via Pluggy
+                  </span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/25">
+                    Meu Pluggy + Connect
+                  </span>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ao continuar, você conectará sua instituição pelo widget oficial do Pluggy
+                  Connect. Caso ainda não tenha cadastro ou queira gerenciar consentimentos,
+                  acesse o portal Meu Pluggy.
+                </p>
+                <a
+                  href="https://meu.pluggy.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="open-finance-meu-pluggy-link"
+                  className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-medium text-primary transition-colors"
+                >
+                  <span>Acessar Meu Pluggy</span>
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                </a>
+              </div>
+
+              <div
+                data-testid="open-finance-pluggy-disclaimer"
+                className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground"
+              >
+                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  A sincronização está sujeita às regras, janelas de atualização do Open Finance
+                  Brasil e limites vigentes do Pluggy — atualmente{' '}
+                  <strong className="font-semibold text-foreground">
+                    até 5 conexões (instituições/contas) por CPF
+                  </strong>{' '}
+                  no plano pessoal gratuito.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -247,44 +322,85 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
               <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-muted/40 border border-border">
                 <div className="flex items-center gap-2 text-xs text-foreground">
                   <Building2 className="w-4 h-4 text-primary shrink-0" />
-                  <span>Selecione a instituição para conectar</span>
+                  <span>
+                    {isLiveMode
+                      ? 'Autorize sua instituição no Pluggy Connect'
+                      : 'Selecione a instituição para conectar'}
+                  </span>
                 </div>
                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/25">
-                  {tokenData?.mode === 'live' ? 'Produção' : 'Sandbox'}
+                  {isLiveMode ? 'Produção' : 'Sandbox'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
-                {OPEN_FINANCE_SANDBOX_INSTITUTIONS.map((inst) => {
-                  const isSelected = selectedInstitution.id === inst.id
-                  return (
+              {isLiveMode ? (
+                <div
+                  data-testid="open-finance-pluggy-widget-container"
+                  className="p-4 rounded-xl bg-muted/30 border border-border space-y-3 text-center"
+                >
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {isCreatingConnection
+                      ? 'Salvando conexão e importando contas e transações...'
+                      : 'Conclua o consentimento na janela oficial do Pluggy Connect. Se ela não abrir automaticamente, clique no botão abaixo.'}
+                  </p>
+                  <div className="flex justify-center">
                     <button
-                      key={inst.id}
                       type="button"
-                      data-testid={`open-finance-institution-${inst.id}`}
-                      onClick={() => setSelectedInstitution(inst)}
-                      aria-pressed={isSelected}
-                      className={`min-h-[48px] p-3 rounded-xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-primary/15 border-primary text-foreground ring-1 ring-primary/30'
-                          : 'bg-muted/30 border-border text-muted-foreground hover:text-foreground hover:bg-muted/60'
-                      }`}
+                      data-testid="open-finance-pluggy-launch-btn"
+                      onClick={() => {
+                        if (tokenData?.connectToken) {
+                          void launchPluggyWidget(tokenData.connectToken)
+                        }
+                      }}
+                      disabled={isLaunchingWidget || isCreatingConnection}
+                      className="min-h-[44px] px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 text-xs font-semibold transition-all inline-flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                     >
-                      <span className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-[11px] font-bold text-foreground shrink-0">
-                        {inst.initials}
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${isLaunchingWidget || isCreatingConnection ? 'animate-spin' : ''}`}
+                      />
+                      <span>
+                        {isCreatingConnection
+                          ? 'Sincronizando...'
+                          : isLaunchingWidget
+                            ? 'Abrindo Pluggy Connect...'
+                            : 'Abrir Pluggy Connect'}
                       </span>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-foreground truncate">
-                          {inst.name}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          {inst.typeLabel}
-                        </div>
-                      </div>
                     </button>
-                  )
-                })}
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                  {OPEN_FINANCE_SANDBOX_INSTITUTIONS.map((inst) => {
+                    const isSelected = selectedInstitution.id === inst.id
+                    return (
+                      <button
+                        key={inst.id}
+                        type="button"
+                        data-testid={`open-finance-institution-${inst.id}`}
+                        onClick={() => setSelectedInstitution(inst)}
+                        aria-pressed={isSelected}
+                        className={`min-h-[48px] p-3 rounded-xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary/15 border-primary text-foreground ring-1 ring-primary/30'
+                            : 'bg-muted/30 border-border text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                        }`}
+                      >
+                        <span className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-[11px] font-bold text-foreground shrink-0">
+                          {inst.initials}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-foreground truncate">
+                            {inst.name}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {inst.typeLabel}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               <div className="flex items-center justify-between gap-2 pt-2">
                 <button
@@ -297,25 +413,27 @@ export const OpenFinanceModal: React.FC<OpenFinanceModalProps> = ({
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Voltar</span>
                 </button>
-                <button
-                  type="button"
-                  data-testid="open-finance-connect-submit-btn"
-                  onClick={handleConfirmConnection}
-                  disabled={isCreatingConnection}
-                  className="min-h-[44px] px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 text-xs font-semibold transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-                >
-                  {isCreatingConnection ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Sincronizando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Conectar {selectedInstitution.name}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
+                {!isLiveMode && (
+                  <button
+                    type="button"
+                    data-testid="open-finance-connect-submit-btn"
+                    onClick={handleConfirmConnection}
+                    disabled={isCreatingConnection}
+                    className="min-h-[44px] px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 text-xs font-semibold transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isCreatingConnection ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Sincronizando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Conectar {selectedInstitution.name}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           )}

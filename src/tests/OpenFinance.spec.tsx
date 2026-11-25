@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { OpenFinanceModal } from '../components/modals/OpenFinanceModal'
 import { OpenFinanceSettings } from '../components/settings/OpenFinanceSettings'
 import type {
@@ -13,6 +13,29 @@ import type {
 } from '../types/openFinance'
 
 let mockHookState: OpenFinanceHookReturn
+
+const mockPluggyInit = vi.fn()
+let lastPluggyOptions: {
+  connectToken: string
+  includeSandbox?: boolean
+  onSuccess?: (data: {
+    item: {
+      id: string
+      connector?: { id?: number | string; name?: string; imageUrl?: string | null }
+    }
+  }) => void
+  onError?: (error: { message?: string }) => void
+  onClose?: () => void
+} | null = null
+
+vi.mock('pluggy-connect-sdk', () => ({
+  PluggyConnect: vi.fn().mockImplementation((options: NonNullable<typeof lastPluggyOptions>) => {
+    lastPluggyOptions = options
+    return {
+      init: mockPluggyInit
+    }
+  })
+}))
 
 vi.mock('../hooks/useOpenFinance', () => ({
   useOpenFinance: () => mockHookState
@@ -62,6 +85,7 @@ const sampleConnections: OpenFinanceConnection[] = [
 describe('OpenFinance Frontend (TDD)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    lastPluggyOptions = null
 
     const tokenRes: ConnectTokenResponse = {
       connectToken: 'sandbox-token-123',
@@ -118,6 +142,24 @@ describe('OpenFinance Frontend (TDD)', () => {
   })
 
   describe('OpenFinanceModal', () => {
+    it('não exibe opção de Belvo e mostra guia Meu Pluggy e disclaimer de 5 contas por CPF antes do consentimento', () => {
+      render(<OpenFinanceModal isOpen={true} onClose={vi.fn()} />)
+
+      expect(screen.queryByTestId('open-finance-provider-belvo')).not.toBeInTheDocument()
+      expect(screen.queryByText(/Belvo/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Agregador alternativo/i)).not.toBeInTheDocument()
+
+      expect(screen.getByTestId('open-finance-meu-pluggy-guide')).toBeInTheDocument()
+      const meuPluggyLink = screen.getByTestId('open-finance-meu-pluggy-link')
+      expect(meuPluggyLink).toHaveAttribute('href', 'https://meu.pluggy.ai')
+      expect(meuPluggyLink).toHaveAttribute('target', '_blank')
+      expect(meuPluggyLink).toHaveAttribute('rel', 'noopener noreferrer')
+
+      const disclaimer = screen.getByTestId('open-finance-pluggy-disclaimer')
+      expect(disclaimer).toBeInTheDocument()
+      expect(disclaimer.textContent).toMatch(/5\s*(conexões|contas).*CPF/i)
+    })
+
     it('exibe passo 1 com aviso explícito de acesso Somente Leitura e avança para conexão Sandbox até o resumo', async () => {
       const onClose = vi.fn()
       render(<OpenFinanceModal isOpen={true} onClose={onClose} />)
@@ -179,9 +221,100 @@ describe('OpenFinance Frontend (TDD)', () => {
       expect(title.className).not.toContain('truncate')
       expect(subtitle.className).not.toContain('truncate')
     })
+
+    it('em modo production inicia Pluggy Connect e envia externalItemId real no onSuccess', async () => {
+      mockHookState.createConnectToken = vi.fn().mockResolvedValue({
+        connectToken: 'live-connect-token-xyz',
+        provider: 'pluggy',
+        mode: 'production',
+        consentScope: 'read_only',
+        expiresAt: '2026-11-25T12:00:00.000Z'
+      })
+
+      render(<OpenFinanceModal isOpen={true} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByTestId('open-finance-consent-continue-btn'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('open-finance-pluggy-widget-container')).toBeInTheDocument()
+      })
+
+      expect(screen.getByTestId('open-finance-pluggy-launch-btn')).toBeInTheDocument()
+      expect(lastPluggyOptions?.connectToken).toBe('live-connect-token-xyz')
+      expect(mockPluggyInit).toHaveBeenCalledTimes(1)
+
+      await act(async () => {
+        await lastPluggyOptions?.onSuccess?.({
+          item: {
+            id: 'pluggy-item-real-999',
+            connector: {
+              id: 201,
+              name: 'Nubank',
+              imageUrl: 'https://cdn.pluggy.ai/nubank.png'
+            }
+          }
+        })
+      })
+
+      await waitFor(() => {
+        expect(mockHookState.createConnection).toHaveBeenCalledWith({
+          provider: 'pluggy',
+          externalItemId: 'pluggy-item-real-999',
+          institutionId: '201',
+          institutionName: 'Nubank',
+          institutionLogoUrl: 'https://cdn.pluggy.ai/nubank.png',
+          profileId: null
+        })
+      })
+
+      expect(screen.getByTestId('open-finance-summary-step')).toBeInTheDocument()
+    })
+
+    it('exibe erro acessível em open-finance-modal-error quando Pluggy Connect dispara onError', async () => {
+      mockHookState.createConnectToken = vi.fn().mockResolvedValue({
+        connectToken: 'live-connect-token-xyz',
+        provider: 'pluggy',
+        mode: 'live',
+        consentScope: 'read_only',
+        expiresAt: '2026-11-25T12:00:00.000Z'
+      })
+
+      render(<OpenFinanceModal isOpen={true} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByTestId('open-finance-consent-continue-btn'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('open-finance-pluggy-widget-container')).toBeInTheDocument()
+      })
+
+      act(() => {
+        lastPluggyOptions?.onError?.({ message: 'Falha ao autenticar no banco selecionado' })
+      })
+
+      await waitFor(() => {
+        const alert = screen.getByTestId('open-finance-modal-error')
+        expect(alert).toHaveAttribute('role', 'alert')
+        expect(alert.textContent).toContain('Falha ao autenticar no banco selecionado')
+      })
+    })
   })
 
   describe('OpenFinanceSettings', () => {
+    it('exibe disclaimer de 5 contas por CPF, link Meu Pluggy e badge Legado para conexão Belvo histórica', () => {
+      render(<OpenFinanceSettings />)
+
+      const disclaimer = screen.getByTestId('open-finance-settings-pluggy-disclaimer')
+      expect(disclaimer).toBeInTheDocument()
+      expect(disclaimer.textContent).toMatch(/5\s*(conexões|contas).*CPF/i)
+
+      const meuPluggyLink = screen.getByTestId('open-finance-settings-meu-pluggy-link')
+      expect(meuPluggyLink).toHaveAttribute('href', 'https://meu.pluggy.ai')
+      expect(meuPluggyLink).toHaveAttribute('target', '_blank')
+      expect(meuPluggyLink).toHaveAttribute('rel', 'noopener noreferrer')
+
+      expect(screen.getByText('Legado')).toBeInTheDocument()
+    })
+
     it('lista conexões com status, última sincronização e todos os data-testid obrigatórios', () => {
       render(<OpenFinanceSettings />)
 

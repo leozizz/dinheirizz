@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import React from 'react'
 import { CreditCardWidget } from '../components/cards/CreditCardWidget'
+import { CreditCardModal } from '../components/modals/CreditCardModal'
 import type { CreditCard } from '../types/database.types'
+import type { AccountItem } from '../hooks/useAccounts'
 
 describe('CreditCardWidget Component (TDD)', () => {
   const mockCards: CreditCard[] = [
@@ -127,6 +129,16 @@ describe('CreditCardWidget Component (TDD)', () => {
     // card-3: 92% -> rose/perigo
     expect(progressBars[2].getAttribute('aria-valuenow')).toBe('92')
     expect(progressBars[2].className).toContain('rose')
+
+    // Garante que o percentual de uso seja legível (sem bg-* sólido igual ao texto)
+    const percentages = screen.getAllByTestId('credit-card-limit-percentage')
+    expect(percentages[0].className).not.toContain('bg-emerald-500')
+    expect(percentages[1].className).not.toContain('bg-amber-500')
+    expect(percentages[2].className).not.toContain('bg-rose-500')
+
+    // Garante que os dígitos do cartão nunca quebrem linha
+    const digits = screen.getAllByTestId('credit-card-digits')
+    expect(digits[0].className).toContain('whitespace-nowrap')
   })
 
   it('deve exibir os badges de status das faturas com texto e estilo apropriados', () => {
@@ -169,5 +181,77 @@ describe('CreditCardWidget Component (TDD)', () => {
     const anticipateBtn = screen.getByTestId('open-anticipate-btn-card-1')
     fireEvent.click(anticipateBtn)
     expect(onOpenAnticipate).toHaveBeenCalledWith(mockCards[0])
+  })
+
+  it('aplica a skin do banco (data-bank-slug), BankLogo e CardBrandLogo em cada cartão virtual', () => {
+    const cardsWithGeneric: CreditCard[] = [
+      ...mockCards,
+      {
+        id: 'card-4',
+        name: 'Cartão Loja XYZ',
+        brand: 'hipercard',
+        limitAmount: 3000,
+        usedLimit: 500,
+        availableLimit: 2500,
+        closingDay: 15,
+        dueDay: 25,
+        color: '#3b82f6',
+        lastFourDigits: '9912',
+        accountId: 'acc-1'
+      }
+    ]
+
+    render(
+      <CreditCardWidget
+        cards={cardsWithGeneric}
+        onOpenCreateCard={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('bank-logo-nubank')).toBeInTheDocument()
+    expect(screen.getByTestId('bank-logo-itau')).toBeInTheDocument()
+    expect(screen.getByTestId('bank-logo-bradesco')).toBeInTheDocument()
+    expect(screen.getByTestId('bank-logo-generic')).toBeInTheDocument()
+
+    const nubankCard = screen.getByTestId('credit-card-item-card-1').querySelector('[data-bank-slug="nubank"]')
+    expect(nubankCard).not.toBeNull()
+
+    const genericCard = screen.getByTestId('credit-card-item-card-4').querySelector('[data-bank-slug="generic"]')
+    expect(genericCard).not.toBeNull()
+  })
+
+  it('exibe preview em tempo real do cartão virtual no CreditCardModal', () => {
+    const mockAccounts: AccountItem[] = [
+      {
+        id: '11111111-1111-1111-1111-111111111111',
+        name: 'Conta Itaú',
+        type: 'checking',
+        balance: 2000,
+        bank: 'Itaú',
+        color: '#ec7000'
+      }
+    ]
+
+    render(
+      <CreditCardModal
+        isOpen={true}
+        accounts={mockAccounts}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    )
+
+    const preview = screen.getByTestId('credit-card-preview')
+    expect(preview).toBeInTheDocument()
+
+    const nameInput = screen.getByTestId('credit-card-name-input')
+    fireEvent.change(nameInput, { target: { value: 'Nubank Ultravioleta' } })
+
+    const digitsInput = screen.getByTestId('credit-card-digits-input')
+    fireEvent.change(digitsInput, { target: { value: '4321' } })
+
+    expect(preview.querySelector('[data-bank-slug="nubank"]')).not.toBeNull()
+    expect(preview.textContent).toContain('Nubank Ultravioleta')
+    expect(preview.textContent).toContain('4321')
   })
 })

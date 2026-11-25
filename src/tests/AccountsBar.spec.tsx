@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { AccountsBar } from '../components/dashboard/AccountsBar'
+import { AccountModal } from '../components/modals/AccountModal'
 import type { AccountItem } from '../hooks/useAccounts'
 
 describe('AccountsBar Component', () => {
@@ -88,18 +89,56 @@ describe('AccountsBar Component', () => {
     expect(handleNew).toHaveBeenCalled()
   })
 
-  it('exibe a identificação/sigla do banco inferida pelo nome ou instituição', () => {
+  it('exibe o BankLogo correspondente ao banco inferido pelo nome ou instituição e monograma para conta genérica', () => {
+    const accountsWithGeneric: AccountItem[] = [
+      ...mockAccounts,
+      {
+        id: 'acc-3',
+        name: 'Carteira Física',
+        type: 'checking',
+        balance: 200,
+        color: '#3b82f6'
+      }
+    ]
+
     render(
       <AccountsBar
-        accounts={mockAccounts}
+        accounts={accountsWithGeneric}
         selectedAccountId={null}
         onSelectAccount={vi.fn()}
         onNewAccount={vi.fn()}
       />
     )
 
-    expect(screen.getByText('NU')).toBeInTheDocument()
-    expect(screen.getByText('IT')).toBeInTheDocument()
+    const nubankLogo = screen.getByTestId('bank-logo-nubank')
+    expect(nubankLogo).toHaveAttribute('aria-label', 'Logo Nubank')
+    expect(nubankLogo.querySelector('svg')).not.toBeNull()
+
+    const itauLogo = screen.getByTestId('bank-logo-itau')
+    expect(itauLogo).toHaveAttribute('aria-label', 'Logo Itaú')
+    expect(itauLogo.querySelector('svg')).not.toBeNull()
+
+    const genericLogo = screen.getByTestId('bank-logo-generic')
+    expect(genericLogo.textContent).toContain('CF')
+  })
+
+  it('exibe preview em tempo real do banco no AccountModal ao digitar nome ou instituição', () => {
+    render(
+      <AccountModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />
+    )
+
+    const preview = screen.getByTestId('account-bank-preview')
+    expect(preview).toBeInTheDocument()
+
+    const nameInput = screen.getByPlaceholderText('Ex: Nubank Principal, Itaú Reserva')
+    fireEvent.change(nameInput, { target: { value: 'Nubank Ultravioleta' } })
+
+    expect(screen.getByTestId('bank-logo-nubank')).toBeInTheDocument()
+    expect(preview.textContent).toContain('Nubank')
   })
 })
 

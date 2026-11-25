@@ -1,6 +1,7 @@
 import { Plus, Layers } from 'lucide-react'
 import { formatBRL } from '../../lib/formatters'
 import { detectBank } from '../../lib/banks'
+import { BankLogo } from '../banks/BankLogo'
 import type { AccountItem } from '../../hooks/useAccounts'
 
 interface AccountsBarProps {
@@ -10,12 +11,12 @@ interface AccountsBarProps {
   onNewAccount: () => void
 }
 
-export function AccountsBar({
+export const AccountsBar = ({
   accounts,
   selectedAccountId,
   onSelectAccount,
   onNewAccount
-}: AccountsBarProps) {
+}: AccountsBarProps) => {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2.5 px-1">
@@ -66,13 +67,14 @@ export function AccountsBar({
         {accounts.map((acc) => {
           const isSelected = selectedAccountId === acc.id
           const bankInfo = detectBank(acc.bank || acc.name)
-          const badgeBg = acc.color ? `${acc.color}25` : `${bankInfo.primaryColor}25`
           const badgeColor = acc.color || bankInfo.primaryColor
+          const logoLabel = bankInfo.slug === 'generic' ? acc.name : bankInfo.name
 
           return (
             <button
               key={acc.id}
               type="button"
+              data-testid={`account-item-${acc.id}`}
               onClick={() => onSelectAccount(acc.id)}
               data-active={isSelected}
               className={`flex-shrink-0 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border transition-all duration-200 text-left min-h-[44px] cursor-pointer ${
@@ -81,15 +83,14 @@ export function AccountsBar({
                   : 'glass-card border-border text-muted-foreground hover:border-primary/30 hover:bg-muted/40'
               }`}
             >
-              <div
-                className="w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-bold flex-shrink-0 border border-border"
-                style={{
-                  backgroundColor: badgeBg,
-                  color: badgeColor
-                }}
-              >
-                <span>{bankInfo.initials}</span>
-              </div>
+              <BankLogo
+                slug={bankInfo.slug}
+                name={logoLabel}
+                initials={bankInfo.initials}
+                primaryColor={badgeColor}
+                size="sm"
+                variant="badge"
+              />
               <div className="min-w-0 pr-1">
                 <span className="block text-xs font-medium truncate max-w-[130px]">
                   {acc.name}

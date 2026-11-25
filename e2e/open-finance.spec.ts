@@ -76,6 +76,11 @@ test.describe('Motor de Conexão Bancária via Open Finance Brasil (#84)', () =>
     await page.getByTestId(triggerTestId).click()
     await expect(page.getByTestId('profile-modal')).toBeVisible()
     await expect(page.getByTestId('open-finance-settings-section')).toBeVisible()
+    await expect(page.getByTestId('open-finance-settings-pluggy-disclaimer')).toBeVisible()
+    await expect(page.getByTestId('open-finance-settings-meu-pluggy-link')).toHaveAttribute(
+      'href',
+      'https://meu.pluggy.ai'
+    )
 
     // Abrir OpenFinanceModal
     await page.getByTestId('open-finance-connect-btn').click()
@@ -91,14 +96,14 @@ test.describe('Motor de Conexão Bancária via Open Finance Brasil (#84)', () =>
     )
     expect(hasOverflow).toBe(false)
 
-    // Etapa 1: Consentimento Somente Leitura e alternância de provedor
+    // Etapa 1: Consentimento Somente Leitura, Pluggy-only (sem Belvo), guia Meu Pluggy e disclaimer 5 contas/CPF
     await expect(page.getByTestId('open-finance-consent-step')).toBeVisible()
-    const belvoBtn = page.getByTestId('open-finance-provider-belvo')
-    await belvoBtn.click()
-    await expect(belvoBtn).toHaveAttribute('aria-pressed', 'true')
-    const pluggyBtn = page.getByTestId('open-finance-provider-pluggy')
-    await pluggyBtn.click()
-    await expect(pluggyBtn).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByTestId('open-finance-provider-belvo')).toHaveCount(0)
+    await expect(page.getByTestId('open-finance-meu-pluggy-guide')).toBeVisible()
+    const meuPluggyLink = page.getByTestId('open-finance-meu-pluggy-link')
+    await expect(meuPluggyLink).toHaveAttribute('href', 'https://meu.pluggy.ai')
+    await expect(meuPluggyLink).toHaveAttribute('rel', /noopener/)
+    await expect(page.getByTestId('open-finance-pluggy-disclaimer')).toContainText('5')
 
     await page.getByTestId('open-finance-consent-continue-btn').click()
 

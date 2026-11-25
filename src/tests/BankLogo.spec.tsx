@@ -64,6 +64,22 @@ describe('BankLogo Component (TDD)', () => {
     const logo = screen.getByTestId('bank-logo-nubank')
     expect(logo.className).toContain('custom-test-class')
   })
+
+  it('garante contraste WCAG AA no variant="badge" para bancos escuros e amarelos em ambos os temas', () => {
+    const { rerender } = render(
+      <BankLogo slug="xp" name="XP Investimentos" primaryColor="#18181b" variant="badge" />
+    )
+    const xpLogo = screen.getByTestId('bank-logo-xp')
+    expect(xpLogo.style.backgroundColor).toBe('rgb(24, 24, 27)')
+    expect(xpLogo.style.color).toBe('rgb(255, 255, 255)')
+
+    rerender(
+      <BankLogo slug="bb" name="Banco do Brasil" primaryColor="#fbf700" variant="badge" />
+    )
+    const bbLogo = screen.getByTestId('bank-logo-bb')
+    expect(bbLogo.style.backgroundColor).toBe('rgb(251, 247, 0)')
+    expect(bbLogo.style.color).toBe('rgb(15, 23, 42)')
+  })
 })
 
 describe('CardBrandLogo Component (TDD)', () => {

@@ -129,6 +129,16 @@ describe('CreditCardWidget Component (TDD)', () => {
     // card-3: 92% -> rose/perigo
     expect(progressBars[2].getAttribute('aria-valuenow')).toBe('92')
     expect(progressBars[2].className).toContain('rose')
+
+    // Garante que o percentual de uso seja legível (sem bg-* sólido igual ao texto)
+    const percentages = screen.getAllByTestId('credit-card-limit-percentage')
+    expect(percentages[0].className).not.toContain('bg-emerald-500')
+    expect(percentages[1].className).not.toContain('bg-amber-500')
+    expect(percentages[2].className).not.toContain('bg-rose-500')
+
+    // Garante que os dígitos do cartão nunca quebrem linha
+    const digits = screen.getAllByTestId('credit-card-digits')
+    expect(digits[0].className).toContain('whitespace-nowrap')
   })
 
   it('deve exibir os badges de status das faturas com texto e estilo apropriados', () => {

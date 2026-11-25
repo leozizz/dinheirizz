@@ -51,18 +51,21 @@ const getStatusBadge = (status?: InvoiceStatus | null) => {
 const getLimitColor = (percentage: number) => {
   if (percentage < 60) {
     return {
-      barClass: 'bg-emerald-500 text-emerald-500',
+      barClass: 'bg-emerald-500',
+      textClass: 'text-emerald-600 dark:text-emerald-400',
       trackClass: 'bg-emerald-500/20 border-emerald-500/30'
     }
   }
   if (percentage <= 85) {
     return {
-      barClass: 'bg-amber-500 text-amber-500',
+      barClass: 'bg-amber-500',
+      textClass: 'text-amber-600 dark:text-amber-400',
       trackClass: 'bg-amber-500/20 border-amber-500/30'
     }
   }
   return {
-    barClass: 'bg-rose-500 text-rose-500',
+    barClass: 'bg-rose-500',
+    textClass: 'text-rose-600 dark:text-rose-400',
     trackClass: 'bg-rose-500/20 border-rose-500/30'
   }
 }
@@ -142,7 +145,7 @@ export const CreditCardWidget = ({
         </div>
       ) : (
         /* Lista / Grid de Cartões */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,290px),1fr))] gap-5">
           {cards.map((card) => {
             const percentageUsed = card.limitAmount > 0
               ? Math.min(100, Math.round((card.usedLimit / card.limitAmount) * 100))
@@ -197,7 +200,10 @@ export const CreditCardWidget = ({
                       <span className="text-muted-foreground">
                         Utilizado: <strong className="text-foreground font-mono">{formatBRL(card.usedLimit)}</strong>
                       </span>
-                      <span className={`font-mono font-semibold ${limitColors.barClass}`}>
+                      <span
+                        data-testid="credit-card-limit-percentage"
+                        className={`font-mono font-semibold ${limitColors.textClass}`}
+                      >
                         {percentageUsed}%
                       </span>
                     </div>
@@ -208,10 +214,10 @@ export const CreditCardWidget = ({
                       aria-valuenow={percentageUsed}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      className={`h-2.5 w-full rounded-full overflow-hidden border ${limitColors.barClass} ${limitColors.trackClass}`}
+                      className={`h-2.5 w-full rounded-full overflow-hidden border ${limitColors.trackClass}`}
                     >
                       <div
-                        className={`h-full transition-all duration-300 ${limitColors.barClass.split(' ')[0]}`}
+                        className={`h-full transition-all duration-300 ${limitColors.barClass}`}
                         style={{ width: `${percentageUsed}%` }}
                       />
                     </div>

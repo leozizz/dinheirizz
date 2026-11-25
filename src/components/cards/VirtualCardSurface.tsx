@@ -77,8 +77,8 @@ export const VirtualCardSurface = ({
   return (
     <div
       data-bank-slug={bankInfo.slug}
-      className={`relative overflow-hidden rounded-2xl shadow-lg flex flex-col justify-between aspect-[1.586/1] border transition-all ${
-        compact ? 'p-4' : 'p-5'
+      className={`relative overflow-hidden rounded-2xl shadow-lg flex flex-col justify-between gap-3 min-h-[184px] aspect-[1.586/1] border transition-all ${
+        compact ? 'p-4' : 'p-4 sm:p-5'
       }`}
       style={{
         background,
@@ -118,7 +118,7 @@ export const VirtualCardSurface = ({
       <div className="relative z-10 space-y-1 my-auto">
         <div
           data-testid="credit-card-digits"
-          className="text-base sm:text-xl font-mono tracking-wider font-semibold"
+          className="text-sm sm:text-lg font-mono tracking-wider font-semibold whitespace-nowrap"
         >
           •••• •••• •••• {lastFourDigits || '••••'}
         </div>

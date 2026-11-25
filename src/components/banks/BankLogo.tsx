@@ -199,6 +199,49 @@ const BANK_SVG_MARKS: Record<string, (iconClass: string) => ReactElement> = {
   )
 }
 
+const parseHexLuminance = (hexColor: string): number | null => {
+  const clean = hexColor.trim().replace(/^#/, '')
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) {
+    return null
+  }
+
+  const r = parseInt(clean.slice(0, 2), 16) / 255
+  const g = parseInt(clean.slice(2, 4), 16) / 255
+  const b = parseInt(clean.slice(4, 6), 16) / 255
+
+  const toLinear = (channel: number): number =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+}
+
+const getBadgeContrastStyle = (primaryColor?: string) => {
+  if (!primaryColor) {
+    return undefined
+  }
+
+  const luminance = parseHexLuminance(primaryColor)
+  if (luminance === null) {
+    return {
+      backgroundColor: primaryColor,
+      color: '#ffffff',
+      borderColor: 'rgba(255, 255, 255, 0.22)'
+    }
+  }
+
+  // Contraste WCAG AA (>= 4.5:1) escolhendo entre texto claro (#ffffff) e escuro (#0f172a)
+  const contrastWithWhite = 1.05 / (luminance + 0.05)
+  const darkLuminance = 0.008 // ~#0f172a
+  const contrastWithDark = (luminance + 0.05) / (darkLuminance + 0.05)
+  const useDarkText = contrastWithDark > contrastWithWhite
+
+  return {
+    backgroundColor: primaryColor,
+    color: useDarkText ? '#0f172a' : '#ffffff',
+    borderColor: luminance < 0.15 ? 'rgba(255, 255, 255, 0.24)' : 'rgba(15, 23, 42, 0.16)'
+  }
+}
+
 export const BankLogo = ({
   slug,
   name,
@@ -215,13 +258,7 @@ export const BankLogo = ({
   const isCardVariant = variant === 'card'
   const isMonochrome = variant === 'monochrome'
 
-  const badgeStyle = !isCardVariant && !isMonochrome && primaryColor
-    ? {
-        backgroundColor: `${primaryColor}22`,
-        color: primaryColor,
-        borderColor: `${primaryColor}40`
-      }
-    : undefined
+  const badgeStyle = !isCardVariant && !isMonochrome ? getBadgeContrastStyle(primaryColor) : undefined
 
   return (
     <div
